@@ -12,6 +12,11 @@ class PreviewController extends Controller
 {
     public function index(Request $request, Website $website): Response
     {
+        // Laravel1 type uses fixed homepage template
+        if ($website->type === 'laravel1') {
+            return $this->laravel1Home($request, $website);
+        }
+
         $page = $website->pages()
             ->where('path', '/')
             ->where(function ($q) {
@@ -29,6 +34,84 @@ class PreviewController extends Controller
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->header('X-Robots-Tag', 'noindex, nofollow')
             ->header('X-Frame-Options', 'DENY');
+    }
+
+    private function laravel1Home(Request $request, Website $website): Response
+    {
+        $folders = Folder::where('website_id', $website->id)->whereNull('parent_id')->get();
+        $categoriesData = $folders->map(function ($folder) use ($website) {
+            $pageCount = $folder->pages()->count();
+            $firstPage = $folder->pages()->first();
+            $firstPageData = $firstPage ? (json_decode($firstPage->content_json ?? '{}', true) ?: []) : [];
+            $gallery = $firstPageData['gallery'] ?? [];
+            return [
+                'name' => $folder->name,
+                'url' => '/preview/folder/' . $folder->id . '/' . $folder->slug,
+                'count' => $pageCount,
+                'image' => $gallery[0] ?? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
+            ];
+        })->toArray();
+
+        $featuredPages = $website->pages()->limit(6)->get();
+        $featuredData = $featuredPages->map(function ($page) use ($website) {
+            $data = json_decode($page->content_json ?? '{}', true) ?: [];
+            $gallery = $data['gallery'] ?? [];
+            return [
+                'title' => $data['title'] ?? $page->title ?? 'Untitled',
+                'image' => $gallery[0] ?? '',
+                'location_text' => $data['location_text'] ?? $data['location'] ?? '',
+                'url' => '/preview/' . $website->id . $page->path,
+            ];
+        })->toArray();
+
+        $templatePath = public_path('templates/home-1/index.html');
+        $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
+
+        $html = str_replace('{{TITLE}}', e($website->domain), $html);
+        $html = str_replace('{{DESCRIPTION}}', 'Find your perfect stay at ' . e($website->domain), $html);
+        $html = str_replace('{{OG_IMAGE}}', $featuredData[0]['image'] ?? '', $html);
+        $html = str_replace('{{OG_URL}}', url()->current(), $html);
+
+        $dataScript = '<script type="application/json" id="page-data">' . json_encode([
+            'categories' => $categoriesData,
+            'featured' => $featuredData,
+        ]) . '</script>';
+        $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        if (!$this->shouldHidePreviewBar($request)) {
+            $html = $this->addHomeBanner($html, $website);
+        }
+
+        return response($html)
+            ->header('Content-Type', 'text/html; charset=utf-8')
+            ->header('X-Robots-Tag', 'noindex, nofollow')
+            ->header('X-Frame-Options', 'DENY');
+    }
+
+    private function addHomeBanner(string $html, Website $website): string
+    {
+        $status = $website->status ?? 'draft';
+        $statusColor = match ($status) {
+            'deployed' => '#16a34a',
+            'deploying' => '#2563eb',
+            'suspended' => '#f97316',
+            'error' => '#dc2626',
+            default => '#6b7280',
+        };
+
+        $bar = '<div id="__preview_bar__" style="position:fixed;top:0;left:0;right:0;z-index:2147483647;background:linear-gradient(90deg,#0ea5e9,#3b82f6);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;box-shadow:0 2px 8px rgba(0,0,0,0.15)">' .
+            '<strong style="margin-right:8px">' . e($website->domain) . ' - Home</strong>' .
+            '<span style="display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;background:#fff;color:' . $statusColor . ';font-weight:600;font-size:12px">' . ucfirst($status) . '</span>' .
+            '<span style="flex:1"></span>' .
+            '<a href="/websites/' . $website->id . '/folders" style="text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,0.6);padding:6px 10px;border-radius:6px">Manage Categories</a>' .
+            '<a href="/websites/' . $website->id . '/pages" style="text-decoration:none;color:#fff;border:1px solid rgba(255,255,255,0.6);padding:6px 10px;border-radius:6px">Manage Pages</a>' .
+            '<button type="button" onclick="__hide_preview_bar()" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.6);padding:6px 10px;border-radius:6px">Hide</button>' .
+            '</div>' .
+            '<script>function __hide_preview_bar(){try{localStorage.setItem("previewBarHidden","1");var b=document.getElementById("__preview_bar__");if(b){b.remove();}}catch(e){}}(function(){try{if(localStorage.getItem("previewBarHidden")==="1"){var b=document.getElementById("__preview_bar__");if(b){b.remove();}}}catch(e){}})();</script>';
+
+        $shim = '<style>html{scroll-padding-top:56px}</style>';
+
+        return $this->injectIntoBodyTop($html, $bar . $shim);
     }
 
     public function folder(Request $request, Folder $folder, ?string $slug = null): Response
