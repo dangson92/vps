@@ -88,7 +88,6 @@ import { ChevronRight, Edit, Trash2, Search, Filter, CornerDownRight, Eye } from
 const route = useRoute()
 const websiteId = route.params.websiteId
 const folders = ref([])
-const website = ref(null)
 const loading = ref(false)
 const msg = ref('')
 const msgType = ref('')
@@ -98,28 +97,29 @@ const refresh = async () => {
   loading.value = true
   msg.value = ''
   try {
-    const [foldersResp, websiteResp] = await Promise.all([
-      axios.get(`/api/websites/${websiteId}/folders`),
-      axios.get(`/api/websites/${websiteId}`)
-    ])
-    const list = foldersResp.data || []
+    const resp = await axios.get(`/api/websites/${websiteId}/folders`)
+    const list = resp.data || []
     const norm = list.map(f => ({
       ...f,
       id: Number(f.id),
       parent_id: f.parent_id == null ? null : Number(f.parent_id)
     }))
     folders.value = norm
-    website.value = websiteResp.data
   } finally {
     loading.value = false
   }
 }
 
 const preview = (folder) => {
-  if (!website.value) return
-  const domain = website.value.domain || ''
+  const id = folder.id
   const slug = fullSlug(folder.id)
-  const url = `https://${domain}/${slug}`
+  const base = slug ? `/preview/folder/${id}/${slug}` : `/preview/folder/${id}`
+  const token = localStorage.getItem('adminToken') || ''
+  if (!token) {
+    window.open(base, '_blank')
+    return
+  }
+  const url = `${base}?token=${encodeURIComponent(token)}`
   window.open(url, '_blank')
 }
 
