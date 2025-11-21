@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Website extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'domain',
+        'type',
+        'vps_server_id',
+        'document_root',
+        'status',
+        'content_version',
+        'deployed_version',
+        'content_updated_at',
+        'deployed_at',
+        'suspended_at',
+        'ssl_enabled',
+        'ssl_expires_at',
+        'wordpress_config',
+        'nginx_config'
+    ];
+
+    protected $casts = [
+        'ssl_enabled' => 'boolean',
+        'ssl_expires_at' => 'datetime',
+        'content_updated_at' => 'datetime',
+        'deployed_at' => 'datetime',
+        'suspended_at' => 'datetime',
+        'wordpress_config' => 'array',
+        'nginx_config' => 'array',
+    ];
+
+    public function vpsServer(): BelongsTo
+    {
+        return $this->belongsTo(VpsServer::class);
+    }
+
+    public function pages(): HasMany
+    {
+        return $this->hasMany(Page::class);
+    }
+
+    public function dnsRecords(): HasMany
+    {
+        return $this->hasMany(DnsRecord::class);
+    }
+
+    public function monitoringStats(): HasMany
+    {
+        return $this->hasMany(MonitoringStat::class);
+    }
+
+    public function isDeployed(): bool
+    {
+        return $this->status === 'deployed';
+    }
+
+    public function hasUnpublishedChanges(): bool
+    {
+        return (int)($this->content_version ?? 0) > (int)($this->deployed_version ?? 0);
+    }
+
+    public function getDocumentRoot(): string
+    {
+        return $this->document_root ?: "/var/www/{$this->domain}";
+    }
+}
