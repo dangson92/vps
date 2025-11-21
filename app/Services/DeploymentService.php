@@ -22,7 +22,7 @@ class DeploymentService
 
         // Send deployment command to worker
         try {
-            $response = Http::timeout(300)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -36,7 +36,7 @@ class DeploymentService
                     'nginx_config' => $this->generateNginxConfig($website),
                 ]);
         } catch (ConnectionException $e) {
-            $response = Http::timeout(300)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -59,6 +59,9 @@ class DeploymentService
 
         // Deploy laravel1 homepage and category pages
         if ($website->type === 'laravel1') {
+            $this->deployTemplateAssets($website, 'home-1');
+            $this->deployTemplateAssets($website, 'listing-1');
+            $this->deployTemplateAssets($website, 'hotel-detail-1');
             $this->deployLaravel1Homepage($website);
             $this->deployLaravel1AllCategories($website);
         }
@@ -296,6 +299,43 @@ class DeploymentService
         return $html;
     }
 
+    public function deployTemplateAssets(Website $website, string $templateName): void
+    {
+        $vps = $website->vpsServer;
+        if (!$vps || !$vps->isActive()) return;
+
+        $templateDir = public_path("templates/{$templateName}");
+        $files = ['style.css', 'script.js'];
+
+        foreach ($files as $file) {
+            $filePath = "{$templateDir}/{$file}";
+            if (!file_exists($filePath)) continue;
+
+            $content = file_get_contents($filePath);
+            try {
+                Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => "/templates/{$templateName}",
+                        'filename' => $file,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            } catch (ConnectionException $e) {
+                Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://127.0.0.1:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => "/templates/{$templateName}",
+                        'filename' => $file,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            }
+        }
+    }
+
     public function removePage(Page $page): void
     {
         $website = $page->website;
@@ -391,7 +431,7 @@ class DeploymentService
         }
 
         try {
-            $response = Http::timeout(300)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -407,7 +447,7 @@ class DeploymentService
                 throw new \Exception($response->body());
             }
         } catch (ConnectionException $e) {
-            Http::timeout(300)
+            Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
