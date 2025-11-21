@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{{TITLE}}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link rel="stylesheet" href="/templates/listing-1/style.css"/>
+</head>
+<body class="font-display bg-gray-50 text-neutral-900">
+<div class="relative flex min-h-screen w-full flex-col">
+<header class="bg-white border-b border-gray-200">
+  <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
+    <div class="flex items-center gap-4">
+      <div class="size-8 text-primary"><svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fill-rule="evenodd"></path></svg></div>
+      <h1 id="site-name" class="text-2xl font-bold">StayFinder</h1>
+    </div>
+    <nav class="hidden md:flex items-center gap-6">
+      <a href="#" class="text-neutral-700 hover:text-primary font-medium">Home</a>
+      <a href="#" class="text-neutral-700 hover:text-primary font-medium">My Bookings</a>
+      <a href="#" class="text-neutral-700 hover:text-primary font-medium">Support</a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <button class="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-primary">Login</button>
+      <button class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-blue-700">Sign Up</button>
+    </div>
+  </div>
+</header>
+
+<section class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-3xl md:text-4xl font-bold mb-2">Find your perfect stay</h2>
+    <p class="text-blue-100 mb-6">Search and compare hotels, apartments & more</p>
+    <div class="bg-white rounded-xl p-4 flex flex-col md:flex-row gap-4">
+      <div class="flex-1">
+        <label class="block text-xs font-medium text-neutral-500 mb-1">Destination</label>
+        <input type="text" placeholder="Where are you going?" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-neutral-900 focus:ring-2 focus:ring-blue-500"/>
+      </div>
+      <div class="flex-1 flex gap-4">
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-neutral-500 mb-1">Check-in</label>
+          <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-neutral-900 focus:ring-2 focus:ring-blue-500"/>
+        </div>
+        <div class="flex-1">
+          <label class="block text-xs font-medium text-neutral-500 mb-1">Check-out</label>
+          <input type="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-neutral-900 focus:ring-2 focus:ring-blue-500"/>
+        </div>
+      </div>
+      <button class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition self-end">Search</button>
+    </div>
+  </div>
+</section>
+
+<main class="flex-1 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col lg:flex-row gap-8">
+      <!-- Filters Sidebar -->
+      <aside class="w-full lg:w-64 shrink-0">
+        <div class="bg-white rounded-xl border border-gray-200 p-6 sticky top-4">
+          <h3 class="font-bold text-lg mb-4">Filter by</h3>
+          <div class="space-y-6">
+            <div>
+              <h4 class="font-medium mb-3">Price Range</h4>
+              <div class="flex gap-2">
+                <input type="number" placeholder="Min" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"/>
+                <input type="number" placeholder="Max" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"/>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-medium mb-3">Rating</h4>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-blue-600"/> 5 Stars</label>
+                <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-blue-600"/> 4+ Stars</label>
+                <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-blue-600"/> 3+ Stars</label>
+              </div>
+            </div>
+            <div>
+              <h4 class="font-medium mb-3">Amenities</h4>
+              <div class="space-y-2">
+                <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-blue-600"/> Free WiFi</label>
+                <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-blue-600"/> Pool</label>
+                <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-blue-600"/> Parking</label>
+                <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-blue-600"/> Restaurant</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Listings -->
+      <div class="flex-1">
+        <div class="flex items-center justify-between mb-6">
+          <p id="results-count" class="text-neutral-600">Showing 3 properties</p>
+          <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm">
+            <option>Sort by: Recommended</option>
+            <option>Price: Low to High</option>
+            <option>Price: High to Low</option>
+            <option>Rating</option>
+          </select>
+        </div>
+        <div id="listings-grid" class="space-y-6">
+          <!-- Card 1 -->
+          <a href="#" class="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition group">
+            <div class="flex flex-col md:flex-row">
+              <div class="md:w-72 h-48 md:h-auto shrink-0 bg-cover bg-center" style="background-image:url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400')"></div>
+              <div class="flex-1 p-6">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-xl font-bold group-hover:text-primary transition">Grand Hotel Resort</h3>
+                  <div class="flex items-center gap-1 text-amber-500"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">star</span><span class="text-sm font-medium">4.8</span></div>
+                </div>
+                <p class="text-neutral-500 text-sm mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-base">location_on</span>123 Beach Road, Miami</p>
+                <p class="text-neutral-600 text-sm mb-4 line-clamp-2">Luxury beachfront resort with stunning ocean views, world-class amenities and exceptional service.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">WiFi</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Pool</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Spa</span>
+                </div>
+              </div>
+            </div>
+          </a>
+          <!-- Card 2 -->
+          <a href="#" class="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition group">
+            <div class="flex flex-col md:flex-row">
+              <div class="md:w-72 h-48 md:h-auto shrink-0 bg-cover bg-center" style="background-image:url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400')"></div>
+              <div class="flex-1 p-6">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-xl font-bold group-hover:text-primary transition">Mountain View Lodge</h3>
+                  <div class="flex items-center gap-1 text-amber-500"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">star</span><span class="text-sm font-medium">4.6</span></div>
+                </div>
+                <p class="text-neutral-500 text-sm mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-base">location_on</span>456 Alpine Way, Denver</p>
+                <p class="text-neutral-600 text-sm mb-4 line-clamp-2">Cozy mountain retreat perfect for nature lovers and adventure seekers.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Parking</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Restaurant</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Fireplace</span>
+                </div>
+              </div>
+            </div>
+          </a>
+          <!-- Card 3 -->
+          <a href="#" class="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition group">
+            <div class="flex flex-col md:flex-row">
+              <div class="md:w-72 h-48 md:h-auto shrink-0 bg-cover bg-center" style="background-image:url('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400')"></div>
+              <div class="flex-1 p-6">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-xl font-bold group-hover:text-primary transition">City Center Hotel</h3>
+                  <div class="flex items-center gap-1 text-amber-500"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">star</span><span class="text-sm font-medium">4.5</span></div>
+                </div>
+                <p class="text-neutral-500 text-sm mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-base">location_on</span>789 Main Street, New York</p>
+                <p class="text-neutral-600 text-sm mb-4 line-clamp-2">Modern hotel in the heart of the city, walking distance to major attractions.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">WiFi</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Gym</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Business Center</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="bg-neutral-900 text-neutral-100 py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div>
+        <h3 class="text-xl font-bold mb-4">StayFinder</h3>
+        <p class="text-neutral-400 text-sm">Your trusted travel companion for finding the perfect stay.</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3">Company</h4>
+        <ul class="space-y-2 text-neutral-400 text-sm">
+          <li><a href="#" class="hover:text-white">About Us</a></li>
+          <li><a href="#" class="hover:text-white">Careers</a></li>
+          <li><a href="#" class="hover:text-white">Press</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3">Support</h4>
+        <ul class="space-y-2 text-neutral-400 text-sm">
+          <li><a href="#" class="hover:text-white">Help Center</a></li>
+          <li><a href="#" class="hover:text-white">Contact Us</a></li>
+          <li><a href="#" class="hover:text-white">Cancellation Policy</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3">Legal</h4>
+        <ul class="space-y-2 text-neutral-400 text-sm">
+          <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
+          <li><a href="#" class="hover:text-white">Terms of Service</a></li>
+          <li><a href="#" class="hover:text-white">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="border-t border-neutral-800 mt-8 pt-8 text-center text-neutral-400 text-sm">
+      <p>&copy; 2024 StayFinder. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+</div>
+{{PAGE_DATA_SCRIPT}}
+<script src="/templates/listing-1/script.js"></script>
+</body>
+</html>

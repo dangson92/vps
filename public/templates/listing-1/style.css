@@ -1,0 +1,5 @@
+.font-display{font-family:'Plus Jakarta Sans',sans-serif}
+.text-primary{color:#137fec}
+.bg-primary{background-color:#137fec}
+.hover\:text-primary:hover{color:#137fec}
+.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
