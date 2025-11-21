@@ -27,7 +27,8 @@
                     <span
                       :class="{
                         'bg-blue-100 text-blue-800': website.type === 'html',
-                        'bg-green-100 text-green-800': website.type === 'wordpress'
+                        'bg-green-100 text-green-800': website.type === 'wordpress',
+                        'bg-purple-100 text-purple-800': website.type === 'laravel1'
                       }"
                       class="ml-2 px-2 py-1 text-xs font-medium rounded-full"
                     >
@@ -164,6 +165,7 @@
             >
               <option value="html">HTML Website</option>
               <option value="wordpress">WordPress</option>
+              <option value="laravel1">Laravel 1</option>
             </select>
           </div>
           
