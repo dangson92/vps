@@ -1,8 +1,27 @@
 html{scroll-behavior:smooth}
 .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
-.section-link.active{color:#137fec;border-bottom:2px solid #137fec;font-weight:600}
+.section-link.active,.section-link.text-primary{color:#137fec;border-bottom:2px solid #137fec;font-weight:600}
+.section-link.border-b-2{border-color:#137fec}
 [data-idx]{cursor:pointer}
 body{overflow-x:hidden}
 #nav-bar{position:-webkit-sticky;position:sticky}
 @keyframes navSlideDown{from{transform:translateY(-12px);opacity:0}to{transform:translateY(0);opacity:1}}
 #nav-bar.is-stuck{animation:navSlideDown .18s ease-out;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+/* Amenity icon colors */
+.amenity-wifi{color:#3b82f6}
+.amenity-air{color:#06b6d4}
+.amenity-tv{color:#8b5cf6}
+.amenity-spa{color:#ec4899}
+.amenity-restaurant{color:#f97316}
+.amenity-security{color:#ef4444}
+.amenity-shuttle{color:#10b981}
+.amenity-elevator{color:#6366f1}
+.amenity-accessible{color:#14b8a6}
+.amenity-heating{color:#f59e0b}
+.amenity-laundry{color:#0ea5e9}
+.amenity-business{color:#6b7280}
+.amenity-lock{color:#78716c}
+.amenity-view{color:#22c55e}
+.amenity-room-service{color:#a855f7}
+.amenity-kitchen{color:#84cc16}
+.amenity-default{color:#137fec}
