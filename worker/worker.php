@@ -167,6 +167,8 @@ class VpsWorker
         // Deploy based on type
         if ($type === 'wordpress') {
             $this->deployWordPress($domain, $documentRoot, $wordpressConfig);
+        } elseif ($type === 'laravel1') {
+            $this->deployLaravel1($domain, $documentRoot);
         } else {
             $this->deployHtml($domain, $documentRoot);
         }
@@ -357,6 +359,24 @@ class VpsWorker
     {
         if (!file_exists("{$documentRoot}/index.html")) {
             $indexContent = "<h1>Welcome to {$domain}</h1>\n<p>Your website is ready!</p>";
+            file_put_contents("{$documentRoot}/index.html", $indexContent);
+        }
+    }
+
+    private function deployLaravel1(string $domain, string $documentRoot): void
+    {
+        $this->log('info', 'Deploying Laravel1 website', ['domain' => $domain]);
+
+        // Create templates directory
+        $templatesDir = "{$documentRoot}/templates";
+        if (!is_dir($templatesDir)) {
+            mkdir($templatesDir, 0755, true);
+        }
+
+        // Laravel1 pages are deployed individually via deployPage
+        // Just create a placeholder if no index exists
+        if (!file_exists("{$documentRoot}/index.html")) {
+            $indexContent = "<!DOCTYPE html><html><head><title>{$domain}</title></head><body><h1>Welcome to {$domain}</h1></body></html>";
             file_put_contents("{$documentRoot}/index.html", $indexContent);
         }
     }
