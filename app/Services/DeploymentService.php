@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Website;
 use App\Models\Page;
+use App\Models\Folder;
 use App\Models\VpsServer;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -55,6 +56,88 @@ class DeploymentService
         }
 
         Log::info("Website base deployed successfully", ['website_id' => $website->id]);
+
+        // Deploy laravel1 homepage
+        if ($website->type === 'laravel1') {
+            $this->deployLaravel1Homepage($website);
+        }
+    }
+
+    private function deployLaravel1Homepage(Website $website): void
+    {
+        $vps = $website->vpsServer;
+
+        // Generate homepage HTML
+        $folders = Folder::where('website_id', $website->id)->whereNull('parent_id')->get();
+        $categoriesData = $folders->map(function ($folder) use ($website) {
+            $pageCount = $folder->pages()->count();
+            $firstPage = $folder->pages()->first();
+            $firstPageData = $firstPage ? (json_decode($firstPage->content_json ?? '{}', true) ?: []) : [];
+            $gallery = $firstPageData['gallery'] ?? [];
+            return [
+                'name' => $folder->name,
+                'url' => '/' . $folder->slug,
+                'count' => $pageCount,
+                'image' => $gallery[0] ?? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
+            ];
+        })->toArray();
+
+        $featuredPages = $website->pages()->limit(6)->get();
+        $featuredData = $featuredPages->map(function ($page) {
+            $data = json_decode($page->content_json ?? '{}', true) ?: [];
+            $gallery = $data['gallery'] ?? [];
+            return [
+                'title' => $data['title'] ?? $page->title ?? 'Untitled',
+                'image' => $gallery[0] ?? '',
+                'location_text' => $data['location_text'] ?? $data['location'] ?? '',
+                'url' => $page->path,
+            ];
+        })->toArray();
+
+        $templatePath = public_path('templates/home-1/index.html');
+        $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
+
+        $html = str_replace('{{TITLE}}', e($website->domain), $html);
+        $html = str_replace('{{DESCRIPTION}}', 'Find your perfect stay at ' . e($website->domain), $html);
+        $html = str_replace('{{OG_IMAGE}}', $featuredData[0]['image'] ?? '', $html);
+        $html = str_replace('{{OG_URL}}', 'https://' . $website->domain, $html);
+
+        $dataScript = '<script type="application/json" id="page-data">' . json_encode([
+            'categories' => $categoriesData,
+            'featured' => $featuredData,
+        ]) . '</script>';
+        $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        // Deploy the homepage
+        try {
+            $response = Http::timeout(60)
+                ->withHeaders([
+                    'X-Worker-Key' => $vps->worker_key,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
+                    'website_id' => $website->id,
+                    'page_path' => '/',
+                    'filename' => 'index.html',
+                    'content' => $html,
+                    'document_root' => $website->getDocumentRoot(),
+                ]);
+        } catch (ConnectionException $e) {
+            Http::timeout(60)
+                ->withHeaders([
+                    'X-Worker-Key' => $vps->worker_key,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("http://127.0.0.1:8080/api/deploy-page", [
+                    'website_id' => $website->id,
+                    'page_path' => '/',
+                    'filename' => 'index.html',
+                    'content' => $html,
+                    'document_root' => $website->getDocumentRoot(),
+                ]);
+        }
+
+        Log::info("Laravel1 homepage deployed", ['website_id' => $website->id]);
     }
 
     public function deployPage(Page $page, ?string $oldPath = null, ?string $oldFilename = null): void
