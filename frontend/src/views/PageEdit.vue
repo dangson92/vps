@@ -303,11 +303,16 @@ const fetchPage = async () => {
     templateType.value = page.template_type
     isTemplatePage.value = !!page.template_type
     if ((page.template_type === 'hotel-detail' || page.template_type === 'hotel-detail-1') && page.template_data) {
+      // Convert gallery array to galleryRaw string if needed
+      let galleryRaw = page.template_data.galleryRaw || ''
+      if (!galleryRaw && Array.isArray(page.template_data.gallery)) {
+        galleryRaw = page.template_data.gallery.join('\n')
+      }
       tpl.value = {
         title: page.template_data.title || '',
-        location: page.template_data.location || '',
+        location: page.template_data.location || page.template_data.location_text || '',
         phone: page.template_data.phone || '',
-        galleryRaw: page.template_data.galleryRaw || '',
+        galleryRaw: galleryRaw,
         about1: page.template_data.about1 || '',
         amenities: Array.isArray(page.template_data.amenities) ? page.template_data.amenities : [],
         info: Array.isArray(page.template_data.info) ? page.template_data.info : [{ subject: '', description: '' }, { subject: '', description: '' }],
@@ -451,7 +456,20 @@ const save = async () => {
       const payload = { ...form.value }
       if (templateType.value !== 'blank') {
         payload.template_type = templateType.value
-        payload.template_data = { ...tpl.value }
+        const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
+        payload.template_data = {
+          title: (tpl.value.title || '').trim() || 'Hotel',
+          location: tpl.value.location || '',
+          location_text: tpl.value.location || '',
+          phone: tpl.value.phone || '',
+          about1: tpl.value.about1 || '',
+          amenities: tpl.value.amenities || [],
+          faqs: tpl.value.faqs || [],
+          info: tpl.value.info || [],
+          gallery: g,
+          galleryRaw: tpl.value.galleryRaw || '',
+          breadcrumb_items: ['Home', 'Stays', (tpl.value.title || '').trim()].filter(Boolean)
+        }
       } else {
         payload.template_type = 'blank'
         payload.template_data = null
@@ -471,7 +489,20 @@ const save = async () => {
       payload.filename = (payload.filename || 'index.html').trim()
       if (templateType.value !== 'blank') {
         payload.template_type = templateType.value
-        payload.template_data = { ...tpl.value }
+        const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
+        payload.template_data = {
+          title: (tpl.value.title || '').trim() || 'Hotel',
+          location: tpl.value.location || '',
+          location_text: tpl.value.location || '',
+          phone: tpl.value.phone || '',
+          about1: tpl.value.about1 || '',
+          amenities: tpl.value.amenities || [],
+          faqs: tpl.value.faqs || [],
+          info: tpl.value.info || [],
+          gallery: g,
+          galleryRaw: tpl.value.galleryRaw || '',
+          breadcrumb_items: ['Home', 'Stays', (tpl.value.title || '').trim()].filter(Boolean)
+        }
       } else {
         payload.template_type = 'blank'
         payload.template_data = null

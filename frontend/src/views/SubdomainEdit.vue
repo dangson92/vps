@@ -312,15 +312,30 @@ const submit = async () => {
 
     // try saving page content
     let adjusted
+    let processedData = null
     if (templateType.value === 'blank') {
       adjusted = htmlRaw.value
     } else {
       adjusted = await buildHtmlExternal()
+      // Build processed template data
+      const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
+      processedData = {
+        title: (tpl.value.title || '').trim() || 'Hotel',
+        location: tpl.value.location || '',
+        location_text: tpl.value.location || '',
+        phone: tpl.value.phone || '',
+        about1: tpl.value.about1 || '',
+        amenities: tpl.value.amenities || [],
+        faqs: tpl.value.faqs || [],
+        info: tpl.value.info || [],
+        gallery: g,
+        breadcrumb_items: ['Home', 'Stays', (tpl.value.title || '').trim()].filter(Boolean)
+      }
     }
     const pagePayload = { path: '/', filename: 'index.html', title: templateType.value === 'blank' ? (tpl.value.title || '') : tpl.value.title, content: adjusted }
     if (templateType.value !== 'blank') {
       pagePayload.template_type = templateType.value
-      pagePayload.template_data = { ...tpl.value }
+      pagePayload.template_data = processedData
     }
     try {
       await axios.post(`/api/websites/${site.id}/pages`, pagePayload)
