@@ -161,8 +161,13 @@ class PreviewController extends Controller
         $normalized = '/' . ltrim($path, '/');
         $page = $website->pages()->where('path', $normalized)->orderByDesc('id')->first();
 
-        $content = $page?->content ?? '<h1>Page not found</h1>';
-        $html = $this->processUrls($content, $website->id);
+        if (!$page) {
+            return response('<h1>Page not found</h1>')
+                ->header('Content-Type', 'text/html; charset=utf-8');
+        }
+
+        $html = $this->renderPageWithTemplate($page, $website);
+        $html = $this->processUrls($html, $website->id);
         if (!$this->shouldHidePreviewBar($request)) {
             $html = $this->addPreviewBanner($html, $website, $page);
         }
@@ -171,6 +176,31 @@ class PreviewController extends Controller
             ->header('Content-Type', 'text/html; charset=utf-8')
             ->header('X-Robots-Tag', 'noindex, nofollow')
             ->header('X-Frame-Options', 'DENY');
+    }
+
+    private function renderPageWithTemplate(Page $page, Website $website): string
+    {
+        $html = $page->content;
+        $data = $page->template_data ?? [];
+
+        if (empty($data)) {
+            return $html;
+        }
+
+        $title = $data['title'] ?? $page->title ?? 'Untitled';
+        $description = $data['about1'] ?? $page->meta_description ?? '';
+        $gallery = $data['gallery'] ?? [];
+
+        $html = str_replace('{{TITLE}}', e($title), $html);
+        $html = str_replace('{{DESCRIPTION}}', e($description), $html);
+        $html = str_replace('{{OG_IMAGE}}', $gallery[0] ?? '', $html);
+        $html = str_replace('{{OG_URL}}', url()->current(), $html);
+
+        $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
+        $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+        $html = str_replace('{{GALLERY_DATA_SCRIPT}}', $dataScript, $html);
+
+        return $html;
     }
 
     private function processUrls(string $html, int $websiteId): string
