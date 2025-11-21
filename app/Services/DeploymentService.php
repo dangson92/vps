@@ -226,6 +226,9 @@ class DeploymentService
             throw new \Exception('VPS server is not active');
         }
 
+        // Render page content with template data
+        $content = $this->renderPageContent($page);
+
         try {
             $response = Http::timeout(60)
                 ->withHeaders([
@@ -236,7 +239,7 @@ class DeploymentService
                     'website_id' => $website->id,
                     'page_path' => $page->path,
                     'filename' => $page->filename,
-                    'content' => $page->content,
+                    'content' => $content,
                     'document_root' => $website->getDocumentRoot(),
                     'old_path' => $oldPath,
                     'old_filename' => $oldFilename,
@@ -251,7 +254,7 @@ class DeploymentService
                     'website_id' => $website->id,
                     'page_path' => $page->path,
                     'filename' => $page->filename,
-                    'content' => $page->content,
+                    'content' => $content,
                     'document_root' => $website->getDocumentRoot(),
                     'old_path' => $oldPath,
                     'old_filename' => $oldFilename,
@@ -263,6 +266,34 @@ class DeploymentService
         }
 
         Log::info("Page deployed successfully", ['page_id' => $page->id]);
+    }
+
+    private function renderPageContent(Page $page): string
+    {
+        $html = $page->content;
+        $data = json_decode($page->content_json ?? '{}', true) ?: [];
+
+        // If no template data, return raw content
+        if (empty($data)) {
+            return $html;
+        }
+
+        // Replace placeholders
+        $website = $page->website;
+        $title = $data['title'] ?? $page->title ?? 'Untitled';
+        $description = $data['about1'] ?? $page->meta_description ?? '';
+        $gallery = $data['gallery'] ?? [];
+
+        $html = str_replace('{{TITLE}}', e($title), $html);
+        $html = str_replace('{{DESCRIPTION}}', e($description), $html);
+        $html = str_replace('{{OG_IMAGE}}', $gallery[0] ?? '', $html);
+        $html = str_replace('{{OG_URL}}', 'https://' . $website->domain . $page->path, $html);
+
+        // Inject page data script
+        $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
+        $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        return $html;
     }
 
     public function removePage(Page $page): void
