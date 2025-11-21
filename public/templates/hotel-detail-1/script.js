@@ -161,6 +161,6 @@
       window.__openGallery(i);
     }
     var mapBtn=e.target.closest('#openMapButton');
-    if(mapBtn){e.preventDefault();window.__openMap();}
+    if(mapBtn){window.__openMap();}
   });
 })();
