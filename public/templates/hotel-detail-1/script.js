@@ -128,11 +128,13 @@
     if(!m){
       m=document.createElement('div');
       m.id='mapModal';
-      m.className='fixed inset-0 z-50 flex items-center justify-center p-6';
+      m.className='fixed inset-0 z-50 flex items-center justify-center p-8';
       m.style.backgroundColor='rgba(0,0,0,0.85)';
-      var html='<div class="relative w-full max-w-6xl bg-white rounded-lg shadow-2xl overflow-hidden">';
-      html+='<button id="closeMap" class="absolute top-4 right-4 bg-neutral-800 hover:bg-black text-white px-3 py-1 rounded">Close</button>';
-      html+='<div class="w-full" style="height:70vh">'+content+'</div>';
+      var html='<div class="relative flex items-center justify-center w-full max-w-6xl">';
+      html+='<div class="bg-white rounded-lg shadow-2xl p-6 w-full relative">';
+      html+='<button id="closeMap" class="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-lg transition z-10 flex items-center gap-2"><span style="font-weight:600">Đóng</span><span style="font-size:20px;line-height:1">×</span></button>';
+      html+='<div class="w-full rounded overflow-hidden" style="height:calc(100vh - 280px);max-height:700px">'+content+'</div>';
+      html+='</div>';
       html+='</div>';
       m.innerHTML=html;
       document.body.appendChild(m);
