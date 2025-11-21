@@ -292,7 +292,7 @@ const submit = async () => {
       saving.value = false
       return
     }
-    const websitePayload = { domain: fullDomain.value, type: 'html', vps_server_id: vpsId }
+    const websitePayload = { domain: fullDomain.value, type: parentWebsite.value?.type || 'html', vps_server_id: vpsId }
     let site
     try {
       const resp = await axios.post('/api/websites', websitePayload)

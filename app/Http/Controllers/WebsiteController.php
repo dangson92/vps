@@ -56,7 +56,6 @@ class WebsiteController extends Controller
             'domain' => $validated['domain'],
             'type' => $validated['type'],
             'vps_server_id' => $validated['vps_server_id'],
-            'document_root' => "/var/www/{$validated['domain']}",
             'status' => 'draft',
             'content_version' => 1,
             'deployed_version' => 0,

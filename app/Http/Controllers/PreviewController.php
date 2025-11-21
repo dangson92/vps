@@ -42,7 +42,7 @@ class PreviewController extends Controller
         $categoriesData = $folders->map(function ($folder) use ($website) {
             $pageCount = $folder->pages()->count();
             $firstPage = $folder->pages()->first();
-            $firstPageData = $firstPage ? (json_decode($firstPage->content_json ?? '{}', true) ?: []) : [];
+            $firstPageData = $firstPage ? ($firstPage->template_data ?? []) : [];
             $gallery = $firstPageData['gallery'] ?? [];
             return [
                 'name' => $folder->name,
@@ -54,7 +54,7 @@ class PreviewController extends Controller
 
         $featuredPages = $website->pages()->limit(6)->get();
         $featuredData = $featuredPages->map(function ($page) use ($website) {
-            $data = json_decode($page->content_json ?? '{}', true) ?: [];
+            $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
             return [
                 'title' => $data['title'] ?? $page->title ?? 'Untitled',
@@ -120,7 +120,7 @@ class PreviewController extends Controller
         $pages = $folder->pages()->get();
 
         $pagesData = $pages->map(function ($page) use ($website) {
-            $data = json_decode($page->content_json ?? '{}', true) ?: [];
+            $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
             return [
                 'title' => $data['title'] ?? $page->title ?? 'Untitled',
