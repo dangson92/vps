@@ -92,7 +92,7 @@
       <!-- Listings -->
       <div class="flex-1">
         <div class="flex items-center justify-between mb-6">
-          <p id="results-count" class="text-neutral-600"></p>
+          <p class="text-neutral-600">Showing 3 properties</p>
           <select class="px-4 py-2 border border-gray-300 rounded-lg text-sm">
             <option>Sort by: Recommended</option>
             <option>Price: Low to High</option>
@@ -100,7 +100,65 @@
             <option>Rating</option>
           </select>
         </div>
-        <div id="listings-grid" class="space-y-6"></div>
+        <div id="listings-grid" class="space-y-6">
+          <!-- Card 1 -->
+          <a href="#" class="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition group">
+            <div class="flex flex-col md:flex-row">
+              <div class="md:w-72 h-48 md:h-auto shrink-0 bg-cover bg-center" style="background-image:url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400')"></div>
+              <div class="flex-1 p-6">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-xl font-bold group-hover:text-primary transition">Grand Hotel Resort</h3>
+                  <div class="flex items-center gap-1 text-amber-500"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">star</span><span class="text-sm font-medium">4.8</span></div>
+                </div>
+                <p class="text-neutral-500 text-sm mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-base">location_on</span>123 Beach Road, Miami</p>
+                <p class="text-neutral-600 text-sm mb-4 line-clamp-2">Luxury beachfront resort with stunning ocean views, world-class amenities and exceptional service.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">WiFi</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Pool</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Spa</span>
+                </div>
+              </div>
+            </div>
+          </a>
+          <!-- Card 2 -->
+          <a href="#" class="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition group">
+            <div class="flex flex-col md:flex-row">
+              <div class="md:w-72 h-48 md:h-auto shrink-0 bg-cover bg-center" style="background-image:url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400')"></div>
+              <div class="flex-1 p-6">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-xl font-bold group-hover:text-primary transition">Mountain View Lodge</h3>
+                  <div class="flex items-center gap-1 text-amber-500"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">star</span><span class="text-sm font-medium">4.6</span></div>
+                </div>
+                <p class="text-neutral-500 text-sm mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-base">location_on</span>456 Alpine Way, Denver</p>
+                <p class="text-neutral-600 text-sm mb-4 line-clamp-2">Cozy mountain retreat perfect for nature lovers and adventure seekers.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Parking</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Restaurant</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Fireplace</span>
+                </div>
+              </div>
+            </div>
+          </a>
+          <!-- Card 3 -->
+          <a href="#" class="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition group">
+            <div class="flex flex-col md:flex-row">
+              <div class="md:w-72 h-48 md:h-auto shrink-0 bg-cover bg-center" style="background-image:url('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400')"></div>
+              <div class="flex-1 p-6">
+                <div class="flex items-start justify-between mb-2">
+                  <h3 class="text-xl font-bold group-hover:text-primary transition">City Center Hotel</h3>
+                  <div class="flex items-center gap-1 text-amber-500"><span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">star</span><span class="text-sm font-medium">4.5</span></div>
+                </div>
+                <p class="text-neutral-500 text-sm mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-base">location_on</span>789 Main Street, New York</p>
+                <p class="text-neutral-600 text-sm mb-4 line-clamp-2">Modern hotel in the heart of the city, walking distance to major attractions.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">WiFi</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Gym</span>
+                  <span class="inline-flex items-center gap-1 text-xs text-neutral-600 bg-gray-100 px-2 py-1 rounded">Business Center</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -144,7 +202,5 @@
   </div>
 </footer>
 </div>
-{{PAGE_DATA_SCRIPT}}
-<script src="/templates/listing-1/script.js"></script>
 </body>
 </html>
