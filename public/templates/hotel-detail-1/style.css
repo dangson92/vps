@@ -1,0 +1,8 @@
+html{scroll-behavior:smooth}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}
+.section-link.active{color:#137fec;border-bottom:2px solid #137fec;font-weight:600}
+[data-idx]{cursor:pointer}
+body{overflow-x:hidden}
+#nav-bar{position:-webkit-sticky;position:sticky}
+@keyframes navSlideDown{from{transform:translateY(-12px);opacity:0}to{transform:translateY(0);opacity:1}}
+#nav-bar.is-stuck{animation:navSlideDown .18s ease-out;box-shadow:0 1px 6px rgba(0,0,0,.06)}
