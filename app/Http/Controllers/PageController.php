@@ -151,13 +151,20 @@ class PageController extends Controller
             return;
         }
 
-        try {
-            $this->deploymentService->deployLaravel1Homepage($website);
+        // Check if this is a subdomain - don't deploy homepage for subdomains
+        $domainParts = explode('.', $website->domain);
+        $isSubdomain = count($domainParts) > 2;
 
-            // Redeploy affected category pages
-            $affectedFolders = $folders ?? ($page ? $page->folders()->get() : collect());
-            foreach ($affectedFolders as $folder) {
-                $this->deploymentService->deployLaravel1CategoryPage($folder);
+        try {
+            // Only deploy homepage for main domain, not subdomains
+            if (!$isSubdomain) {
+                $this->deploymentService->deployLaravel1Homepage($website);
+
+                // Redeploy affected category pages
+                $affectedFolders = $folders ?? ($page ? $page->folders()->get() : collect());
+                foreach ($affectedFolders as $folder) {
+                    $this->deploymentService->deployLaravel1CategoryPage($folder);
+                }
             }
         } catch (\Exception $e) {
             // Silently fail - don't block the main operation
