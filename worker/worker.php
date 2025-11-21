@@ -257,6 +257,26 @@ class VpsWorker
         echo json_encode(['status' => 'removed', 'message' => 'Website removed successfully']);
     }
 
+    private function handleDeactivateWebsite(): void
+    {
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $domain = $data['domain'] ?? '';
+
+        $this->log('info', 'Deactivating website', ['domain' => $domain]);
+
+        // Disable nginx configuration by removing from sites-enabled
+        $enabledLink = "{$this->config['nginx_sites_enabled']}/{$domain}";
+        if (is_link($enabledLink) || file_exists($enabledLink)) {
+            unlink($enabledLink);
+        }
+
+        // Reload nginx
+        $this->reloadNginx();
+
+        echo json_encode(['status' => 'deactivated', 'message' => 'Website deactivated successfully']);
+    }
+
     private function handleGenerateSsl(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
