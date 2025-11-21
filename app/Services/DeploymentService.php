@@ -59,6 +59,9 @@ class DeploymentService
 
         // Deploy laravel1 homepage and category pages
         if ($website->type === 'laravel1') {
+            $this->deployTemplateAssets($website, 'home-1');
+            $this->deployTemplateAssets($website, 'listing-1');
+            $this->deployTemplateAssets($website, 'hotel-detail-1');
             $this->deployLaravel1Homepage($website);
             $this->deployLaravel1AllCategories($website);
         }
@@ -116,9 +119,6 @@ class DeploymentService
             'featured' => $featuredData,
         ]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
-
-        // Inline CSS and JS
-        $html = $this->inlineTemplateAssets($html, 'home-1');
 
         // Deploy the homepage
         try {
@@ -188,9 +188,6 @@ class DeploymentService
 
         $dataScript = '<script type="application/json" id="page-data">' . json_encode(['pages' => $pagesData]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
-
-        // Inline CSS and JS
-        $html = $this->inlineTemplateAssets($html, 'listing-1');
 
         try {
             Http::timeout(60)
@@ -299,41 +296,44 @@ class DeploymentService
         $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
 
-        // Inline CSS and JS based on template
-        if ($page->template_type) {
-            $html = $this->inlineTemplateAssets($html, $page->template_type);
-        }
-
         return $html;
     }
 
-    private function inlineTemplateAssets(string $html, string $templateName): string
+    public function deployTemplateAssets(Website $website, string $templateName): void
     {
+        $vps = $website->vpsServer;
+        if (!$vps || !$vps->isActive()) return;
+
         $templateDir = public_path("templates/{$templateName}");
+        $files = ['style.css', 'script.js'];
 
-        // Inline CSS
-        $cssPath = "{$templateDir}/style.css";
-        if (file_exists($cssPath)) {
-            $css = file_get_contents($cssPath);
-            $html = preg_replace(
-                '/<link[^>]+href="[^"]*' . preg_quote($templateName, '/') . '\/style\.css"[^>]*\/?>/i',
-                '<style>' . $css . '</style>',
-                $html
-            );
+        foreach ($files as $file) {
+            $filePath = "{$templateDir}/{$file}";
+            if (!file_exists($filePath)) continue;
+
+            $content = file_get_contents($filePath);
+            try {
+                Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => "/templates/{$templateName}",
+                        'filename' => $file,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            } catch (ConnectionException $e) {
+                Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://127.0.0.1:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => "/templates/{$templateName}",
+                        'filename' => $file,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            }
         }
-
-        // Inline JS
-        $jsPath = "{$templateDir}/script.js";
-        if (file_exists($jsPath)) {
-            $js = file_get_contents($jsPath);
-            $html = preg_replace(
-                '/<script[^>]+src="[^"]*' . preg_quote($templateName, '/') . '\/script\.js"[^>]*><\/script>/i',
-                '<script>' . $js . '</script>',
-                $html
-            );
-        }
-
-        return $html;
     }
 
     public function removePage(Page $page): void
