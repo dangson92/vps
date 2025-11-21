@@ -41,7 +41,7 @@ class WebsiteController extends Controller
     {
         $validated = $request->validate([
             'domain' => 'required|string|max:255|unique:websites',
-            'type' => 'required|in:html,wordpress',
+            'type' => 'required|in:html,wordpress,laravel1',
             'vps_server_id' => 'required|exists:vps_servers,id',
             'wordpress_template' => 'required_if:type,wordpress|string|max:255',
         ]);
