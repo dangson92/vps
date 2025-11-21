@@ -79,6 +79,14 @@ const deploy = async (site) => {
   try {
     deployingIds.value = [...deployingIds.value, site.id]
     await axios.post(`/api/websites/${site.id}/deploy`)
+    // Poll until deployment completes
+    let attempts = 0
+    while (attempts < 60) {
+      await new Promise(r => setTimeout(r, 2000))
+      const resp = await axios.get(`/api/websites/${site.id}`)
+      if (resp.data.status !== 'deploying') break
+      attempts++
+    }
     await fetchAll()
   } finally {
     deployingIds.value = deployingIds.value.filter(id => id !== site.id)
