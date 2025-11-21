@@ -225,7 +225,18 @@ const saving = ref(false)
 const msg = ref('')
 const msgType = ref('')
 
-const fullDomain = computed(() => (form.value.sub ? `${form.value.sub}.` : '') + parentDomain.value)
+const slugify = (str) => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/Đ/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+const subdomainSlug = computed(() => slugify(form.value.sub || ''))
+const fullDomain = computed(() => (subdomainSlug.value ? `${subdomainSlug.value}.` : '') + parentDomain.value)
 
 const lineCount = computed(() => {
   const v = htmlRaw.value || ''
