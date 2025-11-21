@@ -28,6 +28,10 @@
                     <Loader2 v-if="sslIds.includes(site.id)" class="size-4 animate-spin" />
                     <ShieldCheck v-else class="size-4" />
                   </button>
+                  <button @click="deactivate(site)" v-if="site.status === 'deployed' || site.status === 'error'" :disabled="deactivatingIds.includes(site.id)" class="h-8 w-8 flex items-center justify-center rounded-md border border-gray-300 bg-white text-orange-600 hover:bg-gray-50 disabled:text-gray-400" title="Deactivate">
+                    <Loader2 v-if="deactivatingIds.includes(site.id)" class="size-4 animate-spin" />
+                    <Power v-else class="size-4" />
+                  </button>
                   <a :href="(site.ssl_enabled ? 'https://' : 'http://') + site.domain" target="_blank" class="h-8 w-8 flex items-center justify-center rounded-md border border-gray-300 bg-white text-indigo-600 hover:bg-gray-50" title="View">
                     <Globe class="size-4" />
                   </a>
@@ -50,7 +54,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
-import { Globe, FileText, Play, Loader2, Trash2, ShieldCheck } from 'lucide-vue-next'
+import { Globe, FileText, Play, Loader2, Trash2, ShieldCheck, Power } from 'lucide-vue-next'
 
 const route = useRoute()
 const websiteId = route.params.websiteId
@@ -59,6 +63,7 @@ const subdomains = ref([])
 const deployingIds = ref([])
 const deletingIds = ref([])
 const sslIds = ref([])
+const deactivatingIds = ref([])
 
 const fetchAll = async () => {
   const parentResp = await axios.get(`/api/websites/${websiteId}`)
@@ -98,6 +103,17 @@ const enableSsl = async (site) => {
     await fetchAll()
   } finally {
     sslIds.value = sslIds.value.filter(id => id !== site.id)
+  }
+}
+
+const deactivate = async (site) => {
+  if (!confirm(`Deactivate subdomain ${site.domain}?`)) return
+  try {
+    deactivatingIds.value = [...deactivatingIds.value, site.id]
+    await axios.post(`/api/websites/${site.id}/deactivate`)
+    await fetchAll()
+  } finally {
+    deactivatingIds.value = deactivatingIds.value.filter(id => id !== site.id)
   }
 }
 </script>
