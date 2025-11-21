@@ -4,13 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Website;
 use App\Models\Folder;
+use App\Services\DeploymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
- 
 
 class FolderController extends Controller
 {
+    private DeploymentService $deploymentService;
+
+    public function __construct(DeploymentService $deploymentService)
+    {
+        $this->deploymentService = $deploymentService;
+    }
     public function index(Website $website): JsonResponse
     {
         $root = $this->rootWebsiteFor($website);
@@ -57,6 +63,8 @@ class FolderController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
         $folder->save();
+
+        $this->redeployLaravel1IfNeeded($root);
 
         return response()->json($folder, 201);
     }
@@ -107,6 +115,9 @@ class FolderController extends Controller
         $folder->parent_id = $data['parent_id'];
         $folder->slug = $data['slug'];
         $folder->save();
+
+        $this->redeployLaravel1IfNeeded($root, $folder);
+
         return response()->json($folder);
     }
 
@@ -124,7 +135,26 @@ class FolderController extends Controller
         // detach pages
         $folder->pages()->detach();
         $folder->delete();
+
+        $this->redeployLaravel1IfNeeded($root);
+
         return response()->json(null, 204);
+    }
+
+    private function redeployLaravel1IfNeeded(Website $website, ?Folder $folder = null): void
+    {
+        if ($website->type !== 'laravel1' || $website->status !== 'deployed') {
+            return;
+        }
+
+        try {
+            $this->deploymentService->deployLaravel1Homepage($website);
+            if ($folder) {
+                $this->deploymentService->deployLaravel1CategoryPage($folder);
+            }
+        } catch (\Exception $e) {
+            // Silently fail - don't block the main operation
+        }
     }
 
     private function rootWebsiteFor(Website $website): Website

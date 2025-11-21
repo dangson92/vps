@@ -57,13 +57,22 @@ class DeploymentService
 
         Log::info("Website base deployed successfully", ['website_id' => $website->id]);
 
-        // Deploy laravel1 homepage
+        // Deploy laravel1 homepage and category pages
         if ($website->type === 'laravel1') {
             $this->deployLaravel1Homepage($website);
+            $this->deployLaravel1AllCategories($website);
         }
     }
 
-    private function deployLaravel1Homepage(Website $website): void
+    public function deployLaravel1AllCategories(Website $website): void
+    {
+        $folders = Folder::where('website_id', $website->id)->get();
+        foreach ($folders as $folder) {
+            $this->deployLaravel1CategoryPage($folder);
+        }
+    }
+
+    public function deployLaravel1Homepage(Website $website): void
     {
         $vps = $website->vpsServer;
 
@@ -138,6 +147,74 @@ class DeploymentService
         }
 
         Log::info("Laravel1 homepage deployed", ['website_id' => $website->id]);
+    }
+
+    public function deployLaravel1CategoryPage(Folder $folder): void
+    {
+        $website = $folder->website;
+        $vps = $website->vpsServer;
+
+        if (!$vps || !$vps->isActive()) {
+            return;
+        }
+
+        $pages = $folder->pages()->get();
+        $pagesData = $pages->map(function ($page) {
+            $data = json_decode($page->content_json ?? '{}', true) ?: [];
+            $gallery = $data['gallery'] ?? [];
+            return [
+                'title' => $data['title'] ?? $page->title ?? 'Untitled',
+                'description' => $data['about1'] ?? '',
+                'image' => $gallery[0] ?? '',
+                'location_text' => $data['location_text'] ?? $data['location'] ?? '',
+                'url' => $page->path,
+                'amenities' => $data['amenities'] ?? [],
+            ];
+        })->toArray();
+
+        $templatePath = public_path('templates/listing-1/index.html');
+        $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
+
+        $folderName = $folder->name ?? 'Category';
+        $folderDesc = $folder->description ?? 'Browse all properties in this category';
+
+        $html = str_replace('{{TITLE}}', e($folderName), $html);
+        $html = str_replace('{{DESCRIPTION}}', e($folderDesc), $html);
+        $html = str_replace('{{OG_IMAGE}}', $pagesData[0]['image'] ?? '', $html);
+        $html = str_replace('{{OG_URL}}', 'https://' . $website->domain . '/' . $folder->slug, $html);
+
+        $dataScript = '<script type="application/json" id="page-data">' . json_encode(['pages' => $pagesData]) . '</script>';
+        $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        try {
+            Http::timeout(60)
+                ->withHeaders([
+                    'X-Worker-Key' => $vps->worker_key,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
+                    'website_id' => $website->id,
+                    'page_path' => '/' . $folder->slug,
+                    'filename' => 'index.html',
+                    'content' => $html,
+                    'document_root' => $website->getDocumentRoot(),
+                ]);
+        } catch (ConnectionException $e) {
+            Http::timeout(60)
+                ->withHeaders([
+                    'X-Worker-Key' => $vps->worker_key,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("http://127.0.0.1:8080/api/deploy-page", [
+                    'website_id' => $website->id,
+                    'page_path' => '/' . $folder->slug,
+                    'filename' => 'index.html',
+                    'content' => $html,
+                    'document_root' => $website->getDocumentRoot(),
+                ]);
+        }
+
+        Log::info("Laravel1 category page deployed", ['folder_id' => $folder->id]);
     }
 
     public function deployPage(Page $page, ?string $oldPath = null, ?string $oldFilename = null): void

@@ -64,6 +64,8 @@ class PageController extends Controller
         $website->increment('content_version');
         $website->update(['content_updated_at' => now()]);
 
+        $this->redeployLaravel1IfNeeded($website, $page);
+
         return response()->json($page, 201);
     }
 
@@ -123,16 +125,42 @@ class PageController extends Controller
         $page->website->increment('content_version');
         $page->website->update(['content_updated_at' => now()]);
 
+        $this->redeployLaravel1IfNeeded($page->website, $page);
+
         return response()->json($page);
     }
 
     public function destroy(Page $page): JsonResponse
     {
+        $website = $page->website;
+        $folders = $page->folders()->get();
+
         $page->delete();
 
-        $page->website->increment('content_version');
-        $page->website->update(['content_updated_at' => now()]);
+        $website->increment('content_version');
+        $website->update(['content_updated_at' => now()]);
+
+        $this->redeployLaravel1IfNeeded($website, null, $folders);
 
         return response()->json(null, 204);
+    }
+
+    private function redeployLaravel1IfNeeded(Website $website, ?Page $page = null, $folders = null): void
+    {
+        if ($website->type !== 'laravel1' || $website->status !== 'deployed') {
+            return;
+        }
+
+        try {
+            $this->deploymentService->deployLaravel1Homepage($website);
+
+            // Redeploy affected category pages
+            $affectedFolders = $folders ?? ($page ? $page->folders()->get() : collect());
+            foreach ($affectedFolders as $folder) {
+                $this->deploymentService->deployLaravel1CategoryPage($folder);
+            }
+        } catch (\Exception $e) {
+            // Silently fail - don't block the main operation
+        }
     }
 }
