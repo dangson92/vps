@@ -12,8 +12,11 @@ class PreviewController extends Controller
 {
     public function index(Request $request, Website $website): Response
     {
-        // Laravel1 type uses fixed homepage template
-        if ($website->type === 'laravel1') {
+        // Laravel1 type uses fixed homepage template - but only for main domain, not subdomains
+        $domainParts = explode('.', $website->domain);
+        $isSubdomain = count($domainParts) > 2;
+
+        if ($website->type === 'laravel1' && !$isSubdomain) {
             return $this->laravel1Home($request, $website);
         }
 
@@ -24,8 +27,13 @@ class PreviewController extends Controller
             })
             ->first();
 
-        $content = $page?->content ?? '<h1>Homepage not found</h1>';
-        $html = $this->processUrls($content, $website->id);
+        if (!$page) {
+            return response('<h1>Homepage not found</h1>')
+                ->header('Content-Type', 'text/html; charset=utf-8');
+        }
+
+        $html = $this->renderPageWithTemplate($page, $website);
+        $html = $this->processUrls($html, $website->id);
         if (!$this->shouldHidePreviewBar($request)) {
             $html = $this->addPreviewBanner($html, $website, $page);
         }
