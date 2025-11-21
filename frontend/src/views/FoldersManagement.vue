@@ -51,8 +51,9 @@
               <div class="col-span-3 text-sm text-slate-600">/{{ fullSlug(root.id) }}</div>
               <div class="col-span-1 text-sm text-slate-600">{{ root.pages_count ?? 0 }}</div>
               <div class="col-span-2 flex justify-end gap-2 text-slate-500">
+                <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xem trước" @click.stop="preview(root)"><Eye class="size-4" /></button>
                 <router-link :to="`/websites/${websiteId}/folders/${root.id}`" class="p-1.5 hover:bg-slate-200 rounded-md" title="Sửa"><Edit class="size-4" /></router-link>
-                <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xóa" @click="remove(root)"><Trash2 class="size-4" /></button>
+                <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xóa" @click.stop="remove(root)"><Trash2 class="size-4" /></button>
               </div>
             </div>
           </summary>
@@ -65,6 +66,7 @@
               <div class="col-span-3 text-sm text-slate-600">/{{ fullSlug(child.id) }}</div>
               <div class="col-span-1 text-sm text-slate-600">{{ child.pages_count ?? 0 }}</div>
               <div class="col-span-2 flex justify-end gap-2 text-slate-500">
+                <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xem trước" @click="preview(child)"><Eye class="size-4" /></button>
                 <router-link :to="`/websites/${websiteId}/folders/${child.id}`" class="p-1.5 hover:bg-slate-200 rounded-md" title="Sửa"><Edit class="size-4" /></router-link>
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xóa" @click="remove(child)"><Trash2 class="size-4" /></button>
               </div>
@@ -81,7 +83,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
-import { ChevronRight, Edit, Trash2, Search, Filter, CornerDownRight } from 'lucide-vue-next'
+import { ChevronRight, Edit, Trash2, Search, Filter, CornerDownRight, Eye } from 'lucide-vue-next'
 
 const route = useRoute()
 const websiteId = route.params.websiteId
@@ -106,6 +108,19 @@ const refresh = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const preview = (folder) => {
+  const id = folder.id
+  const slug = fullSlug(folder.id)
+  const base = slug ? `/preview/folder/${id}/${slug}` : `/preview/folder/${id}`
+  const token = localStorage.getItem('adminToken') || ''
+  if (!token) {
+    window.open(base, '_blank')
+    return
+  }
+  const url = `${base}?token=${encodeURIComponent(token)}`
+  window.open(url, '_blank')
 }
 
 const folderName = (id) => {
