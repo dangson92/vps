@@ -22,7 +22,7 @@ class DeploymentService
 
         // Send deployment command to worker
         try {
-            $response = Http::timeout(300)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -36,7 +36,7 @@ class DeploymentService
                     'nginx_config' => $this->generateNginxConfig($website),
                 ]);
         } catch (ConnectionException $e) {
-            $response = Http::timeout(300)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -117,6 +117,9 @@ class DeploymentService
         ]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
 
+        // Inline CSS and JS
+        $html = $this->inlineTemplateAssets($html, 'home-1');
+
         // Deploy the homepage
         try {
             $response = Http::timeout(60)
@@ -185,6 +188,9 @@ class DeploymentService
 
         $dataScript = '<script type="application/json" id="page-data">' . json_encode(['pages' => $pagesData]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        // Inline CSS and JS
+        $html = $this->inlineTemplateAssets($html, 'listing-1');
 
         try {
             Http::timeout(60)
@@ -293,6 +299,40 @@ class DeploymentService
         $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
 
+        // Inline CSS and JS based on template
+        if ($page->template_type) {
+            $html = $this->inlineTemplateAssets($html, $page->template_type);
+        }
+
+        return $html;
+    }
+
+    private function inlineTemplateAssets(string $html, string $templateName): string
+    {
+        $templateDir = public_path("templates/{$templateName}");
+
+        // Inline CSS
+        $cssPath = "{$templateDir}/style.css";
+        if (file_exists($cssPath)) {
+            $css = file_get_contents($cssPath);
+            $html = preg_replace(
+                '/<link[^>]+href="[^"]*' . preg_quote($templateName, '/') . '\/style\.css"[^>]*\/?>/i',
+                '<style>' . $css . '</style>',
+                $html
+            );
+        }
+
+        // Inline JS
+        $jsPath = "{$templateDir}/script.js";
+        if (file_exists($jsPath)) {
+            $js = file_get_contents($jsPath);
+            $html = preg_replace(
+                '/<script[^>]+src="[^"]*' . preg_quote($templateName, '/') . '\/script\.js"[^>]*><\/script>/i',
+                '<script>' . $js . '</script>',
+                $html
+            );
+        }
+
         return $html;
     }
 
@@ -391,7 +431,7 @@ class DeploymentService
         }
 
         try {
-            $response = Http::timeout(300)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -407,7 +447,7 @@ class DeploymentService
                 throw new \Exception($response->body());
             }
         } catch (ConnectionException $e) {
-            Http::timeout(300)
+            Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
