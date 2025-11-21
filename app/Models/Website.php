@@ -70,6 +70,20 @@ class Website extends Model
 
     public function getDocumentRoot(): string
     {
-        return $this->document_root ?: "/var/www/{$this->domain}";
+        if ($this->document_root) {
+            return $this->document_root;
+        }
+
+        $domain = $this->domain;
+        $parts = explode('.', $domain);
+
+        // If subdomain (more than 2 parts), put inside parent domain folder
+        if (count($parts) > 2) {
+            $subdomain = $parts[0];
+            $parentDomain = implode('.', array_slice($parts, 1));
+            return "/var/www/{$parentDomain}/{$subdomain}";
+        }
+
+        return "/var/www/{$domain}";
     }
 }
