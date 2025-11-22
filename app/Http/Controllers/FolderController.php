@@ -64,7 +64,7 @@ class FolderController extends Controller
         ]);
         $folder->save();
 
-        $this->redeployLaravel1IfNeeded($root);
+        // Don't redeploy on folder creation - folder has no pages yet
 
         return response()->json($folder, 201);
     }
