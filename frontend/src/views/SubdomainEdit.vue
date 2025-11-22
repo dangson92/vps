@@ -35,7 +35,7 @@
                 <div v-if="folders.length === 0" class="text-sm text-gray-500">Không có danh mục</div>
                 <div v-else class="space-y-2">
                   <label v-for="f in flattenedFolders" :key="f.id" class="flex items-center gap-2">
-                    <input type="checkbox" :value="f.id" v-model="selectedFolders" class="rounded" />
+                    <input type="checkbox" :value="f.id" v-model="selectedFolders" @change="onFolderChange(f.id)" class="rounded" />
                     <span class="text-sm" :style="{ paddingLeft: (f.depth > 0 ? f.depth * 16 : 0) + 'px' }">{{ '↳ '.repeat(f.depth) }}{{ f.name }}</span>
                   </label>
                 </div>
@@ -274,6 +274,27 @@ const flattenedFolders = computed(() => {
   roots.forEach(r => visit(r, 0))
   return out
 })
+
+const onFolderChange = (folderId) => {
+  // If folder is now checked, auto-select all parent folders
+  if (selectedFolders.value.includes(folderId)) {
+    const folder = folders.value.find(f => f.id === folderId)
+    if (folder && folder.parent_id) {
+      // Recursively add all parents
+      const addParents = (parentId) => {
+        if (!parentId) return
+        if (!selectedFolders.value.includes(parentId)) {
+          selectedFolders.value.push(parentId)
+        }
+        const parent = folders.value.find(f => f.id === parentId)
+        if (parent && parent.parent_id) {
+          addParents(parent.parent_id)
+        }
+      }
+      addParents(folder.parent_id)
+    }
+  }
+}
 
 const syncScroll = () => {
   if (gutterRef.value && codeRef.value) gutterRef.value.scrollTop = codeRef.value.scrollTop
