@@ -88,6 +88,10 @@ const deploy = async (site) => {
       attempts++
     }
     await fetchAll()
+    alert(`✓ Deploy thành công cho ${site.domain}`)
+  } catch (error) {
+    const msg = error?.response?.data?.message || error?.response?.data?.error || 'Deploy thất bại'
+    alert(`✗ ${msg}`)
   } finally {
     deployingIds.value = deployingIds.value.filter(id => id !== site.id)
   }
@@ -109,6 +113,10 @@ const enableSsl = async (site) => {
     sslIds.value = [...sslIds.value, site.id]
     await axios.post(`/api/websites/${site.id}/ssl`)
     await fetchAll()
+    alert(`✓ SSL đã được cài đặt thành công cho ${site.domain}`)
+  } catch (error) {
+    const msg = error?.response?.data?.message || error?.response?.data?.error || 'Cài đặt SSL thất bại'
+    alert(`✗ ${msg}`)
   } finally {
     sslIds.value = sslIds.value.filter(id => id !== site.id)
   }
