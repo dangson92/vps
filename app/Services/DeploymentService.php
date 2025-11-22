@@ -230,10 +230,13 @@ class DeploymentService
         $folderName = $folder->name ?? 'Category';
         $folderDesc = $folder->description ?? 'Browse all properties in this category';
 
+        // Get full path including parent folders (e.g., /vietnam/halong)
+        $folderPath = $folder->getPath();
+
         $html = str_replace('{{TITLE}}', e($folderName), $html);
         $html = str_replace('{{DESCRIPTION}}', e($folderDesc), $html);
         $html = str_replace('{{OG_IMAGE}}', $pagesData[0]['image'] ?? '', $html);
-        $html = str_replace('{{OG_URL}}', 'https://' . $website->domain . '/' . $folder->slug, $html);
+        $html = str_replace('{{OG_URL}}', 'https://' . $website->domain . $folderPath, $html);
 
         $dataScript = '<script type="application/json" id="page-data">' . json_encode(['pages' => $pagesData]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
@@ -246,7 +249,7 @@ class DeploymentService
                 ])
                 ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
                     'website_id' => $website->id,
-                    'page_path' => '/' . $folder->slug,
+                    'page_path' => $folderPath,
                     'filename' => 'index.html',
                     'content' => $html,
                     'document_root' => $website->getDocumentRoot(),
@@ -259,7 +262,7 @@ class DeploymentService
                 ])
                 ->post("http://127.0.0.1:8080/api/deploy-page", [
                     'website_id' => $website->id,
-                    'page_path' => '/' . $folder->slug,
+                    'page_path' => $folderPath,
                     'filename' => 'index.html',
                     'content' => $html,
                     'document_root' => $website->getDocumentRoot(),
