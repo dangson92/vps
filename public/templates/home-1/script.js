@@ -49,4 +49,26 @@
     }
     featGrid.innerHTML=featHtml;
   }
+
+  // Render newest properties
+  var newest=data.newest||[];
+  var newestGrid=document.getElementById('newest-grid');
+  if(newestGrid && newest.length>0){
+    var newestHtml='';
+    for(var k=0;k<newest.length;k++){
+      var p=newest[k];
+      var title=p.title||'Property';
+      var image=p.image||'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400';
+      var location=p.location_text||'';
+      var url=p.url||'#';
+      newestHtml+='<a href="'+url+'" class="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition">';
+      newestHtml+='<div class="aspect-[4/3] bg-cover bg-center" style="background-image:url(\''+image+'\')"></div>';
+      newestHtml+='<div class="p-4">';
+      newestHtml+='<h3 class="font-bold text-lg group-hover:text-primary transition">'+title+'</h3>';
+      if(location){newestHtml+='<p class="text-neutral-500 text-sm flex items-center gap-1 mt-1"><span class="material-symbols-outlined text-base">location_on</span>'+location+'</p>';}
+      newestHtml+='</div>';
+      newestHtml+='</a>';
+    }
+    newestGrid.innerHTML=newestHtml;
+  }
 })();

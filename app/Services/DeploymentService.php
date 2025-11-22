@@ -115,6 +115,28 @@ class DeploymentService
             ];
         })->toArray();
 
+        // Get newest pages (most recently updated)
+        $newestPages = [];
+        foreach ($folders as $folder) {
+            $folderPages = $folder->pages()->orderBy('updated_at', 'desc')->limit(2)->get();
+            foreach ($folderPages as $page) {
+                $newestPages[] = $page;
+            }
+        }
+
+        // Sort by updated_at and take top 6
+        $newestPages = collect($newestPages)->sortByDesc('updated_at')->take(6);
+        $newestData = $newestPages->map(function ($page) {
+            $data = $page->template_data ?? [];
+            $gallery = $data['gallery'] ?? [];
+            return [
+                'title' => $data['title'] ?? $page->title ?? 'Untitled',
+                'image' => $gallery[0] ?? '',
+                'location_text' => $data['location_text'] ?? $data['location'] ?? '',
+                'url' => $page->path,
+            ];
+        })->values()->toArray();
+
         $templatePath = public_path('templates/home-1/index.html');
         $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
 
@@ -126,6 +148,7 @@ class DeploymentService
         $dataScript = '<script type="application/json" id="page-data">' . json_encode([
             'categories' => $categoriesData,
             'featured' => $featuredData,
+            'newest' => $newestData,
         ]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
 
@@ -170,7 +193,7 @@ class DeploymentService
             return;
         }
 
-        $pages = $folder->pages()->get();
+        $pages = $folder->pages()->orderBy('updated_at', 'desc')->get();
         $pagesData = $pages->map(function ($page) {
             $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
