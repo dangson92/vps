@@ -5,16 +5,51 @@
 1. ✅ **Subdomain** - Đã OK
 2. ❌ **Category chưa sắp xếp** theo thời gian cập nhật/tạo mới
 3. ❌ **Homepage không hiển thị** dữ liệu ở các section
+4. ❌ **Template CSS/JS 404 error** - style.css và script.js không load
 
 ## Nguyên nhân
 
+### Vấn đề 2 & 3: Data không hiển thị
 Code đã có `orderBy('updated_at', 'desc')` rồi, nhưng:
 - **Category đã được deploy TRƯỚC KHI code được cập nhật**
 - **Homepage đã được deploy TRƯỚC KHI code được cập nhật**
 
 → Cần **redeploy lại** tất cả để áp dụng code mới!
 
+### Vấn đề 4: Template assets 404
+Template CSS/JS chỉ được deploy khi **deploy website lần đầu**, nhưng không được deploy khi **redeploy homepage qua queue**.
+
+→ Cần **deploy template assets** một lần!
+
 ## Giải pháp
+
+### Bước 0: Fix template assets 404 (làm trước tiên!)
+
+```bash
+./fix-template-assets.sh
+```
+
+Script này sẽ:
+- Deploy tất cả template CSS/JS files (home-1, listing-1, hotel-detail-1)
+- Kiểm tra files đã được deploy chưa
+- Hiển thị path của các files
+
+**Output mong đợi:**
+```
+✅ home-1 folder exists
+-rw-r--r-- 1 www-data www-data 2.1K style.css
+-rw-r--r-- 1 www-data www-data 2.4K script.js
+
+✅ listing-1 folder exists
+-rw-r--r-- 1 www-data www-data 1.8K style.css
+-rw-r--r-- 1 www-data www-data 1.5K script.js
+
+✅ hotel-detail-1 folder exists
+-rw-r--r-- 1 www-data www-data 3.2K style.css
+-rw-r--r-- 1 www-data www-data 4.1K script.js
+```
+
+**Sau khi chạy xong, reload trang homepage để thấy CSS/JS đã load!**
 
 ### Bước 1: Kiểm tra homepage hiện tại
 
