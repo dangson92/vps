@@ -34,9 +34,9 @@
               <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-auto">
                 <div v-if="folders.length === 0" class="text-sm text-gray-500">Không có danh mục</div>
                 <div v-else class="space-y-2">
-                  <label v-for="folder in folders" :key="folder.id" class="flex items-center gap-2">
-                    <input type="checkbox" :value="folder.id" v-model="selectedFolders" class="rounded" />
-                    <span class="text-sm">{{ folder.name }}</span>
+                  <label v-for="f in flattenedFolders" :key="f.id" class="flex items-center gap-2">
+                    <input type="checkbox" :value="f.id" v-model="selectedFolders" class="rounded" />
+                    <span class="text-sm" :style="{ paddingLeft: (f.depth > 0 ? f.depth * 16 : 0) + 'px' }">{{ '↳ '.repeat(f.depth) }}{{ f.name }}</span>
                   </label>
                 </div>
               </div>
@@ -257,6 +257,22 @@ const lineCount = computed(() => {
   const v = htmlRaw.value || ''
   const n = v.split('\n').length
   return n > 0 ? n : 1
+})
+
+const flattenedFolders = computed(() => {
+  const list = [...(folders.value || [])]
+  const map = new Map(list.map(f => [String(f.id), f]))
+  const sortByName = (arr) => arr.sort((a,b) => (a.name||'').localeCompare(b.name||''))
+  const childrenOf = (pid) => list.filter(x => String(x.parent_id) === String(pid))
+  const isRoot = (f) => !f.parent_id || !map.has(String(f.parent_id)) || String(f.parent_id) === String(f.id)
+  const roots = sortByName(list.filter(isRoot))
+  const out = []
+  const visit = (node, depth) => {
+    out.push({ ...node, depth })
+    sortByName(childrenOf(node.id)).forEach(ch => visit(ch, depth + 1))
+  }
+  roots.forEach(r => visit(r, 0))
+  return out
 })
 
 const syncScroll = () => {
