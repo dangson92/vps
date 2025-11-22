@@ -94,8 +94,17 @@ class DeploymentService
             ];
         })->toArray();
 
-        $featuredPages = $website->pages()->limit(6)->get();
-        $featuredData = $featuredPages->map(function ($page) {
+        // Get featured pages from all folders
+        $featuredPages = [];
+        foreach ($folders as $folder) {
+            $folderPages = $folder->pages()->limit(2)->get();
+            foreach ($folderPages as $page) {
+                $featuredPages[] = $page;
+                if (count($featuredPages) >= 6) break 2;
+            }
+        }
+
+        $featuredData = collect($featuredPages)->map(function ($page) {
             $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
             return [
