@@ -155,6 +155,17 @@ class PageController extends Controller
         $domainParts = explode('.', $website->domain);
         $isSubdomain = count($domainParts) > 2;
 
+        // For subdomains, deploy the page itself
+        if ($isSubdomain && $page) {
+            try {
+                $this->deploymentService->deployPage($page);
+            } catch (\Exception $e) {
+                // Log but don't block
+                \Log::error("Failed to deploy subdomain page {$page->id}: " . $e->getMessage());
+            }
+            return;
+        }
+
         // Only deploy homepage for main domain, not subdomains
         if (!$isSubdomain) {
             \App\Jobs\DeployLaravel1Homepage::dispatch($website->id);
