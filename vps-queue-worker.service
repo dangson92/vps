@@ -1,0 +1,16 @@
+[Unit]
+Description=VPS Manager Queue Worker
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/user/vps
+ExecStart=/usr/bin/php /home/user/vps/artisan queue:work --sleep=3 --tries=3 --max-time=3600
+Restart=always
+RestartSec=5
+StandardOutput=append:/home/user/vps/storage/logs/queue-worker.log
+StandardError=append:/home/user/vps/storage/logs/queue-worker.log
+
+[Install]
+WantedBy=multi-user.target
