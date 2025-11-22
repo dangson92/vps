@@ -141,9 +141,16 @@ const save = async () => {
     }
     msg.value = 'Đã lưu thư mục'
     msgType.value = 'success'
-    parentId.value = resp?.data?.parent_id == null ? null : Number(resp.data.parent_id)
-    await refreshFolders()
-    loadEditing()
+
+    if (isNew.value) {
+      // Redirect to folders list after creating new folder
+      router.push(`/websites/${websiteId}/folders`)
+    } else {
+      // Stay on edit page after updating
+      parentId.value = resp?.data?.parent_id == null ? null : Number(resp.data.parent_id)
+      await refreshFolders()
+      loadEditing()
+    }
   } catch (e) {
     msg.value = e?.response?.data?.message || e?.response?.data?.error || 'Lưu thư mục thất bại'
     msgType.value = 'error'
