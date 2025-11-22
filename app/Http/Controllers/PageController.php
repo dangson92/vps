@@ -155,19 +155,15 @@ class PageController extends Controller
         $domainParts = explode('.', $website->domain);
         $isSubdomain = count($domainParts) > 2;
 
-        try {
-            // Only deploy homepage for main domain, not subdomains
-            if (!$isSubdomain) {
-                $this->deploymentService->deployLaravel1Homepage($website);
+        // Only deploy homepage for main domain, not subdomains
+        if (!$isSubdomain) {
+            \App\Jobs\DeployLaravel1Homepage::dispatch($website->id);
 
-                // Redeploy affected category pages
-                $affectedFolders = $folders ?? ($page ? $page->folders()->get() : collect());
-                foreach ($affectedFolders as $folder) {
-                    $this->deploymentService->deployLaravel1CategoryPage($folder);
-                }
+            // Redeploy affected category pages
+            $affectedFolders = $folders ?? ($page ? $page->folders()->get() : collect());
+            foreach ($affectedFolders as $folder) {
+                \App\Jobs\DeployLaravel1CategoryPage::dispatch($folder->id);
             }
-        } catch (\Exception $e) {
-            // Silently fail - don't block the main operation
         }
     }
 }

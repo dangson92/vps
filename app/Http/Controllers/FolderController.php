@@ -147,13 +147,9 @@ class FolderController extends Controller
             return;
         }
 
-        try {
-            $this->deploymentService->deployLaravel1Homepage($website);
-            if ($folder) {
-                $this->deploymentService->deployLaravel1CategoryPage($folder);
-            }
-        } catch (\Exception $e) {
-            // Silently fail - don't block the main operation
+        \App\Jobs\DeployLaravel1Homepage::dispatch($website->id);
+        if ($folder) {
+            \App\Jobs\DeployLaravel1CategoryPage::dispatch($folder->id);
         }
     }
 
