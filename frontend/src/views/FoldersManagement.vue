@@ -52,6 +52,7 @@
               <div class="col-span-1 text-sm text-slate-600">{{ root.pages_count ?? 0 }}</div>
               <div class="col-span-2 flex justify-end gap-2 text-slate-500">
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xem trước" @click.stop="preview(root)"><Eye class="size-4" /></button>
+                <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md text-indigo-600" title="Mở link" @click.stop="openLink(root)"><Globe class="size-4" /></button>
                 <router-link :to="`/websites/${websiteId}/folders/${root.id}`" class="p-1.5 hover:bg-slate-200 rounded-md" title="Sửa"><Edit class="size-4" /></router-link>
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xóa" @click.stop="remove(root)"><Trash2 class="size-4" /></button>
               </div>
@@ -67,6 +68,7 @@
               <div class="col-span-1 text-sm text-slate-600">{{ child.pages_count ?? 0 }}</div>
               <div class="col-span-2 flex justify-end gap-2 text-slate-500">
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xem trước" @click="preview(child)"><Eye class="size-4" /></button>
+                <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md text-indigo-600" title="Mở link" @click="openLink(child)"><Globe class="size-4" /></button>
                 <router-link :to="`/websites/${websiteId}/folders/${child.id}`" class="p-1.5 hover:bg-slate-200 rounded-md" title="Sửa"><Edit class="size-4" /></router-link>
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xóa" @click="remove(child)"><Trash2 class="size-4" /></button>
               </div>
@@ -83,11 +85,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
-import { ChevronRight, Edit, Trash2, Search, Filter, CornerDownRight, Eye } from 'lucide-vue-next'
+import { ChevronRight, Edit, Trash2, Search, Filter, CornerDownRight, Eye, Globe } from 'lucide-vue-next'
 
 const route = useRoute()
 const websiteId = route.params.websiteId
 const folders = ref([])
+const website = ref(null)
 const loading = ref(false)
 const msg = ref('')
 const msgType = ref('')
@@ -97,8 +100,14 @@ const refresh = async () => {
   loading.value = true
   msg.value = ''
   try {
-    const resp = await axios.get(`/api/websites/${websiteId}/folders`)
-    const list = resp.data || []
+    const [websiteResp, foldersResp] = await Promise.all([
+      axios.get(`/api/websites/${websiteId}`),
+      axios.get(`/api/websites/${websiteId}/folders`)
+    ])
+
+    website.value = websiteResp.data
+
+    const list = foldersResp.data || []
     const norm = list.map(f => ({
       ...f,
       id: Number(f.id),
@@ -120,6 +129,15 @@ const preview = (folder) => {
     return
   }
   const url = `${base}?token=${encodeURIComponent(token)}`
+  window.open(url, '_blank')
+}
+
+const openLink = (folder) => {
+  if (!website.value) return
+  const slug = fullSlug(folder.id)
+  if (!slug) return
+  const protocol = website.value.ssl_enabled ? 'https://' : 'http://'
+  const url = `${protocol}${website.value.domain}/${slug}`
   window.open(url, '_blank')
 }
 
