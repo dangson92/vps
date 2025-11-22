@@ -104,14 +104,18 @@ class DeploymentService
             }
         }
 
-        $featuredData = collect($featuredPages)->map(function ($page) {
+        $featuredData = collect($featuredPages)->map(function ($page) use ($website) {
             $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
+
+            // Generate proper URL for page
+            $url = $this->generatePageUrl($page, $website);
+
             return [
                 'title' => $data['title'] ?? $page->title ?? 'Untitled',
                 'image' => $gallery[0] ?? '',
                 'location_text' => $data['location_text'] ?? $data['location'] ?? '',
-                'url' => $page->path,
+                'url' => $url,
             ];
         })->toArray();
 
@@ -126,14 +130,18 @@ class DeploymentService
 
         // Sort by updated_at and take top 6
         $newestPages = collect($newestPages)->sortByDesc('updated_at')->take(6);
-        $newestData = $newestPages->map(function ($page) {
+        $newestData = $newestPages->map(function ($page) use ($website) {
             $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
+
+            // Generate proper URL for page
+            $url = $this->generatePageUrl($page, $website);
+
             return [
                 'title' => $data['title'] ?? $page->title ?? 'Untitled',
                 'image' => $gallery[0] ?? '',
                 'location_text' => $data['location_text'] ?? $data['location'] ?? '',
-                'url' => $page->path,
+                'url' => $url,
             ];
         })->values()->toArray();
 
@@ -194,15 +202,19 @@ class DeploymentService
         }
 
         $pages = $folder->pages()->orderBy('updated_at', 'desc')->get();
-        $pagesData = $pages->map(function ($page) {
+        $pagesData = $pages->map(function ($page) use ($website) {
             $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
+
+            // Generate proper URL for page
+            $url = $this->generatePageUrl($page, $website);
+
             return [
                 'title' => $data['title'] ?? $page->title ?? 'Untitled',
                 'description' => $data['about1'] ?? '',
                 'image' => $gallery[0] ?? '',
                 'location_text' => $data['location_text'] ?? $data['location'] ?? '',
-                'url' => $page->path,
+                'url' => $url,
                 'amenities' => $data['amenities'] ?? [],
             ];
         })->toArray();
@@ -571,6 +583,25 @@ class DeploymentService
         $config .= "}\n";
 
         return $config;
+    }
+
+    /**
+     * Generate proper URL for a page
+     * If page belongs to a subdomain, return full URL
+     * If page belongs to same website, return relative path
+     */
+    private function generatePageUrl(Page $page, Website $currentWebsite): string
+    {
+        $pageWebsite = $page->website;
+
+        // If page belongs to a different website (subdomain), use full URL
+        if ($pageWebsite->id !== $currentWebsite->id) {
+            $protocol = $pageWebsite->ssl_enabled ? 'https://' : 'http://';
+            return $protocol . $pageWebsite->domain . $page->path;
+        }
+
+        // Same website, use relative path
+        return $page->path;
     }
 
     public function publishAllPages(Website $website): void
