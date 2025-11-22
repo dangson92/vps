@@ -64,7 +64,27 @@ class PageController extends Controller
         $website->increment('content_version');
         $website->update(['content_updated_at' => now()]);
 
-        $this->redeployLaravel1IfNeeded($website, $page);
+        // For subdomain pages, we need to deploy both the page and the main website
+        $domainParts = explode('.', $website->domain);
+        $isSubdomain = count($domainParts) > 2;
+
+        if ($isSubdomain) {
+            // Deploy the subdomain page itself
+            $this->redeployLaravel1IfNeeded($website, $page);
+
+            // Also deploy homepage and categories of the main website
+            $mainDomain = implode('.', array_slice($domainParts, -2));
+            $mainWebsite = Website::where('domain', $mainDomain)
+                ->where('type', 'laravel1')
+                ->where('status', 'deployed')
+                ->first();
+
+            if ($mainWebsite) {
+                $this->redeployLaravel1IfNeeded($mainWebsite, null, $page->folders);
+            }
+        } else {
+            $this->redeployLaravel1IfNeeded($website, $page);
+        }
 
         return response()->json($page, 201);
     }
@@ -125,7 +145,28 @@ class PageController extends Controller
         $page->website->increment('content_version');
         $page->website->update(['content_updated_at' => now()]);
 
-        $this->redeployLaravel1IfNeeded($page->website, $page);
+        // For subdomain pages, we need to deploy both the page and the main website
+        $website = $page->website;
+        $domainParts = explode('.', $website->domain);
+        $isSubdomain = count($domainParts) > 2;
+
+        if ($isSubdomain) {
+            // Deploy the subdomain page itself
+            $this->redeployLaravel1IfNeeded($website, $page);
+
+            // Also deploy homepage and categories of the main website
+            $mainDomain = implode('.', array_slice($domainParts, -2));
+            $mainWebsite = Website::where('domain', $mainDomain)
+                ->where('type', 'laravel1')
+                ->where('status', 'deployed')
+                ->first();
+
+            if ($mainWebsite) {
+                $this->redeployLaravel1IfNeeded($mainWebsite, null, $page->folders);
+            }
+        } else {
+            $this->redeployLaravel1IfNeeded($website, $page);
+        }
 
         return response()->json($page);
     }
@@ -135,12 +176,30 @@ class PageController extends Controller
         $website = $page->website;
         $folders = $page->folders()->get();
 
+        // If this is a subdomain page, we need to redeploy the main website
+        $domainParts = explode('.', $website->domain);
+        $isSubdomain = count($domainParts) > 2;
+
+        if ($isSubdomain) {
+            // Get main domain (e.g., timnhakhoa.com from luxeden-hanoi-hotel.timnhakhoa.com)
+            $mainDomain = implode('.', array_slice($domainParts, -2));
+            $mainWebsite = Website::where('domain', $mainDomain)
+                ->where('type', 'laravel1')
+                ->where('status', 'deployed')
+                ->first();
+        } else {
+            $mainWebsite = $website;
+        }
+
         $page->delete();
 
         $website->increment('content_version');
         $website->update(['content_updated_at' => now()]);
 
-        $this->redeployLaravel1IfNeeded($website, null, $folders);
+        // Deploy homepage and categories of the main website
+        if ($mainWebsite) {
+            $this->redeployLaravel1IfNeeded($mainWebsite, null, $folders);
+        }
 
         return response()->json(null, 204);
     }
