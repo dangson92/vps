@@ -86,9 +86,14 @@ class DeploymentService
             $firstPage = $folder->pages()->first();
             $firstPageData = $firstPage ? ($firstPage->template_data ?? []) : [];
             $gallery = $firstPageData['gallery'] ?? [];
+
+            // Category URLs should always point to main domain, not subdomain
+            $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+            $categoryUrl = $protocol . $website->domain . '/' . $folder->slug;
+
             return [
                 'name' => $folder->name,
-                'url' => '/' . $folder->slug,
+                'url' => $categoryUrl,
                 'count' => $pageCount,
                 'image' => $gallery[0] ?? 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400',
             ];

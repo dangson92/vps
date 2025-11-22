@@ -136,8 +136,16 @@ const openLink = (folder) => {
   if (!website.value) return
   const slug = fullSlug(folder.id)
   if (!slug) return
+
+  // Categories always belong to main domain, not subdomain
+  // Extract main domain from current domain
+  const domainParts = website.value.domain.split('.')
+  const mainDomain = domainParts.length > 2
+    ? domainParts.slice(-2).join('.') // Get last 2 parts (domain.com)
+    : website.value.domain // Already main domain
+
   const protocol = website.value.ssl_enabled ? 'https://' : 'http://'
-  const url = `${protocol}${website.value.domain}/${slug}`
+  const url = `${protocol}${mainDomain}/${slug}`
   window.open(url, '_blank')
 }
 
