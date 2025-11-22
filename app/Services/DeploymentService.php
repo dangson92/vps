@@ -102,10 +102,10 @@ class DeploymentService
         // Get featured pages from all folders
         $featuredPages = [];
         foreach ($folders as $folder) {
-            $folderPages = $folder->pages()->limit(2)->get();
+            $folderPages = $folder->pages()->limit(3)->get();
             foreach ($folderPages as $page) {
                 $featuredPages[] = $page;
-                if (count($featuredPages) >= 6) break 2;
+                if (count($featuredPages) >= 8) break 2;
             }
         }
 
@@ -127,14 +127,14 @@ class DeploymentService
         // Get newest pages (most recently updated)
         $newestPages = [];
         foreach ($folders as $folder) {
-            $folderPages = $folder->pages()->orderBy('updated_at', 'desc')->limit(2)->get();
+            $folderPages = $folder->pages()->orderBy('updated_at', 'desc')->limit(3)->get();
             foreach ($folderPages as $page) {
                 $newestPages[] = $page;
             }
         }
 
-        // Sort by updated_at and take top 6
-        $newestPages = collect($newestPages)->sortByDesc('updated_at')->take(6);
+        // Sort by updated_at and take top 8
+        $newestPages = collect($newestPages)->sortByDesc('updated_at')->take(8);
         $newestData = $newestPages->map(function ($page) use ($website) {
             $data = $page->template_data ?? [];
             $gallery = $data['gallery'] ?? [];
@@ -333,8 +333,23 @@ class DeploymentService
             return $html;
         }
 
-        // Replace placeholders
+        // Add primary folder info for breadcrumb
+        if ($page->primary_folder_id) {
+            $primaryFolder = $page->primaryFolder;
+            if ($primaryFolder) {
+                $data['primary_folder_name'] = $primaryFolder->name;
+                $data['primary_folder_path'] = $primaryFolder->getPath();
+            }
+        }
+
+        // Add main domain URL for breadcrumb
         $website = $page->website;
+        $domainParts = explode('.', $website->domain);
+        $mainDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $website->domain;
+        $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+        $data['main_domain_url'] = $protocol . $mainDomain;
+
+        // Replace placeholders
         $title = $data['title'] ?? $page->title ?? 'Untitled';
         $description = $data['about1'] ?? $page->meta_description ?? '';
         $gallery = $data['gallery'] ?? [];
