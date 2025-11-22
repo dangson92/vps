@@ -661,6 +661,26 @@ const togglePrimary = (fid) => {
 }
 
 const onFolderCheckChange = (fid) => {
+  // Auto-select parent folders when child is selected
+  if (selectedFolderIds.value.includes(fid)) {
+    const folder = folders.value.find(f => f.id === fid)
+    if (folder && folder.parent_id) {
+      // Recursively add all parents
+      const addParents = (parentId) => {
+        if (!parentId) return
+        if (!selectedFolderIds.value.includes(parentId)) {
+          selectedFolderIds.value.push(parentId)
+        }
+        const parent = folders.value.find(f => f.id === parentId)
+        if (parent && parent.parent_id) {
+          addParents(parent.parent_id)
+        }
+      }
+      addParents(folder.parent_id)
+    }
+  }
+
+  // Clear primary folder if it's unchecked
   if (primaryFolderId.value && !selectedFolderIds.value.includes(primaryFolderId.value)) {
     primaryFolderId.value = null
   }
