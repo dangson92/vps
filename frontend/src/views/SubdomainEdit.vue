@@ -29,6 +29,19 @@
               </select>
             </div>
 
+            <div class="mt-4" v-if="templateType === 'hotel-detail-1'">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Danh mục (chọn nhiều)</label>
+              <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-auto">
+                <div v-if="folders.length === 0" class="text-sm text-gray-500">Không có danh mục</div>
+                <div v-else class="space-y-2">
+                  <label v-for="folder in folders" :key="folder.id" class="flex items-center gap-2">
+                    <input type="checkbox" :value="folder.id" v-model="selectedFolders" class="rounded" />
+                    <span class="text-sm">{{ folder.name }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div class="mt-6">
               <h2 class="text-lg font-semibold text-gray-900">Nội dung template</h2>
               <div v-if="templateType === 'hotel-detail-1'" class="mt-4 space-y-4">
@@ -138,6 +151,8 @@ const websiteId = route.params.websiteId
 const parentDomain = ref('')
 const parentWebsite = ref(null)
 const servers = ref([])
+const folders = ref([])
+const selectedFolders = ref([])
 const form = ref({ sub: '', vps_server_id: '' })
 const templateType = ref('blank')
 const htmlRaw = ref('')
@@ -348,6 +363,10 @@ const submit = async () => {
       pagePayload.template_type = templateType.value
       pagePayload.template_data = processedData
     }
+    // Add folder_ids if selected
+    if (selectedFolders.value.length > 0) {
+      pagePayload.folder_ids = selectedFolders.value
+    }
     try {
       await axios.post(`/api/websites/${site.id}/pages`, pagePayload)
     } catch (err) {
@@ -380,6 +399,14 @@ const init = async () => {
   const sv = await axios.get('/api/vps')
   servers.value = sv.data.filter(s => s.status === 'active')
   if (parentWebsite.value?.vps_server_id) form.value.vps_server_id = parentWebsite.value.vps_server_id
+
+  // Load folders
+  try {
+    const foldersResp = await axios.get(`/api/websites/${websiteId}/folders`)
+    folders.value = foldersResp.data || []
+  } catch (e) {
+    console.error('Failed to load folders:', e)
+  }
 }
 
 onMounted(init)
