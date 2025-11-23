@@ -427,6 +427,9 @@ class DeploymentService
             );
         }
 
+        // Add script version for cache busting
+        $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+
         return $html;
     }
 
