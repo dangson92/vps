@@ -69,26 +69,49 @@ foreach ($websites as $website) {
         }
 
         $templateHtml = file_get_contents($templateFile);
+        $currentHtml = $page->content;
+        $updated = false;
 
-        // Keep the page data script from current page
-        if (preg_match('/<script[^>]*id="page-data"[^>]*>.*?<\/script>/s', $page->content, $dataMatches)) {
-            $pageDataScript = $dataMatches[0];
+        // Update only header (not entire HTML to avoid breaking rendered content)
+        $headerPattern = '/<header[^>]*>.*?<\/header>/s';
+        if (preg_match($headerPattern, $templateHtml, $templateHeaderMatch) &&
+            preg_match($headerPattern, $currentHtml)) {
+            $newHeader = $templateHeaderMatch[0];
 
-            // Replace {{PAGE_DATA_SCRIPT}} in template with actual data
-            $templateHtml = str_replace('{{PAGE_DATA_SCRIPT}}', $pageDataScript, $templateHtml);
+            // Warn if header contains placeholders (to avoid breaking page)
+            if (preg_match('/\{\{[A-Z_]+\}\}/', $newHeader)) {
+                echo "⚠ {$website->domain}{$page->path}: Header contains placeholders, skipping\n";
+            } else {
+                $currentHtml = preg_replace($headerPattern, $newHeader, $currentHtml);
+                $updated = true;
+                echo "✓ {$website->domain}{$page->path}: Updated header\n";
+            }
         }
 
-        // Keep SEO meta tags
-        preg_match('/<title>(.*?)<\/title>/s', $page->content, $titleMatches);
-        $title = $titleMatches[1] ?? '{{TITLE}}';
-        $templateHtml = preg_replace('/<title>.*?<\/title>/s', "<title>{$title}</title>", $templateHtml);
+        // Update only footer
+        $footerPattern = '/(?:<!--\s*Footer\s*-->\\s*)?<footer[^>]*>.*?<\/footer>/s';
+        if (preg_match($footerPattern, $templateHtml, $templateFooterMatch) &&
+            preg_match($footerPattern, $currentHtml)) {
+            $newFooter = $templateFooterMatch[0];
 
-        // Update page content
-        $page->content = $templateHtml;
-        $page->save();
+            // Warn if footer contains placeholders
+            if (preg_match('/\{\{[A-Z_]+\}\}/', $newFooter)) {
+                echo "⚠ {$website->domain}{$page->path}: Footer contains placeholders, skipping\n";
+            } else {
+                $currentHtml = preg_replace($footerPattern, $newFooter, $currentHtml);
+                $updated = true;
+                echo "✓ {$website->domain}{$page->path}: Updated footer\n";
+            }
+        }
 
-        echo "✓ {$website->domain}{$page->path}: Updated with {$templateName} template\n";
-        $updatedCount++;
+        if ($updated) {
+            $page->content = $currentHtml;
+            $page->save();
+            $updatedCount++;
+        } else {
+            echo "⊘ {$website->domain}{$page->path}: No updates needed\n";
+            $skippedCount++;
+        }
     }
 }
 
