@@ -334,12 +334,34 @@ class DeploymentService
         }
 
         // Add primary folder info for breadcrumb
-        // Use primary folder if set, otherwise use first folder
+        // Use primary folder if set, otherwise use deepest folder (most nested)
         $folder = null;
         if ($page->primary_folder_id) {
             $folder = $page->primaryFolder;
         } else {
-            $folder = $page->folders()->first();
+            // Find the folder with maximum depth (most ancestors)
+            $folders = $page->folders;
+            $maxDepth = -1;
+
+            foreach ($folders as $f) {
+                // Calculate depth by counting ancestors
+                $depth = 0;
+                $current = $f;
+                while ($current->parent) {
+                    $depth++;
+                    $current = $current->parent;
+                }
+
+                if ($depth > $maxDepth) {
+                    $maxDepth = $depth;
+                    $folder = $f;
+                }
+            }
+
+            // If no folder found, use first folder
+            if (!$folder) {
+                $folder = $folders->first();
+            }
         }
 
         if ($folder) {
