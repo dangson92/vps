@@ -77,9 +77,15 @@ foreach ($websites as $website) {
         if (preg_match($headerPattern, $templateHtml, $templateHeaderMatch) &&
             preg_match($headerPattern, $currentHtml)) {
             $newHeader = $templateHeaderMatch[0];
-            $currentHtml = preg_replace($headerPattern, $newHeader, $currentHtml);
-            $updated = true;
-            echo "✓ {$website->domain}{$page->path}: Updated header\n";
+
+            // Warn if header contains placeholders (to avoid breaking page)
+            if (preg_match('/\{\{[A-Z_]+\}\}/', $newHeader)) {
+                echo "⚠ {$website->domain}{$page->path}: Header contains placeholders, skipping\n";
+            } else {
+                $currentHtml = preg_replace($headerPattern, $newHeader, $currentHtml);
+                $updated = true;
+                echo "✓ {$website->domain}{$page->path}: Updated header\n";
+            }
         }
 
         // Update only footer
@@ -87,9 +93,15 @@ foreach ($websites as $website) {
         if (preg_match($footerPattern, $templateHtml, $templateFooterMatch) &&
             preg_match($footerPattern, $currentHtml)) {
             $newFooter = $templateFooterMatch[0];
-            $currentHtml = preg_replace($footerPattern, $newFooter, $currentHtml);
-            $updated = true;
-            echo "✓ {$website->domain}{$page->path}: Updated footer\n";
+
+            // Warn if footer contains placeholders
+            if (preg_match('/\{\{[A-Z_]+\}\}/', $newFooter)) {
+                echo "⚠ {$website->domain}{$page->path}: Footer contains placeholders, skipping\n";
+            } else {
+                $currentHtml = preg_replace($footerPattern, $newFooter, $currentHtml);
+                $updated = true;
+                echo "✓ {$website->domain}{$page->path}: Updated footer\n";
+            }
         }
 
         if ($updated) {
