@@ -35,11 +35,17 @@
     ui.innerHTML=hu;}
   var lc=document.getElementById('location-card');if(lc){var loc=data.location||'';var phone=data.phone||'';var isIframe=/^<iframe[\s\S]*<\/iframe>$/i.test(loc);var isEmbedUrl=/https?:\/\/(?:www\.)?google\.com\/maps\/embed\?pb=/.test(loc);var me='';if(isIframe){me=loc;}else if(isEmbedUrl){me='<iframe src="'+loc+'" width="100%" height="100%" style="border:0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>';}else if(loc){me='<iframe title="Google Map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q='+encodeURIComponent(loc)+'&output=embed" width="100%" height="100%" style="border:0"></iframe>';}var details='';var addr=(data.location_text||'').trim();var ph=(phone||'').trim();if(addr||ph){details='<div class="flex flex-col gap-3 mb-4">'+(addr?'<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">location_on</span><span class="text-neutral-900">'+addr+'</span></div>':'')+(ph?'<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">call</span><span class="text-neutral-900">'+ph+'</span></div>':'')+'</div>';}lc.innerHTML=me?('<div class="py-8 mt-8 bg-white p-6 rounded-xl border border-gray-200" id="section-location"><h3 class="text-2xl font-bold mb-6">Location</h3>'+details+'<div class="relative w-full h-96 rounded-lg overflow-hidden">'+me+'</div></div>'):'';}
   
+  var currentKeyHandler=null;
+
   function closeModal(){
     var m=document.getElementById('galleryModal');
     if(m){m.remove();}
+    if(currentKeyHandler){
+      document.removeEventListener('keydown',currentKeyHandler);
+      currentKeyHandler=null;
+    }
   }
-  
+
   function open(i){
     idx=Math.max(0,Math.min(images.length-1,i||0));
     var m=document.getElementById('galleryModal');
@@ -48,7 +54,7 @@
       m.id='galleryModal';
       m.className='fixed inset-0 z-50 flex items-center justify-center p-8';
       m.style.backgroundColor='rgba(0,0,0,0.85)';
-      
+
       var html='<div class="relative flex items-center justify-center w-full max-w-6xl">';
       html+='<button id="prev" class="absolute -left-16 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition"><span style="font-size:40px;font-weight:bold;line-height:1;margin-top:-10px">&#8249;</span></button>';
       html+='<div class="bg-white rounded-lg shadow-2xl p-6 w-full relative">';
@@ -58,26 +64,25 @@
       html+='</div>';
       html+='<button id="next" class="absolute -right-16 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition"><span style="font-size:40px;font-weight:bold;line-height:1;margin-top:-10px">&#8250;</span></button>';
       html+='</div>';
-      
+
       m.innerHTML=html;
       document.body.appendChild(m);
-      
+
       m.querySelector('#closeGallery').addEventListener('click',closeModal);
       m.addEventListener('click',function(e){
         if(e.target===m){closeModal();}
       });
 
-      var keyHandler=function(e){
+      currentKeyHandler=function(e){
         if(e.key==='Escape'){
           closeModal();
-          document.removeEventListener('keydown',keyHandler);
         }else if(e.key==='ArrowLeft'){
           if(idx>0){idx--;render();}
         }else if(e.key==='ArrowRight'){
           if(idx<images.length-1){idx++;render();}
         }
       };
-      document.addEventListener('keydown',keyHandler);
+      document.addEventListener('keydown',currentKeyHandler);
     }
   }
   

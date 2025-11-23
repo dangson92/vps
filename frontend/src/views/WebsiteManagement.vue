@@ -140,13 +140,13 @@
                           Redeploy All Pages
                         </button>
                         <button
-                          @click="openRedeployTemplateModal(website)"
+                          @click="openRedeployAssetsModal(website)"
                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Redeploy Template Assets
                         </button>
                         <button
-                          @click="openRedeployTemplateModal(website)"
+                          @click="openUpdateTemplateModal(website)"
                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
                           Update Pages Template
@@ -248,15 +248,15 @@
       </div>
     </div>
 
-    <!-- Redeploy Template Modal -->
-    <div v-if="showRedeployTemplateModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+    <!-- Redeploy Template Assets Modal -->
+    <div v-if="showRedeployAssetsModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Template Operations</h2>
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Redeploy Template Assets</h2>
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Template</label>
           <select
-            v-model="redeployTemplateForm.template_name"
+            v-model="redeployAssetsForm.template_name"
             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
           >
             <option value="home-1">Home 1</option>
@@ -267,15 +267,14 @@
 
         <div class="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <p class="text-sm text-blue-800">
-            <strong>Redeploy Template Assets:</strong> Deploys CSS/JS files<br>
-            <strong>Update Pages Template:</strong> Updates header/footer in database
+            Deploys CSS/JS files from the template to all pages. Use this when you update template scripts or styles.
           </p>
         </div>
 
         <div class="flex justify-end space-x-3">
           <button
             type="button"
-            @click="closeRedeployTemplateModal"
+            @click="closeRedeployAssetsModal"
             class="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
           >
             Cancel
@@ -283,15 +282,54 @@
           <button
             type="button"
             @click="redeployTemplateAssets"
-            class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700"
+            :disabled="loadingRedeployIds.includes(currentRedeployWebsite?.id)"
+            class="px-3 py-2 bg-teal-600 text-white text-sm rounded-md hover:bg-teal-700 disabled:opacity-50 flex items-center gap-2"
           >
+            <Loader2 v-if="loadingRedeployIds.includes(currentRedeployWebsite?.id)" class="size-4 animate-spin" />
             Deploy Assets
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Pages Template Modal -->
+    <div v-if="showUpdateTemplateModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Update Pages Template</h2>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Select Template</label>
+          <select
+            v-model="updateTemplateForm.template_name"
+            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+          >
+            <option value="home-1">Home 1</option>
+            <option value="listing-1">Listing 1</option>
+            <option value="hotel-detail-1">Hotel Detail 1</option>
+          </select>
+        </div>
+
+        <div class="bg-purple-50 border border-purple-200 rounded-md p-3 mb-4">
+          <p class="text-sm text-purple-800">
+            Updates header/footer in database from the template. Use this when you update template header or footer structure.
+          </p>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            @click="closeUpdateTemplateModal"
+            class="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
           </button>
           <button
             type="button"
             @click="updatePagesTemplate"
-            class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            :disabled="loadingRedeployIds.includes(currentRedeployWebsite?.id)"
+            class="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
           >
+            <Loader2 v-if="loadingRedeployIds.includes(currentRedeployWebsite?.id)" class="size-4 animate-spin" />
             Update Template
           </button>
         </div>
@@ -335,9 +373,11 @@ const loadingDeactivateIds = ref([])
 const loadingDeleteIds = ref([])
 const showRedeployDropdown = ref({})
 const loadingRedeployIds = ref([])
-const showRedeployTemplateModal = ref(false)
+const showRedeployAssetsModal = ref(false)
+const showUpdateTemplateModal = ref(false)
 const currentRedeployWebsite = ref(null)
-const redeployTemplateForm = ref({ template_name: 'hotel-detail-1' })
+const redeployAssetsForm = ref({ template_name: 'hotel-detail-1' })
+const updateTemplateForm = ref({ template_name: 'hotel-detail-1' })
 
 const showToast = (msg, type = 'success') => {
   toastMsg.value = msg
@@ -621,10 +661,16 @@ const redeployPages = async (website) => {
   }
 }
 
-const openRedeployTemplateModal = (website) => {
+const openRedeployAssetsModal = (website) => {
   currentRedeployWebsite.value = website
   showRedeployDropdown.value[website.id] = false
-  showRedeployTemplateModal.value = true
+  showRedeployAssetsModal.value = true
+}
+
+const openUpdateTemplateModal = (website) => {
+  currentRedeployWebsite.value = website
+  showRedeployDropdown.value[website.id] = false
+  showUpdateTemplateModal.value = true
 }
 
 const redeployTemplateAssets = async () => {
@@ -633,10 +679,10 @@ const redeployTemplateAssets = async () => {
     loadingRedeployIds.value = [...loadingRedeployIds.value, currentRedeployWebsite.value.id]
     const response = await axios.post(
       `/api/websites/${currentRedeployWebsite.value.id}/redeploy-template-assets`,
-      redeployTemplateForm.value
+      redeployAssetsForm.value
     )
     showToast(response.data.message || 'Template assets deployed', 'success')
-    showRedeployTemplateModal.value = false
+    showRedeployAssetsModal.value = false
   } catch (error) {
     const msg = error?.response?.data?.message || 'Failed to deploy template assets'
     showToast(msg, 'error')
@@ -651,10 +697,10 @@ const updatePagesTemplate = async () => {
     loadingRedeployIds.value = [...loadingRedeployIds.value, currentRedeployWebsite.value.id]
     const response = await axios.post(
       `/api/websites/${currentRedeployWebsite.value.id}/update-pages-template`,
-      redeployTemplateForm.value
+      updateTemplateForm.value
     )
     showToast(response.data.message || 'Pages template updated', 'success')
-    showRedeployTemplateModal.value = false
+    showUpdateTemplateModal.value = false
   } catch (error) {
     const msg = error?.response?.data?.message || 'Failed to update pages template'
     showToast(msg, 'error')
@@ -663,9 +709,15 @@ const updatePagesTemplate = async () => {
   }
 }
 
-const closeRedeployTemplateModal = () => {
-  showRedeployTemplateModal.value = false
+const closeRedeployAssetsModal = () => {
+  showRedeployAssetsModal.value = false
   currentRedeployWebsite.value = null
-  redeployTemplateForm.value = { template_name: 'hotel-detail-1' }
+  redeployAssetsForm.value = { template_name: 'hotel-detail-1' }
+}
+
+const closeUpdateTemplateModal = () => {
+  showUpdateTemplateModal.value = false
+  currentRedeployWebsite.value = null
+  updateTemplateForm.value = { template_name: 'hotel-detail-1' }
 }
 </script>
