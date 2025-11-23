@@ -348,6 +348,7 @@ class DeploymentService
 
             // Generate breadcrumb_items from folder hierarchy
             $breadcrumbItems = ['Home'];
+            $breadcrumbPaths = [''];  // Home path is root
 
             // Get all parent folders in order
             $folderHierarchy = [];
@@ -357,16 +358,19 @@ class DeploymentService
                 $currentFolder = $currentFolder->parent;
             }
 
-            // Add folder names to breadcrumb
+            // Add folder names and paths to breadcrumb
             foreach ($folderHierarchy as $f) {
                 $breadcrumbItems[] = $f->name;
+                $breadcrumbPaths[] = $f->getPath();
             }
 
-            // Add page title
+            // Add page title (no path for current page)
             $breadcrumbItems[] = $data['title'] ?? $page->title ?? 'Untitled';
+            $breadcrumbPaths[] = '';  // Last item has no link
 
-            // Update breadcrumb_items
+            // Update breadcrumb data
             $data['breadcrumb_items'] = $breadcrumbItems;
+            $data['breadcrumb_paths'] = $breadcrumbPaths;
         }
 
         // Add main domain URL for breadcrumb
