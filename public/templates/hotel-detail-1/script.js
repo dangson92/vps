@@ -74,12 +74,15 @@
       });
 
       currentKeyHandler=function(e){
+        console.log('[Gallery] Key pressed:', e.key, 'Current idx:', idx, 'Total images:', images.length);
         if(e.key==='Escape'){
           closeModal();
         }else if(e.key==='ArrowLeft'){
-          if(idx>0){idx--;render();}
+          console.log('[Gallery] ArrowLeft - checking idx>0:', idx>0);
+          if(idx>0){idx--;console.log('[Gallery] New idx:', idx);render();}
         }else if(e.key==='ArrowRight'){
-          if(idx<images.length-1){idx++;render();}
+          console.log('[Gallery] ArrowRight - checking idx<max:', idx, '<', images.length-1);
+          if(idx<images.length-1){idx++;console.log('[Gallery] New idx:', idx);render();}
         }
       };
       document.addEventListener('keydown',currentKeyHandler);
