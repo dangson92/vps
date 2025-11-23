@@ -17,9 +17,9 @@
           </button>
         </div>
 
-        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <div class="bg-white shadow sm:rounded-md">
           <ul class="divide-y divide-gray-200">
-            <li v-for="website in websites" :key="website.id" class="px-6 py-4">
+            <li v-for="website in websites" :key="website.id" class="px-6 py-4 relative overflow-visible">
               <div class="flex items-center justify-between">
                 <div class="flex-1">
                   <div class="flex items-center">
@@ -121,7 +121,7 @@
                     <Loader2 v-if="loadingDeactivateIds.includes(website.id)" class="size-4 animate-spin" />
                     <Power v-else class="size-4" />
                   </button>
-                  <div v-if="website.status === 'deployed' && website.type === 'laravel1'" class="relative">
+                  <div v-if="website.status === 'deployed' && website.type === 'laravel1'" class="relative redeploy-dropdown-container">
                     <button
                       @click="toggleRedeployDropdown(website.id)"
                       :disabled="loadingRedeployIds.includes(website.id)"
@@ -131,7 +131,7 @@
                       <Loader2 v-if="loadingRedeployIds.includes(website.id)" class="size-4 animate-spin" />
                       <RefreshCw v-else class="size-4" />
                     </button>
-                    <div v-if="showRedeployDropdown[website.id]" class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                    <div v-if="showRedeployDropdown[website.id]" class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                       <div class="py-1">
                         <button
                           @click="redeployPages(website)"
@@ -577,6 +577,13 @@ onMounted(() => {
   fetchWebsites()
   fetchServers()
   pollTimer = setInterval(fetchWebsites, 3000)
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.redeploy-dropdown-container')) {
+      showRedeployDropdown.value = {}
+    }
+  })
 })
 
 onUnmounted(() => {
