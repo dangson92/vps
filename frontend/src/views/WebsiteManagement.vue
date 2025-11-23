@@ -121,6 +121,39 @@
                     <Loader2 v-if="loadingDeactivateIds.includes(website.id)" class="size-4 animate-spin" />
                     <Power v-else class="size-4" />
                   </button>
+                  <div v-if="website.status === 'deployed' && website.type === 'laravel1'" class="relative">
+                    <button
+                      @click="toggleRedeployDropdown(website.id)"
+                      :disabled="loadingRedeployIds.includes(website.id)"
+                      class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-teal-600 hover:bg-gray-50 disabled:text-gray-400"
+                      title="Redeploy Options"
+                    >
+                      <Loader2 v-if="loadingRedeployIds.includes(website.id)" class="size-4 animate-spin" />
+                      <RefreshCw v-else class="size-4" />
+                    </button>
+                    <div v-if="showRedeployDropdown[website.id]" class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                      <div class="py-1">
+                        <button
+                          @click="redeployPages(website)"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Redeploy All Pages
+                        </button>
+                        <button
+                          @click="openRedeployTemplateModal(website)"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Redeploy Template Assets
+                        </button>
+                        <button
+                          @click="openRedeployTemplateModal(website)"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Update Pages Template
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   <button
                     @click="deleteWebsite(website)"
                     :disabled="loadingDeleteIds.includes(website.id)"
@@ -215,6 +248,56 @@
       </div>
     </div>
 
+    <!-- Redeploy Template Modal -->
+    <div v-if="showRedeployTemplateModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Template Operations</h2>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Select Template</label>
+          <select
+            v-model="redeployTemplateForm.template_name"
+            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+          >
+            <option value="home-1">Home 1</option>
+            <option value="listing-1">Listing 1</option>
+            <option value="hotel-detail-1">Hotel Detail 1</option>
+          </select>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <p class="text-sm text-blue-800">
+            <strong>Redeploy Template Assets:</strong> Deploys CSS/JS files<br>
+            <strong>Update Pages Template:</strong> Updates header/footer in database
+          </p>
+        </div>
+
+        <div class="flex justify-end space-x-3">
+          <button
+            type="button"
+            @click="closeRedeployTemplateModal"
+            class="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="redeployTemplateAssets"
+            class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700"
+          >
+            Deploy Assets
+          </button>
+          <button
+            type="button"
+            @click="updatePagesTemplate"
+            class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          >
+            Update Template
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Corner Toast -->
@@ -228,7 +311,7 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
-import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid } from 'lucide-vue-next'
+import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid, RefreshCw, ChevronDown } from 'lucide-vue-next'
 
 const websites = ref([])
 const availableServers = ref([])
@@ -250,6 +333,11 @@ const loadingDeployIds = ref([])
 const loadingSslIds = ref([])
 const loadingDeactivateIds = ref([])
 const loadingDeleteIds = ref([])
+const showRedeployDropdown = ref({})
+const loadingRedeployIds = ref([])
+const showRedeployTemplateModal = ref(false)
+const currentRedeployWebsite = ref(null)
+const redeployTemplateForm = ref({ template_name: 'hotel-detail-1' })
 
 const showToast = (msg, type = 'success') => {
   toastMsg.value = msg
@@ -503,5 +591,74 @@ const previewHomeUrl = (website) => {
   params.set('hide_preview_bar', '1')
   const qs = params.toString()
   return qs ? `${base}?${qs}` : base
+}
+
+const toggleRedeployDropdown = (websiteId) => {
+  showRedeployDropdown.value = {
+    ...showRedeployDropdown.value,
+    [websiteId]: !showRedeployDropdown.value[websiteId]
+  }
+}
+
+const redeployPages = async (website) => {
+  try {
+    loadingRedeployIds.value = [...loadingRedeployIds.value, website.id]
+    showRedeployDropdown.value[website.id] = false
+    const response = await axios.post(`/api/websites/${website.id}/redeploy-pages`)
+    showToast(response.data.message || 'Pages redeployed successfully', 'success')
+  } catch (error) {
+    const msg = error?.response?.data?.message || 'Failed to redeploy pages'
+    showToast(msg, 'error')
+  } finally {
+    loadingRedeployIds.value = loadingRedeployIds.value.filter(id => id !== website.id)
+  }
+}
+
+const openRedeployTemplateModal = (website) => {
+  currentRedeployWebsite.value = website
+  showRedeployDropdown.value[website.id] = false
+  showRedeployTemplateModal.value = true
+}
+
+const redeployTemplateAssets = async () => {
+  if (!currentRedeployWebsite.value) return
+  try {
+    loadingRedeployIds.value = [...loadingRedeployIds.value, currentRedeployWebsite.value.id]
+    const response = await axios.post(
+      `/api/websites/${currentRedeployWebsite.value.id}/redeploy-template-assets`,
+      redeployTemplateForm.value
+    )
+    showToast(response.data.message || 'Template assets deployed', 'success')
+    showRedeployTemplateModal.value = false
+  } catch (error) {
+    const msg = error?.response?.data?.message || 'Failed to deploy template assets'
+    showToast(msg, 'error')
+  } finally {
+    loadingRedeployIds.value = loadingRedeployIds.value.filter(id => id !== currentRedeployWebsite.value.id)
+  }
+}
+
+const updatePagesTemplate = async () => {
+  if (!currentRedeployWebsite.value) return
+  try {
+    loadingRedeployIds.value = [...loadingRedeployIds.value, currentRedeployWebsite.value.id]
+    const response = await axios.post(
+      `/api/websites/${currentRedeployWebsite.value.id}/update-pages-template`,
+      redeployTemplateForm.value
+    )
+    showToast(response.data.message || 'Pages template updated', 'success')
+    showRedeployTemplateModal.value = false
+  } catch (error) {
+    const msg = error?.response?.data?.message || 'Failed to update pages template'
+    showToast(msg, 'error')
+  } finally {
+    loadingRedeployIds.value = loadingRedeployIds.value.filter(id => id !== currentRedeployWebsite.value.id)
+  }
+}
+
+const closeRedeployTemplateModal = () => {
+  showRedeployTemplateModal.value = false
+  currentRedeployWebsite.value = null
+  redeployTemplateForm.value = { template_name: 'hotel-detail-1' }
 }
 </script>
