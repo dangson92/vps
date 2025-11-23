@@ -334,12 +334,23 @@ class DeploymentService
         }
 
         // Add primary folder info for breadcrumb
-        // Use primary folder if set, otherwise use first folder
+        // Use primary folder if set, otherwise use deepest folder (nested folder)
         $folder = null;
         if ($page->primary_folder_id) {
             $folder = $page->primaryFolder;
         } else {
-            $folder = $page->folders()->first();
+            // Get the deepest folder (one with parent, i.e., nested folder like Hanoi instead of Vietnam)
+            $folders = $page->folders;
+            foreach ($folders as $f) {
+                if ($f->parent_id) {
+                    $folder = $f;
+                    break;
+                }
+            }
+            // If no nested folder found, use first folder
+            if (!$folder) {
+                $folder = $folders->first();
+            }
         }
 
         if ($folder) {
