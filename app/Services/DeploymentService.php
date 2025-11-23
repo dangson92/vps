@@ -345,6 +345,28 @@ class DeploymentService
         if ($folder) {
             $data['primary_folder_name'] = $folder->name;
             $data['primary_folder_path'] = $folder->getPath();
+
+            // Generate breadcrumb_items from folder hierarchy
+            $breadcrumbItems = ['Home'];
+
+            // Get all parent folders in order
+            $folderHierarchy = [];
+            $currentFolder = $folder;
+            while ($currentFolder) {
+                array_unshift($folderHierarchy, $currentFolder);
+                $currentFolder = $currentFolder->parent;
+            }
+
+            // Add folder names to breadcrumb
+            foreach ($folderHierarchy as $f) {
+                $breadcrumbItems[] = $f->name;
+            }
+
+            // Add page title
+            $breadcrumbItems[] = $data['title'] ?? $page->title ?? 'Untitled';
+
+            // Update breadcrumb_items
+            $data['breadcrumb_items'] = $breadcrumbItems;
         }
 
         // Add main domain URL for breadcrumb
