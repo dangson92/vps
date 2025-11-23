@@ -66,13 +66,18 @@
       m.addEventListener('click',function(e){
         if(e.target===m){closeModal();}
       });
-      
-      document.addEventListener('keydown',function escHandler(e){
+
+      var keyHandler=function(e){
         if(e.key==='Escape'){
           closeModal();
-          document.removeEventListener('keydown',escHandler);
+          document.removeEventListener('keydown',keyHandler);
+        }else if(e.key==='ArrowLeft'){
+          if(idx>0){idx--;render();}
+        }else if(e.key==='ArrowRight'){
+          if(idx<images.length-1){idx++;render();}
         }
-      });
+      };
+      document.addEventListener('keydown',keyHandler);
     }
   }
   
