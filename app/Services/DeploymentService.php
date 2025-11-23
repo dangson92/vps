@@ -366,7 +366,18 @@ class DeploymentService
 
         // Inject page data script
         $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
-        $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        // Try to replace placeholder first
+        if (strpos($html, '{{PAGE_DATA_SCRIPT}}') !== false) {
+            $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+        } else {
+            // If no placeholder, replace hardcoded script tag
+            $html = preg_replace(
+                '/<script[^>]*id=["\']page-data["\'][^>]*>.*?<\/script>/s',
+                $dataScript,
+                $html
+            );
+        }
 
         return $html;
     }
