@@ -334,12 +334,17 @@ class DeploymentService
         }
 
         // Add primary folder info for breadcrumb
+        // Use primary folder if set, otherwise use first folder
+        $folder = null;
         if ($page->primary_folder_id) {
-            $primaryFolder = $page->primaryFolder;
-            if ($primaryFolder) {
-                $data['primary_folder_name'] = $primaryFolder->name;
-                $data['primary_folder_path'] = $primaryFolder->getPath();
-            }
+            $folder = $page->primaryFolder;
+        } else {
+            $folder = $page->folders()->first();
+        }
+
+        if ($folder) {
+            $data['primary_folder_name'] = $folder->name;
+            $data['primary_folder_path'] = $folder->getPath();
         }
 
         // Add main domain URL for breadcrumb
