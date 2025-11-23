@@ -104,6 +104,30 @@ foreach ($websites as $website) {
             }
         }
 
+        // Update CSS link tags with cache busting
+        $cssPattern = '/<link\s+rel="stylesheet"\s+href="\/templates\/' . preg_quote($templateName, '/') . '\/style\.css[^"]*"/i';
+        if (preg_match($cssPattern, $currentHtml)) {
+            $currentHtml = preg_replace(
+                $cssPattern,
+                '<link rel="stylesheet" href="/templates/' . $templateName . '/style.css?v={{SCRIPT_VERSION}}"',
+                $currentHtml
+            );
+            $updated = true;
+            echo "✓ {$website->domain}{$page->path}: Updated CSS link\n";
+        }
+
+        // Update script tag with cache busting
+        $scriptPattern = '/<script\s+src="\/templates\/' . preg_quote($templateName, '/') . '\/script\.js[^"]*"[^>]*>/i';
+        if (preg_match($scriptPattern, $currentHtml)) {
+            $currentHtml = preg_replace(
+                $scriptPattern,
+                '<script src="/templates/' . $templateName . '/script.js?v={{SCRIPT_VERSION}}">',
+                $currentHtml
+            );
+            $updated = true;
+            echo "✓ {$website->domain}{$page->path}: Updated script tag\n";
+        }
+
         if ($updated) {
             $page->content = $currentHtml;
             $page->save();
