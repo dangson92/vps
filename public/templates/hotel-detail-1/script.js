@@ -23,7 +23,7 @@
   var t=document.getElementById('hotel-title');if(t){t.textContent=(data.title||'Hotel');}
   var at=document.getElementById('about-title');if(at){at.textContent=(data.title||'Hotel');}
   var sa=document.getElementById('section-address');if(sa){sa.textContent=(data.location_text||'');}
-  var bc=document.getElementById('breadcrumb');if(bc){var items=(data.breadcrumb_items||[]);var h='';var mainUrl=(data.main_domain_url||'');var folderPath=(data.primary_folder_path||'');var folderName=(data.primary_folder_name||'');for(var i=0;i<items.length;i++){var it=items[i];var last=i===items.length-1;var sep=i>0?'<span class="text-neutral-700 text-sm font-medium">/</span>':'';var url='';if(i===0&&mainUrl){url=mainUrl;}else if(i===1&&mainUrl&&folderPath){url=mainUrl+folderPath;}var node=last?'<span class="text-neutral-900 text-sm font-medium">'+it+'</span>':(url?'<a class="text-neutral-700 text-sm font-medium hover:text-primary transition-colors" href="'+url+'">'+it+'</a>':'<span class="text-neutral-700 text-sm font-medium">'+it+'</span>');h+=sep+node;}bc.innerHTML=h;}
+  var bc=document.getElementById('breadcrumb');if(bc){var items=(data.breadcrumb_items||[]);var paths=(data.breadcrumb_paths||[]);var h='';var mainUrl=(data.main_domain_url||'');for(var i=0;i<items.length;i++){var it=items[i];var last=i===items.length-1;var sep=i>0?'<span class="text-neutral-700 text-sm font-medium">/</span>':'';var url='';if(mainUrl&&i<paths.length){url=mainUrl+paths[i];}var node=last?'<span class="text-neutral-900 text-sm font-medium">'+it+'</span>':(url?'<a class="text-neutral-700 text-sm font-medium hover:text-primary transition-colors" href="'+url+'">'+it+'</a>':'<span class="text-neutral-700 text-sm font-medium">'+it+'</span>');h+=sep+node;}bc.innerHTML=h;}
   var gg=document.getElementById('gallery-grid');if(gg){var tiles=images.slice(0,5);var moreCount=Math.max(0,images.length-4);var gh='';for(var j=0;j<tiles.length;j++){var url=tiles[j];var baseClass='bg-center bg-no-repeat bg-cover';var baseStyle="background-image: url('"+url+"')";if(j===0){gh+='<div data-idx="'+j+'" class="cursor-pointer col-span-2 row-span-2 '+baseClass+'" style="'+baseStyle+'"></div>';}else if(j<4){gh+='<div data-idx="'+j+'" class="cursor-pointer col-span-1 row-span-1 '+baseClass+'" style="'+baseStyle+'"></div>';}else{gh+='<div data-idx="'+j+'" class="relative col-span-1 row-span-1 '+baseClass+'" style="'+baseStyle+'"><div class="absolute inset-0 bg-black/50 flex items-center justify-center"><button id="openGalleryButton" class="text-white font-bold text-lg">+'+moreCount+' more</button></div></div>';}}
     gg.innerHTML=gh;}
   var ac=document.getElementById('about-content');if(ac){var p=(data.about1||'');ac.innerHTML=p?('<p>'+p+'</p>'):'';}
@@ -35,11 +35,17 @@
     ui.innerHTML=hu;}
   var lc=document.getElementById('location-card');if(lc){var loc=data.location||'';var phone=data.phone||'';var isIframe=/^<iframe[\s\S]*<\/iframe>$/i.test(loc);var isEmbedUrl=/https?:\/\/(?:www\.)?google\.com\/maps\/embed\?pb=/.test(loc);var me='';if(isIframe){me=loc;}else if(isEmbedUrl){me='<iframe src="'+loc+'" width="100%" height="100%" style="border:0" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>';}else if(loc){me='<iframe title="Google Map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q='+encodeURIComponent(loc)+'&output=embed" width="100%" height="100%" style="border:0"></iframe>';}var details='';var addr=(data.location_text||'').trim();var ph=(phone||'').trim();if(addr||ph){details='<div class="flex flex-col gap-3 mb-4">'+(addr?'<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">location_on</span><span class="text-neutral-900">'+addr+'</span></div>':'')+(ph?'<div class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">call</span><span class="text-neutral-900">'+ph+'</span></div>':'')+'</div>';}lc.innerHTML=me?('<div class="py-8 mt-8 bg-white p-6 rounded-xl border border-gray-200" id="section-location"><h3 class="text-2xl font-bold mb-6">Location</h3>'+details+'<div class="relative w-full h-96 rounded-lg overflow-hidden">'+me+'</div></div>'):'';}
   
+  var currentKeyHandler=null;
+
   function closeModal(){
     var m=document.getElementById('galleryModal');
     if(m){m.remove();}
+    if(currentKeyHandler){
+      document.removeEventListener('keydown',currentKeyHandler);
+      currentKeyHandler=null;
+    }
   }
-  
+
   function open(i){
     idx=Math.max(0,Math.min(images.length-1,i||0));
     var m=document.getElementById('galleryModal');
@@ -48,7 +54,7 @@
       m.id='galleryModal';
       m.className='fixed inset-0 z-50 flex items-center justify-center p-8';
       m.style.backgroundColor='rgba(0,0,0,0.85)';
-      
+
       var html='<div class="relative flex items-center justify-center w-full max-w-6xl">';
       html+='<button id="prev" class="absolute -left-16 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition"><span style="font-size:40px;font-weight:bold;line-height:1;margin-top:-10px">&#8249;</span></button>';
       html+='<div class="bg-white rounded-lg shadow-2xl p-6 w-full relative">';
@@ -58,21 +64,28 @@
       html+='</div>';
       html+='<button id="next" class="absolute -right-16 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition"><span style="font-size:40px;font-weight:bold;line-height:1;margin-top:-10px">&#8250;</span></button>';
       html+='</div>';
-      
+
       m.innerHTML=html;
       document.body.appendChild(m);
-      
+
       m.querySelector('#closeGallery').addEventListener('click',closeModal);
       m.addEventListener('click',function(e){
         if(e.target===m){closeModal();}
       });
-      
-      document.addEventListener('keydown',function escHandler(e){
+
+      currentKeyHandler=function(e){
+        console.log('[Gallery] Key pressed:', e.key, 'Current idx:', idx, 'Total images:', images.length);
         if(e.key==='Escape'){
           closeModal();
-          document.removeEventListener('keydown',escHandler);
+        }else if(e.key==='ArrowLeft'){
+          console.log('[Gallery] ArrowLeft - checking idx>0:', idx>0);
+          if(idx>0){idx--;console.log('[Gallery] New idx:', idx);render();}
+        }else if(e.key==='ArrowRight'){
+          console.log('[Gallery] ArrowRight - checking idx<max:', idx, '<', images.length-1);
+          if(idx<images.length-1){idx++;console.log('[Gallery] New idx:', idx);render();}
         }
-      });
+      };
+      document.addEventListener('keydown',currentKeyHandler);
     }
   }
   

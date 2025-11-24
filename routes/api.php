@@ -24,6 +24,9 @@ Route::middleware('admin.token')->group(function () {
     Route::apiResource('websites', WebsiteController::class);
     Route::post('websites/{website}/deploy', [WebsiteController::class, 'deploy']);
     Route::post('websites/{website}/deactivate', [WebsiteController::class, 'deactivate']);
+    Route::post('websites/{website}/redeploy-pages', [WebsiteController::class, 'redeployPages']);
+    Route::post('websites/{website}/redeploy-template-assets', [WebsiteController::class, 'redeployTemplateAssets']);
+    Route::post('websites/{website}/update-pages-template', [WebsiteController::class, 'updatePagesTemplate']);
     Route::post('websites/{website}/ssl', [SslController::class, 'generate']);
 
     // Page Management

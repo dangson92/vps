@@ -19,7 +19,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-<link rel="stylesheet" href="/templates/listing-1/style.css"/>
+<link rel="stylesheet" href="/templates/listing-1/style.css?v={{SCRIPT_VERSION}}"/>
 </head>
 <body class="font-display bg-gray-50 text-neutral-900">
 <div class="relative flex min-h-screen w-full flex-col">
@@ -40,6 +40,7 @@
     </div>
   </div>
 </header>
+
 
 <section class="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -176,6 +177,7 @@
   </div>
 </main>
 
+<!-- Footer -->
 <footer class="bg-neutral-900 text-neutral-100 py-12">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -213,8 +215,9 @@
     </div>
   </div>
 </footer>
+
 </div>
 {{PAGE_DATA_SCRIPT}}
-<script src="/templates/listing-1/script.js"></script>
+<script src="/templates/listing-1/script.js?v={{SCRIPT_VERSION}}"></script>
 </body>
 </html>

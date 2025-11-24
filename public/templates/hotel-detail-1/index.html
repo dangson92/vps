@@ -7,21 +7,28 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-<link rel="stylesheet" href="/templates/hotel-detail-1/style.css"/>
+<link rel="stylesheet" href="/templates/hotel-detail-1/style.css?v={{SCRIPT_VERSION}}"/>
 </head>
 <body class="font-display bg-gray-50 text-neutral-900">
 <div class="relative flex min-h-screen w-full flex-col">
 <header class="bg-white border-b border-gray-200">
-  <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-3 max-w-7xl mx-auto">
+  <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
     <div class="flex items-center gap-4">
-      <div class="size-6 text-primary"><svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fill-rule="evenodd"></path></svg></div>
-      <h2 class="text-xl font-bold">Voyage</h2>
+      <div class="size-8 text-primary"><svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fill-rule="evenodd"></path></svg></div>
+      <h1 id="site-name" class="text-2xl font-bold">StayFinder</h1>
     </div>
-    <div class="flex items-center gap-4">
-      <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"></div>
+    <nav class="hidden md:flex items-center gap-6">
+      <a href="#" class="text-neutral-700 hover:text-primary font-medium">Home</a>
+      <a href="#" class="text-neutral-700 hover:text-primary font-medium">My Bookings</a>
+      <a href="#" class="text-neutral-700 hover:text-primary font-medium">Support</a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <button class="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-primary">Login</button>
+      <button class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-blue-700">Sign Up</button>
     </div>
   </div>
 </header>
+
 <div id="nav-sentinel" class="h-px"></div>
 <nav id="nav-bar" class="hidden md:block sticky top-[0px] z-40 bg-white border-t border-gray-200 shadow-sm">
   <div id="dynamic-nav" class="max-w-7xl mx-auto flex justify-start gap-8 px-4 sm:px-6 lg:px-8 py-3"></div>
@@ -125,11 +132,12 @@
     </div>
   </div>
 </main>
+<!-- Footer -->
 <footer class="bg-neutral-900 text-neutral-100 py-12">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
       <div>
-        <h3 class="text-xl font-bold mb-4">Voyage</h3>
+        <h3 class="text-xl font-bold mb-4">StayFinder</h3>
         <p class="text-neutral-400 text-sm">Your trusted travel companion for finding the perfect stay.</p>
       </div>
       <div>
@@ -158,12 +166,13 @@
       </div>
     </div>
     <div class="border-t border-neutral-800 mt-8 pt-8 text-center text-neutral-400 text-sm">
-      <p>&copy; 2024 Voyage. All rights reserved.</p>
+      <p>&copy; 2024 StayFinder. All rights reserved.</p>
     </div>
   </div>
 </footer>
+
 </div>
 {{GALLERY_DATA_SCRIPT}}
-<script src="/templates/hotel-detail-1/script.js"></script>
+<script src="/templates/hotel-detail-1/script.js?v={{SCRIPT_VERSION}}"></script>
 </body>
 </html>

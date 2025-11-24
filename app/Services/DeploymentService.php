@@ -334,12 +334,65 @@ class DeploymentService
         }
 
         // Add primary folder info for breadcrumb
+        // Use primary folder if set, otherwise use deepest folder (most nested)
+        $folder = null;
         if ($page->primary_folder_id) {
-            $primaryFolder = $page->primaryFolder;
-            if ($primaryFolder) {
-                $data['primary_folder_name'] = $primaryFolder->name;
-                $data['primary_folder_path'] = $primaryFolder->getPath();
+            $folder = $page->primaryFolder;
+        } else {
+            // Find the folder with maximum depth (most ancestors)
+            $folders = $page->folders;
+            $maxDepth = -1;
+
+            foreach ($folders as $f) {
+                // Calculate depth by counting ancestors
+                $depth = 0;
+                $current = $f;
+                while ($current->parent) {
+                    $depth++;
+                    $current = $current->parent;
+                }
+
+                if ($depth > $maxDepth) {
+                    $maxDepth = $depth;
+                    $folder = $f;
+                }
             }
+
+            // If no folder found, use first folder
+            if (!$folder) {
+                $folder = $folders->first();
+            }
+        }
+
+        if ($folder) {
+            $data['primary_folder_name'] = $folder->name;
+            $data['primary_folder_path'] = $folder->getPath();
+
+            // Generate breadcrumb_items from folder hierarchy
+            $breadcrumbItems = ['Home'];
+            $breadcrumbPaths = [''];  // Home path is root
+
+            // Get all parent folders in order
+            $folderHierarchy = [];
+            $currentFolder = $folder;
+            while ($currentFolder) {
+                array_unshift($folderHierarchy, $currentFolder);
+                $currentFolder = $currentFolder->parent;
+            }
+
+            // Add folder names and paths to breadcrumb
+            foreach ($folderHierarchy as $f) {
+                $breadcrumbItems[] = $f->name;
+                $breadcrumbPaths[] = $f->getPath();
+            }
+
+            // Add page title (no path for current page)
+            $breadcrumbItems[] = $data['title'] ?? $page->title ?? 'Untitled';
+            $breadcrumbPaths[] = '';  // Last item has no link
+
+            // Update breadcrumb data
+            $data['breadcrumb_items'] = $breadcrumbItems;
+            $data['breadcrumb_paths'] = $breadcrumbPaths;
         }
 
         // Add main domain URL for breadcrumb
@@ -361,7 +414,21 @@ class DeploymentService
 
         // Inject page data script
         $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
-        $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        // Try to replace placeholder first
+        if (strpos($html, '{{PAGE_DATA_SCRIPT}}') !== false) {
+            $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+        } else {
+            // If no placeholder, replace hardcoded script tag
+            $html = preg_replace(
+                '/<script[^>]*id=["\']page-data["\'][^>]*>.*?<\/script>/s',
+                $dataScript,
+                $html
+            );
+        }
+
+        // Add script version for cache busting
+        $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
 
         return $html;
     }

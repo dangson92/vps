@@ -178,6 +178,157 @@ class WebsiteController extends Controller
         ]);
     }
 
+    /**
+     * Redeploy all pages for a website and its subdomains
+     */
+    public function redeployPages(Website $website): JsonResponse
+    {
+        try {
+            $count = 0;
+            $errors = [];
+
+            // Get main domain and all subdomains
+            $domainPattern = "%." . $website->domain;
+            $websites = Website::where(function($q) use ($website, $domainPattern) {
+                $q->where('domain', $website->domain)
+                  ->orWhere('domain', 'like', $domainPattern);
+            })->where('type', 'laravel1')
+              ->where('status', 'deployed')
+              ->get();
+
+            foreach ($websites as $site) {
+                foreach ($site->pages as $page) {
+                    try {
+                        $this->deploymentService->deployPage($page);
+                        $count++;
+                    } catch (\Exception $e) {
+                        $errors[] = "{$site->domain}{$page->path}: {$e->getMessage()}";
+                    }
+                }
+            }
+
+            return response()->json([
+                'message' => "Redeployed {$count} pages",
+                'count' => $count,
+                'errors' => $errors
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Redeploy failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Redeploy template assets (CSS, JS) for a specific template
+     */
+    public function redeployTemplateAssets(Request $request, Website $website): JsonResponse
+    {
+        $validated = $request->validate([
+            'template_name' => 'required|string|in:home-1,listing-1,hotel-detail-1'
+        ]);
+
+        try {
+            $this->deploymentService->deployTemplateAssets($website, $validated['template_name']);
+
+            return response()->json([
+                'message' => "Template assets deployed successfully for {$validated['template_name']}"
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Template asset deployment failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update page HTML from latest template (header/footer sync)
+     */
+    public function updatePagesTemplate(Request $request, Website $website): JsonResponse
+    {
+        $validated = $request->validate([
+            'template_name' => 'nullable|string|in:home-1,listing-1,hotel-detail-1'
+        ]);
+
+        try {
+            $updatedCount = 0;
+            $skippedCount = 0;
+            $templateFilter = $validated['template_name'] ?? null;
+
+            // Get all subdomains
+            $domainPattern = "%." . $website->domain;
+            $websites = Website::where(function($q) use ($website, $domainPattern) {
+                $q->where('domain', $website->domain)
+                  ->orWhere('domain', 'like', $domainPattern);
+            })->where('type', 'laravel1')
+              ->where('status', 'deployed')
+              ->get();
+
+            foreach ($websites as $site) {
+                foreach ($site->pages as $page) {
+                    // Get template name from page
+                    preg_match('/href="\/templates\/([^\/]+)\//', $page->content, $matches);
+                    $templateName = $matches[1] ?? null;
+
+                    if (!$templateName || ($templateFilter && $templateName !== $templateFilter)) {
+                        $skippedCount++;
+                        continue;
+                    }
+
+                    // Read template file
+                    $templateFile = public_path("templates/{$templateName}/index.html");
+                    if (!file_exists($templateFile)) {
+                        $skippedCount++;
+                        continue;
+                    }
+
+                    $templateHtml = file_get_contents($templateFile);
+                    $currentHtml = $page->content;
+                    $updated = false;
+
+                    // Update header
+                    $headerPattern = '/<header[^>]*>.*?<\/header>/s';
+                    if (preg_match($headerPattern, $templateHtml, $match) &&
+                        preg_match($headerPattern, $currentHtml) &&
+                        !preg_match('/\{\{[A-Z_]+\}\}/', $match[0])) {
+                        $currentHtml = preg_replace($headerPattern, $match[0], $currentHtml);
+                        $updated = true;
+                    }
+
+                    // Update footer
+                    $footerPattern = '/(?:<!--\s*Footer\s*-->\\s*)?<footer[^>]*>.*?<\/footer>/s';
+                    if (preg_match($footerPattern, $templateHtml, $match) &&
+                        preg_match($footerPattern, $currentHtml) &&
+                        !preg_match('/\{\{[A-Z_]+\}\}/', $match[0])) {
+                        $currentHtml = preg_replace($footerPattern, $match[0], $currentHtml);
+                        $updated = true;
+                    }
+
+                    if ($updated) {
+                        $page->content = $currentHtml;
+                        $page->save();
+                        $updatedCount++;
+                    } else {
+                        $skippedCount++;
+                    }
+                }
+            }
+
+            return response()->json([
+                'message' => "Updated {$updatedCount} pages",
+                'updated' => $updatedCount,
+                'skipped' => $skippedCount
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Template update failed',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     private function createDefaultPages(Website $website): void
     {
         // Create homepage
