@@ -78,12 +78,12 @@
           </div>
           
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700">IP Address</label>
+            <label class="block text-sm font-medium text-gray-700">IP Address / Hostname</label>
             <input
               v-model="form.ip_address"
               type="text"
               required
-              pattern="[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}"
+              placeholder="e.g. 203.0.113.10 or worker.example.com"
               class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
             />
           </div>
@@ -112,12 +112,25 @@
           
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700">SSH Key Path</label>
-            <input
-              v-model="form.ssh_key_path"
-              type="text"
-              placeholder="/path/to/ssh/key"
-              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-            />
+            <div class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                v-model="form.ssh_key_path"
+                type="text"
+                placeholder="/path/to/ssh/key"
+                class="block w-full border-gray-300 rounded-md shadow-sm"
+              />
+              <select @change="onSelectKeyPath($event)" class="block w-full border-gray-300 rounded-md shadow-sm">
+                <option value="">Chọn nhanh đường dẫn</option>
+                <option value="/root/.ssh/id_rsa">/root/.ssh/id_rsa</option>
+                <option value="/root/.ssh/id_ed25519">/root/.ssh/id_ed25519</option>
+                <option value="/home/ubuntu/.ssh/id_rsa">/home/ubuntu/.ssh/id_rsa</option>
+                <option value="/home/ubuntu/.ssh/id_ed25519">/home/ubuntu/.ssh/id_ed25519</option>
+                <option value="/home/ec2-user/.ssh/id_rsa">/home/ec2-user/.ssh/id_rsa</option>
+                <option value="/home/ec2-user/.ssh/id_ed25519">/home/ec2-user/.ssh/id_ed25519</option>
+                <option value="/home/admin/.ssh/id_rsa">/home/admin/.ssh/id_rsa</option>
+                <option value="/home/admin/.ssh/id_ed25519">/home/admin/.ssh/id_ed25519</option>
+              </select>
+            </div>
           </div>
 
           <div v-if="showEditModal" class="mb-4">
@@ -204,8 +217,24 @@ const fetchServers = async () => {
   }
 }
 
+const sanitizeHost = (h) => {
+  if (!h) return ''
+  let s = String(h).trim()
+  s = s.replace(/^https?:\/\//i, '')
+  s = s.split('/')[0]
+  s = s.split(':')[0]
+  return s.trim()
+}
+
+const onSelectKeyPath = (e) => {
+  const v = e?.target?.value || ''
+  if (v) form.value.ssh_key_path = v
+}
+
 const saveServer = async () => {
   try {
+    form.value.ip_address = sanitizeHost(form.value.ip_address)
+    form.value.ssh_key_path = (form.value.ssh_key_path || '').trim()
     if (showEditModal.value) {
       await axios.put(`/api/vps/${editingServer.value.id}`, form.value)
       uiMsg.value = 'VPS server updated successfully'
@@ -223,7 +252,7 @@ const saveServer = async () => {
     closeModal()
     fetchServers()
   } catch (error) {
-    uiMsg.value = 'Failed to save VPS server'
+    uiMsg.value = error?.response?.data?.message || error?.response?.data?.error || (error?.response?.data?.errors && Object.values(error.response.data.errors).flat().join(', ')) || 'Failed to save VPS server'
     uiMsgType.value = 'error'
   }
 }

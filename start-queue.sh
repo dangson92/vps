@@ -1,7 +1,7 @@
 #!/bin/bash
 # Start queue worker script
 
-cd /home/user/vps
+cd /opt/vps-manager
 
 # Check if queue worker is already running
 if pgrep -f "queue:work" > /dev/null; then

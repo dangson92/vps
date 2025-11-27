@@ -14,7 +14,27 @@
                 <div>
                   <h4 class="font-medium">{{ site.domain }}</h4>
                   <p class="text-sm text-gray-500">Server: {{ site.vps_server?.name || 'N/A' }}</p>
-                  <p class="text-sm text-gray-500">Status: {{ site.status }}</p>
+                  <div class="mt-2 flex items-center space-x-4 text-sm">
+                    <span class="inline-flex items-center"
+                      :class="{
+                        'text-blue-600': site.status === 'deploying',
+                        'text-green-600': site.status === 'deployed',
+                        'text-gray-600': site.status === 'pending' || site.status === 'draft',
+                        'text-orange-600': site.status === 'suspended',
+                        'text-red-600': site.status === 'error',
+                      }" :title="site.status">
+                      <Loader2 v-if="site.status === 'deploying'" class="size-4 animate-spin" />
+                      <CheckCircle v-else-if="site.status === 'deployed'" class="size-4" />
+                      <Clock v-else-if="site.status === 'pending' || site.status === 'draft'" class="size-4" />
+                      <Power v-else-if="site.status === 'suspended'" class="size-4" />
+                      <AlertTriangle v-else class="size-4" />
+                    </span>
+                    <span class="inline-flex items-center gap-1"
+                      :class="site.ssl_enabled ? 'text-green-600' : 'text-gray-400'">
+                      <ShieldCheck v-if="site.ssl_enabled" class="size-4" />
+                      <ShieldOff v-else class="size-4" />
+                    </span>
+                  </div>
                 </div>
                 <div class="flex gap-2">
                   <router-link :to="`/websites/${site.id}/pages`" class="h-8 w-8 flex items-center justify-center rounded-md border border-gray-300 bg-white text-blue-600 hover:bg-gray-50" title="Manage Pages">
@@ -54,7 +74,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
-import { Globe, FileText, Play, Loader2, Trash2, ShieldCheck, Power } from 'lucide-vue-next'
+import { Globe, FileText, Play, Loader2, Trash2, ShieldCheck, ShieldOff, Power, CheckCircle, AlertTriangle, Clock } from 'lucide-vue-next'
 
 const route = useRoute()
 const websiteId = route.params.websiteId

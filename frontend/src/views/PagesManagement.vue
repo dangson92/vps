@@ -5,7 +5,7 @@
         <div class="flex justify-between items-center mb-6">
           <h1 class="text-3xl font-bold text-gray-900">{{ website?.domain || '...' }}</h1>
           <div class="flex items-center gap-2">
-            <router-link to="/websites" class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50" title="Back">
+            <router-link :to="backToRoute" class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50" title="Back">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
             </router-link>
             <input v-model="query" placeholder="Search" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
@@ -103,6 +103,23 @@ const fetchAllWebsites = async () => {
 const parentDomain = computed(() => {
   const d = (website.value?.domain || '').trim()
   return d.replace(/^[^.]+\./, '')
+})
+
+const parentWebsite = computed(() => {
+  const pd = parentDomain.value
+  if (!pd) return null
+  return (allWebsites.value || []).find(w => String(w.domain || '').trim() === pd) || null
+})
+
+const backToRoute = computed(() => {
+  const w = website.value
+  if (!w) return '/websites'
+  const parts = String(w.domain || '').trim().split('.')
+  const isSub = parts.length > 2
+  if (isSub && parentWebsite.value) {
+    return `/websites/${parentWebsite.value.id}/subdomains`
+  }
+  return '/websites'
 })
 
 const fetchRelatedPages = async () => {
@@ -204,5 +221,6 @@ const deleteSelected = async () => {
 onMounted(async () => {
   await fetchWebsite()
   await fetchPages()
+  await fetchAllWebsites()
 })
 </script>

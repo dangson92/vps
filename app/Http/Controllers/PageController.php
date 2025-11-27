@@ -216,12 +216,10 @@ class PageController extends Controller
 
         // For subdomains, deploy the page itself
         if ($isSubdomain && $page) {
-            try {
-                $this->deploymentService->deployPage($page);
-            } catch (\Exception $e) {
-                // Log but don't block
-                \Log::error("Failed to deploy subdomain page {$page->id}: " . $e->getMessage());
-            }
+            $pending = dispatch(function () use ($page) {
+                app(\App\Services\DeploymentService::class)->deployPage($page);
+            });
+            if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
             return;
         }
 

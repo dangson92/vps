@@ -201,14 +201,14 @@ class VpsWorker
         }
 
         $filePath = rtrim($targetDir, '/') . '/' . $filename;
-        
-        $this->log('info', 'Deploying page', ['path' => $pagePath, 'file' => $filename]);
+        $hash = substr(sha1($content), 0, 12);
+        $this->log('info', 'Deploying page', ['path' => $pagePath, 'file' => $filename, 'hash' => $hash]);
 
         if (file_put_contents($filePath, $content) === false) {
             throw new \Exception("Failed to write page to {$filePath}");
         }
 
-        echo json_encode(['status' => 'deployed', 'message' => 'Page deployed successfully']);
+        echo json_encode(['status' => 'deployed', 'message' => 'Page deployed successfully', 'hash' => $hash, 'path' => $pagePath, 'file' => $filename]);
     }
 
     private function handleRemovePage(): void

@@ -55,4 +55,5 @@ Route::middleware('admin.token')->group(function () {
 Route::prefix('worker')->middleware('worker.auth')->group(function () {
     Route::post('command', [VpsController::class, 'executeCommand']);
     Route::post('status', [VpsController::class, 'updateStatus']);
+    Route::get('status', [VpsController::class, 'updateStatus']);
 });

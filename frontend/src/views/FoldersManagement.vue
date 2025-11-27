@@ -49,7 +49,7 @@
                 </div>
               </div>
               <div class="col-span-3 text-sm text-slate-600">/{{ fullSlug(root.id) }}</div>
-              <div class="col-span-1 text-sm text-slate-600">{{ root.pages_count ?? 0 }}</div>
+              <div class="col-span-1 text-sm text-slate-600">{{ (root.pages_count ?? 0) }}</div>
               <div class="col-span-2 flex justify-end gap-2 text-slate-500">
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xem trước" @click.stop="preview(root)"><Eye class="size-4" /></button>
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md text-indigo-600" title="Mở link" @click.stop="openLink(root)"><Globe class="size-4" /></button>
@@ -65,7 +65,7 @@
                 <span>{{ child.name }}</span>
               </div>
               <div class="col-span-3 text-sm text-slate-600">/{{ fullSlug(child.id) }}</div>
-              <div class="col-span-1 text-sm text-slate-600">{{ child.pages_count ?? 0 }}</div>
+              <div class="col-span-1 text-sm text-slate-600">{{ (child.pages_count ?? 0) }}</div>
               <div class="col-span-2 flex justify-end gap-2 text-slate-500">
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md" title="Xem trước" @click="preview(child)"><Eye class="size-4" /></button>
                 <button type="button" class="p-1.5 hover:bg-slate-200 rounded-md text-indigo-600" title="Mở link" @click="openLink(child)"><Globe class="size-4" /></button>

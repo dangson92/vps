@@ -25,7 +25,7 @@
             </div>
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700">Title</label>
-              <input v-model="form.title" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+              <input v-model="form.title" @input="tpl.title = form.title" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
             </div>
             <div class="mb-4">
               <div class="flex items-center justify-between">
@@ -38,9 +38,9 @@
               <div class="mt-1 border border-gray-300 rounded-md p-3 space-y-3">
                 <div class="space-y-1">
                   <label class="text-sm text-gray-700">Chọn thư mục</label>
-                  <div v-for="f in flattenedFolders" :key="f.id" class="flex items-center gap-2">
+                  <div v-for="f in flattenedFolders" :key="f.id" class="flex items-center gap-2 cursor-pointer">
                     <button type="button" class="text-yellow-500 text-xs" :disabled="primaryFolderId && primaryFolderId !== f.id" @click="togglePrimary(f.id)">{{ primaryFolderId === f.id ? '★' : '☆' }}</button>
-                    <input type="checkbox" :value="f.id" v-model="selectedFolderIds" @change="onFolderCheckChange(f.id)" />
+                    <input type="checkbox" :value="f.id" v-model="selectedFolderIds" @change="onFolderCheckChange(f.id)" class="rounded cursor-pointer" />
                     <span class="text-sm" :style="{ paddingLeft: (f.depth > 0 ? f.depth * 16 : 0) + 'px' }">{{ '↳ '.repeat(f.depth) }}{{ f.name }}</span>
                   </div>
                 </div>
@@ -102,14 +102,14 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Giới thiệu (đoạn 1)</label>
-                <textarea v-model="tpl.about1" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                <textarea id="about1-editor" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Amenities</label>
                 <div class="mt-1 border border-gray-300 rounded-md p-2 max-h-64 overflow-auto">
                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                    <label v-for="opt in AMENITIES_OPTIONS" :key="opt" class="inline-flex items-center gap-2">
-                      <input type="checkbox" :value="opt" v-model="tpl.amenities" />
+                    <label v-for="opt in AMENITIES_OPTIONS" :key="opt" class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" :value="opt" v-model="tpl.amenities" class="rounded cursor-pointer border-gray-300" />
                       <span class="text-sm">{{ opt }}</span>
                     </label>
                   </div>
@@ -178,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { Loader2, ExternalLink } from 'lucide-vue-next'
@@ -342,6 +342,22 @@ const buildHtmlExternal = async () => {
   const crumbItems = ['Home', ...chainReduced.map(c => c.name || ''), pageTitle]
   const tResp = await axios.get('/templates/hotel-detail-1/index.html')
   let base = tResp.data || ''
+  let sh = ''
+  let sf = ''
+  try { const hResp = await axios.get('/templates/_shared/header.html'); sh = hResp.data || '' } catch {}
+  try { const fResp = await axios.get('/templates/_shared/footer.html'); sf = fResp.data || '' } catch {}
+  if (sh) {
+    base = base.replace(/<header[^>]*>[\s\S]*?<\/header>/i, sh)
+  }
+  if (sf) {
+    if (/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i.test(base)) {
+      base = base.replace(/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i, sf)
+    } else if (/<\/body>/i.test(base)) {
+      base = base.replace(/<\/body>/i, sf + '</body>')
+    } else {
+      base += '\n' + sf
+    }
+  }
   const amenitiesSelected = (tpl.value.amenities || [])
   const imagesEscaped = g.map(u => String(u).replace(/<\/script>/gi,'<\\/script>'))
   const dataObj = {
@@ -458,7 +474,7 @@ const save = async () => {
         payload.template_type = templateType.value
         const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
         payload.template_data = {
-          title: (tpl.value.title || '').trim() || 'Hotel',
+          title: (tpl.value.title || form.value.title || '').trim() || 'Hotel',
           location: tpl.value.location || '',
           location_text: tpl.value.location || '',
           phone: tpl.value.phone || '',
@@ -491,7 +507,7 @@ const save = async () => {
         payload.template_type = templateType.value
         const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
         payload.template_data = {
-          title: (tpl.value.title || '').trim() || 'Hotel',
+          title: (tpl.value.title || form.value.title || '').trim() || 'Hotel',
           location: tpl.value.location || '',
           location_text: tpl.value.location || '',
           phone: tpl.value.phone || '',
@@ -761,5 +777,48 @@ onMounted(async () => {
   await Promise.all([fetchWebsite(), fetchAllWebsites()])
   await fetchFolders()
   await fetchPage()
+  const ensureTiny = async () => {
+    if (window.tinymce) return
+    const { default: tinymce } = await import('tinymce/tinymce')
+    await import('tinymce/icons/default')
+    await import('tinymce/themes/silver')
+    await import('tinymce/models/dom/model')
+    await import('tinymce/skins/ui/oxide/skin.js')
+    await import('tinymce/skins/ui/oxide/content.js')
+    await import('tinymce/skins/content/default/content.js')
+    await import('tinymce/plugins/link')
+    await import('tinymce/plugins/lists')
+    window.tinymce = tinymce
+  }
+  await nextTick()
+  const el = document.getElementById('about1-editor')
+  if (el) {
+    await ensureTiny()
+    el.value = tpl.value.about1 || ''
+    window.tinymce.init({
+      selector: '#about1-editor',
+      menubar: false,
+      plugins: 'link lists',
+      toolbar: 'bold italic underline | bullist numlist | link',
+      height: 320,
+      setup: (editor) => {
+        editor.on('Change KeyUp SetContent', () => {
+          tpl.value.about1 = editor.getContent() || ''
+        })
+      }
+    }).then((editors) => {
+      const ed = editors && editors[0]
+      if (ed && (tpl.value.about1 || '').trim()) {
+        ed.setContent(tpl.value.about1)
+      }
+    })
+  }
+})
+
+onUnmounted(() => {
+  if (window.tinymce) {
+    const ed = window.tinymce.get('about1-editor')
+    if (ed) ed.remove()
+  }
 })
 </script>

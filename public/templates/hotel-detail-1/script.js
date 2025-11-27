@@ -26,7 +26,42 @@
   var bc=document.getElementById('breadcrumb');if(bc){var items=(data.breadcrumb_items||[]);var paths=(data.breadcrumb_paths||[]);var h='';var mainUrl=(data.main_domain_url||'');for(var i=0;i<items.length;i++){var it=items[i];var last=i===items.length-1;var sep=i>0?'<span class="text-neutral-700 text-sm font-medium">/</span>':'';var url='';if(mainUrl&&i<paths.length){url=mainUrl+paths[i];}var node=last?'<span class="text-neutral-900 text-sm font-medium">'+it+'</span>':(url?'<a class="text-neutral-700 text-sm font-medium hover:text-primary transition-colors" href="'+url+'">'+it+'</a>':'<span class="text-neutral-700 text-sm font-medium">'+it+'</span>');h+=sep+node;}bc.innerHTML=h;}
   var gg=document.getElementById('gallery-grid');if(gg){var tiles=images.slice(0,5);var moreCount=Math.max(0,images.length-4);var gh='';for(var j=0;j<tiles.length;j++){var url=tiles[j];var baseClass='bg-center bg-no-repeat bg-cover';var baseStyle="background-image: url('"+url+"')";if(j===0){gh+='<div data-idx="'+j+'" class="cursor-pointer col-span-2 row-span-2 '+baseClass+'" style="'+baseStyle+'"></div>';}else if(j<4){gh+='<div data-idx="'+j+'" class="cursor-pointer col-span-1 row-span-1 '+baseClass+'" style="'+baseStyle+'"></div>';}else{gh+='<div data-idx="'+j+'" class="relative col-span-1 row-span-1 '+baseClass+'" style="'+baseStyle+'"><div class="absolute inset-0 bg-black/50 flex items-center justify-center"><button id="openGalleryButton" class="text-white font-bold text-lg">+'+moreCount+' more</button></div></div>';}}
     gg.innerHTML=gh;}
-  var ac=document.getElementById('about-content');if(ac){var p=(data.about1||'');ac.innerHTML=p?('<p>'+p+'</p>'):'';}
+  var ac=document.getElementById('about-content');
+  if(ac){
+    var p=(data.about1||'');
+    ac.innerHTML=p||'';
+    var toggle=document.getElementById('about-toggle');
+    var fade=document.getElementById('about-fade');
+    var wrapper=document.getElementById('about-wrapper');
+    if(wrapper){
+      // Apply clamp first, then decide if toggle is needed
+      ac.classList.add('collapsed');
+      var needsCollapse = ac.scrollHeight>ac.clientHeight+2; // clamped reduces clientHeight
+      if(needsCollapse){
+        if(fade) fade.classList.remove('hidden');
+        if(toggle){
+          toggle.classList.remove('hidden');
+          toggle.textContent='Read more...';
+          toggle.onclick=function(e){
+            e.preventDefault();
+            var collapsed=ac.classList.contains('collapsed');
+            if(collapsed){
+              ac.classList.remove('collapsed');
+              if(fade) fade.classList.add('hidden');
+              toggle.textContent='Collapse';
+            }else{
+              ac.classList.add('collapsed');
+              if(fade) fade.classList.remove('hidden');
+              toggle.textContent='Read more...';
+            }
+          };
+        }
+      }else{
+        if(toggle) toggle.classList.add('hidden');
+        if(fade) fade.classList.add('hidden');
+      }
+    }
+  }
   var am=document.getElementById('amenities-grid');if(am){var arr=(data.amenities||[]);var iconData=function(s){var v=(s||'').toLowerCase();var cls='text-primary';if(/wifi|internet/.test(v)) return {icon:'wifi',cls:cls};if(/air|conditioning|ac/.test(v)) return {icon:'ac_unit',cls:cls};if(/tv|television|cable|satellite/.test(v)) return {icon:'tv',cls:cls};if(/spa|wellness/.test(v)) return {icon:'spa',cls:cls};if(/restaurant|snack|breakfast|minibar|bar/.test(v)) return {icon:'restaurant',cls:cls};if(/security|alarm|extinguisher|smoke/.test(v)) return {icon:'security',cls:cls};if(/shuttle|airport/.test(v)) return {icon:'airport_shuttle',cls:cls};if(/elevator|lift/.test(v)) return {icon:'elevator',cls:cls};if(/disabled|accessible|wheelchair/.test(v)) return {icon:'accessible',cls:cls};if(/heating|thermo|fireplace/.test(v)) return {icon:'local_fire_department',cls:cls};if(/laundry|ironing|dry cleaning/.test(v)) return {icon:'local_laundry_service',cls:cls};if(/meeting|business|fax|photocopying/.test(v)) return {icon:'business_center',cls:cls};if(/lockers|safe|deposit/.test(v)) return {icon:'lock',cls:cls};if(/view|scenic|terrace|patio|balcony/.test(v)) return {icon:'landscape',cls:cls};if(/room service/.test(v)) return {icon:'room_service',cls:cls};if(/refrigerator|kettle|electric|kitchen/.test(v)) return {icon:'kitchen',cls:cls};if(/bathroom|toilet|shower|bathtub/.test(v)) return {icon:'bathroom',cls:cls};if(/towel|linen/.test(v)) return {icon:'dry_cleaning',cls:cls};if(/wardrobe|closet/.test(v)) return {icon:'checkroom',cls:cls};if(/desk/.test(v)) return {icon:'desk',cls:cls};if(/telephone|phone/.test(v)) return {icon:'call',cls:cls};if(/fruit/.test(v)) return {icon:'nutrition',cls:cls};if(/tour|cycling|walking|bicycle/.test(v)) return {icon:'directions_bike',cls:cls};if(/karaoke|entertainment|music/.test(v)) return {icon:'music_note',cls:cls};if(/parking|car/.test(v)) return {icon:'local_parking',cls:cls};if(/pool|swimming/.test(v)) return {icon:'pool',cls:cls};if(/gym|fitness/.test(v)) return {icon:'fitness_center',cls:cls};if(/pet/.test(v)) return {icon:'pets',cls:cls};if(/smoking/.test(v)) return {icon:'smoking_rooms',cls:cls};if(/non-smoking/.test(v)) return {icon:'smoke_free',cls:cls};if(/family/.test(v)) return {icon:'family_restroom',cls:cls};if(/24-hour|front desk/.test(v)) return {icon:'support_agent',cls:cls};if(/housekeeping/.test(v)) return {icon:'cleaning_services',cls:cls};if(/currency|atm/.test(v)) return {icon:'currency_exchange',cls:cls};if(/luggage/.test(v)) return {icon:'luggage',cls:cls};return {icon:'check_circle',cls:cls};};var ah='';for(var a=0;a<arr.length;a++){var it=arr[a];var d=iconData(it);ah+='<div class="flex items-center gap-3"><span class="material-symbols-outlined '+d.cls+'">'+d.icon+'</span><span class="text-neutral-900">'+it+'</span></div>';}
     am.innerHTML=ah;}
   var fq=document.getElementById('faqs-list');if(fq){var list=(data.faqs||[]);var hf='';for(var f=0;f<list.length;f++){var x=list[f]||{};var q=(x.q||'').trim();var a=(x.a||'').trim();if(!q&&!a) continue;var border=f<list.length-1?'border-b border-gray-200 pb-4':'';hf+='<div class="'+border+'"><h4 class="font-bold text-lg">'+(x.q||'')+'</h4><p class="text-neutral-700 mt-2">'+(x.a||'')+'</p></div>';}
@@ -74,15 +109,12 @@
       });
 
       currentKeyHandler=function(e){
-        console.log('[Gallery] Key pressed:', e.key, 'Current idx:', idx, 'Total images:', images.length);
         if(e.key==='Escape'){
           closeModal();
         }else if(e.key==='ArrowLeft'){
-          console.log('[Gallery] ArrowLeft - checking idx>0:', idx>0);
-          if(idx>0){idx--;console.log('[Gallery] New idx:', idx);render();}
+          if(idx>0){idx--;render();}
         }else if(e.key==='ArrowRight'){
-          console.log('[Gallery] ArrowRight - checking idx<max:', idx, '<', images.length-1);
-          if(idx<images.length-1){idx++;console.log('[Gallery] New idx:', idx);render();}
+          if(idx<images.length-1){idx++;render();}
         }
       };
       document.addEventListener('keydown',currentKeyHandler);

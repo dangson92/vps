@@ -183,41 +183,49 @@ class WebsiteController extends Controller
      */
     public function redeployPages(Website $website): JsonResponse
     {
-        try {
-            $count = 0;
-            $errors = [];
+        $domainPattern = "%." . $website->domain;
+        $websites = Website::where(function($q) use ($website, $domainPattern) {
+            $q->where('domain', $website->domain)
+              ->orWhere('domain', 'like', $domainPattern);
+        })->where('type', 'laravel1')
+          ->where('status', 'deployed')
+          ->get();
 
-            // Get main domain and all subdomains
-            $domainPattern = "%." . $website->domain;
-            $websites = Website::where(function($q) use ($website, $domainPattern) {
-                $q->where('domain', $website->domain)
-                  ->orWhere('domain', 'like', $domainPattern);
-            })->where('type', 'laravel1')
-              ->where('status', 'deployed')
-              ->get();
-
-            foreach ($websites as $site) {
-                foreach ($site->pages as $page) {
-                    try {
-                        $this->deploymentService->deployPage($page);
-                        $count++;
-                    } catch (\Exception $e) {
-                        $errors[] = "{$site->domain}{$page->path}: {$e->getMessage()}";
-                    }
-                }
+        $queued = 0;
+        foreach ($websites as $site) {
+            foreach ($site->pages as $page) {
+                $pending = dispatch(function () use ($page) {
+                    app(\App\Services\DeploymentService::class)->deployPage($page);
+                });
+                if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
+                $queued++;
             }
-
-            return response()->json([
-                'message' => "Redeployed {$count} pages",
-                'count' => $count,
-                'errors' => $errors
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Redeploy failed',
-                'message' => $e->getMessage()
-            ], 500);
         }
+
+        $domainParts = explode('.', $website->domain);
+        $mainDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $website->domain;
+        $mainWebsite = Website::where('domain', $mainDomain)
+            ->where('type', 'laravel1')
+            ->where('status', 'deployed')
+            ->first();
+        $homeQueued = 0;
+        $catQueued = 0;
+        if ($mainWebsite) {
+            $pHome = \App\Jobs\DeployLaravel1Homepage::dispatch($mainWebsite->id);
+            if (method_exists($pHome, 'afterResponse')) { $pHome->afterResponse(); }
+            $homeQueued = 1;
+            $folders = \App\Models\Folder::where('website_id', $mainWebsite->id)->get();
+            foreach ($folders as $folder) {
+                $pCat = \App\Jobs\DeployLaravel1CategoryPage::dispatch($folder->id);
+                if (method_exists($pCat, 'afterResponse')) { $pCat->afterResponse(); }
+                $catQueued++;
+            }
+        }
+
+        return response()->json([
+            'message' => "Queued redeploy for {$queued} pages" . ($homeQueued ? "; homepage queued" : "") . ($catQueued ? "; {$catQueued} categories queued" : ""),
+            'queued' => $queued
+        ]);
     }
 
     /**
@@ -226,21 +234,18 @@ class WebsiteController extends Controller
     public function redeployTemplateAssets(Request $request, Website $website): JsonResponse
     {
         $validated = $request->validate([
-            'template_name' => 'required|string|in:home-1,listing-1,hotel-detail-1'
+            'template_name' => 'required|string|in:home-1,listing-1,hotel-detail-1',
+            'refresh_pages' => 'sometimes|boolean',
         ]);
 
-        try {
-            $this->deploymentService->deployTemplateAssets($website, $validated['template_name']);
-
-            return response()->json([
-                'message' => "Template assets deployed successfully for {$validated['template_name']}"
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Template asset deployment failed',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+        $refresh = filter_var($request->input('refresh_pages', false), FILTER_VALIDATE_BOOLEAN);
+        $pending = \App\Jobs\RedeployTemplateAssets::dispatch($website->id, $validated['template_name'], $refresh);
+        if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
+        return response()->json([
+            'message' => 'Template asset redeploy queued',
+            'template' => $validated['template_name'],
+            'refresh_pages' => $refresh,
+        ]);
     }
 
     /**
@@ -249,77 +254,104 @@ class WebsiteController extends Controller
     public function updatePagesTemplate(Request $request, Website $website): JsonResponse
     {
         $validated = $request->validate([
-            'template_name' => 'nullable|string|in:home-1,listing-1,hotel-detail-1'
+            'template_name' => 'nullable|string|in:home-1,listing-1,hotel-detail,hotel-detail-1',
+            'template_names' => 'nullable|array',
+            'template_names.*' => 'string|in:home-1,listing-1,hotel-detail,hotel-detail-1,all',
+            'page_ids' => 'nullable|array',
+            'page_ids.*' => 'integer|exists:pages,id'
         ]);
 
         try {
+            $sharedDir = public_path('templates/_shared');
+            $sharedHeader = @file_get_contents($sharedDir . '/header.html');
+            $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+            $templateNames = $validated['template_names'] ?? null;
+            if (!$templateNames && isset($validated['template_name'])) {
+                $templateNames = [$validated['template_name']];
+            }
+            $applyAll = !$templateNames || in_array('all', $templateNames, true);
+            $templateFilters = $applyAll ? null : array_values(array_unique(array_filter($templateNames)));
+
             $updatedCount = 0;
             $skippedCount = 0;
-            $templateFilter = $validated['template_name'] ?? null;
 
-            // Get all subdomains
-            $domainPattern = "%." . $website->domain;
-            $websites = Website::where(function($q) use ($website, $domainPattern) {
-                $q->where('domain', $website->domain)
-                  ->orWhere('domain', 'like', $domainPattern);
-            })->where('type', 'laravel1')
-              ->where('status', 'deployed')
-              ->get();
-
-            foreach ($websites as $site) {
-                foreach ($site->pages as $page) {
-                    // Get template name from page
-                    preg_match('/href="\/templates\/([^\/]+)\//', $page->content, $matches);
-                    $templateName = $matches[1] ?? null;
-
-                    if (!$templateName || ($templateFilter && $templateName !== $templateFilter)) {
-                        $skippedCount++;
-                        continue;
-                    }
-
-                    // Read template file
-                    $templateFile = public_path("templates/{$templateName}/index.html");
-                    if (!file_exists($templateFile)) {
-                        $skippedCount++;
-                        continue;
-                    }
-
-                    $templateHtml = file_get_contents($templateFile);
-                    $currentHtml = $page->content;
-                    $updated = false;
-
-                    // Update header
-                    $headerPattern = '/<header[^>]*>.*?<\/header>/s';
-                    if (preg_match($headerPattern, $templateHtml, $match) &&
-                        preg_match($headerPattern, $currentHtml) &&
-                        !preg_match('/\{\{[A-Z_]+\}\}/', $match[0])) {
-                        $currentHtml = preg_replace($headerPattern, $match[0], $currentHtml);
-                        $updated = true;
-                    }
-
-                    // Update footer
-                    $footerPattern = '/(?:<!--\s*Footer\s*-->\\s*)?<footer[^>]*>.*?<\/footer>/s';
-                    if (preg_match($footerPattern, $templateHtml, $match) &&
-                        preg_match($footerPattern, $currentHtml) &&
-                        !preg_match('/\{\{[A-Z_]+\}\}/', $match[0])) {
-                        $currentHtml = preg_replace($footerPattern, $match[0], $currentHtml);
-                        $updated = true;
-                    }
-
-                    if ($updated) {
-                        $page->content = $currentHtml;
-                        $page->save();
-                        $updatedCount++;
-                    } else {
-                        $skippedCount++;
-                    }
+            $pageIds = $validated['page_ids'] ?? [];
+            $knownTemplates = ['home-1', 'listing-1', 'hotel-detail', 'hotel-detail-1'];
+            $normalize = function($name) {
+                if ($name === 'hotel-detail') return 'hotel-detail-1';
+                return $name;
+            };
+            $normalizedFilters = $templateFilters ? array_map($normalize, $templateFilters) : null;
+            if (!empty($pageIds)) {
+                $pages = \App\Models\Page::whereIn('id', $pageIds)->get();
+            } else {
+                // Get all subdomains
+                $domainPattern = "%." . $website->domain;
+                $websites = Website::where(function($q) use ($website, $domainPattern) {
+                    $q->where('domain', $website->domain)
+                      ->orWhere('domain', 'like', $domainPattern);
+                })->where('type', 'laravel1')
+                  ->where('status', 'deployed')
+                  ->get();
+                $pages = collect();
+                foreach ($websites as $site) {
+                    $pages = $pages->merge($site->pages);
                 }
             }
 
+            foreach ($pages as $page) {
+                $pageTpl = $normalize($page->template_type);
+                $templateName = null;
+                if ($normalizedFilters) {
+                    if (in_array($pageTpl, $normalizedFilters, true)) {
+                        $templateName = $pageTpl;
+                    } else {
+                        $skippedCount++;
+                        continue;
+                    }
+                } else {
+                    if (in_array($pageTpl, $knownTemplates, true)) {
+                        $templateName = $pageTpl;
+                    }
+                }
+
+                $pending = dispatch(function () use ($page) {
+                    app(\App\Services\DeploymentService::class)->deployPage($page);
+                });
+                if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
+                $updatedCount++;
+            }
+            $domainParts = explode('.', $website->domain);
+            $mainDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $website->domain;
+            $mainWebsite = Website::where('domain', $mainDomain)
+                ->where('type', 'laravel1')
+                ->where('status', 'deployed')
+                ->first();
+
+            $homeQueued = 0;
+            $catQueued = 0;
+            if ($mainWebsite) {
+                $pendingHome = \App\Jobs\DeployLaravel1Homepage::dispatch($mainWebsite->id);
+                if (method_exists($pendingHome, 'afterResponse')) { $pendingHome->afterResponse(); }
+                $homeQueued = 1;
+                $folders = \App\Models\Folder::where('website_id', $mainWebsite->id)->get();
+                foreach ($folders as $folder) {
+                    $pendingCat = \App\Jobs\DeployLaravel1CategoryPage::dispatch($folder->id);
+                    if (method_exists($pendingCat, 'afterResponse')) { $pendingCat->afterResponse(); }
+                }
+                $catQueued = $folders->count();
+            }
+
+            $msg = "Updated {$updatedCount} pages";
+            if ($homeQueued || $catQueued) {
+                $msg .= "; Homepage and {$catQueued} categories queued";
+            }
             return response()->json([
-                'message' => "Updated {$updatedCount} pages",
+                'message' => $msg,
                 'updated' => $updatedCount,
-                'skipped' => $skippedCount
+                'skipped' => $skippedCount,
+                'homepage_queued' => $homeQueued,
+                'categories_queued' => $catQueued
             ]);
         } catch (\Exception $e) {
             return response()->json([

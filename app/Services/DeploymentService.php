@@ -57,13 +57,17 @@ class DeploymentService
 
         Log::info("Website base deployed successfully", ['website_id' => $website->id]);
 
-        // Deploy laravel1 homepage and category pages
+        // Deploy laravel1 assets/pages only for MAIN domain (avoid per-subdomain assets)
         if ($website->type === 'laravel1') {
-            $this->deployTemplateAssets($website, 'home-1');
-            $this->deployTemplateAssets($website, 'listing-1');
-            $this->deployTemplateAssets($website, 'hotel-detail-1');
-            $this->deployLaravel1Homepage($website);
-            $this->deployLaravel1AllCategories($website);
+            $parts = explode('.', $website->domain);
+            $isSubdomain = count($parts) > 2;
+            if (!$isSubdomain) {
+                $this->deployTemplateAssets($website, 'home-1');
+                $this->deployTemplateAssets($website, 'listing-1');
+                $this->deployTemplateAssets($website, 'hotel-detail-1');
+                $this->deployLaravel1Homepage($website);
+                $this->deployLaravel1AllCategories($website);
+            }
         }
     }
 
@@ -102,7 +106,7 @@ class DeploymentService
         // Get featured pages from all folders
         $featuredPages = [];
         foreach ($folders as $folder) {
-            $folderPages = $folder->pages()->limit(3)->get();
+            $folderPages = $folder->pages()->limit(4)->get();
             foreach ($folderPages as $page) {
                 $featuredPages[] = $page;
                 if (count($featuredPages) >= 8) break 2;
@@ -127,7 +131,7 @@ class DeploymentService
         // Get newest pages (most recently updated)
         $newestPages = [];
         foreach ($folders as $folder) {
-            $folderPages = $folder->pages()->orderBy('updated_at', 'desc')->limit(3)->get();
+            $folderPages = $folder->pages()->orderBy('updated_at', 'desc')->limit(8)->get();
             foreach ($folderPages as $page) {
                 $newestPages[] = $page;
             }
@@ -153,6 +157,28 @@ class DeploymentService
         $templatePath = public_path('templates/home-1/index.html');
         $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
 
+        $sharedDir = public_path('templates/_shared');
+        $sharedHeader = @file_get_contents($sharedDir . '/header.html');
+        $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+        if ($sharedHeader) {
+            $headerPattern = '/<header[^>]*>.*?<\/header>/s';
+            if (preg_match($headerPattern, $html)) {
+                $html = preg_replace($headerPattern, $sharedHeader, $html);
+            } elseif (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', '$1' . $sharedHeader, $html, 1);
+            }
+        }
+        if ($sharedFooter) {
+            $footerPattern = '/(?:<!--\s*Footer\s*-->\\s*)?<footer[^>]*>.*?<\/footer>/s';
+            if (preg_match($footerPattern, $html)) {
+                $html = preg_replace($footerPattern, $sharedFooter, $html);
+            } elseif (stripos($html, '</body>') !== false) {
+                $html = preg_replace('/<\/body>/i', $sharedFooter . '</body>', $html, 1);
+            } else {
+                $html .= "\n" . $sharedFooter;
+            }
+        }
+
         $html = str_replace('{{TITLE}}', e($website->domain), $html);
         $html = str_replace('{{DESCRIPTION}}', 'Find your perfect stay at ' . e($website->domain), $html);
         $html = str_replace('{{OG_IMAGE}}', $featuredData[0]['image'] ?? '', $html);
@@ -164,6 +190,21 @@ class DeploymentService
             'newest' => $newestData,
         ]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
+
+        // Rewrite CSS/JS to shared main domain assets (home-1)
+        $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+        $base = $protocol . $website->domain;
+        $html = preg_replace(
+            '#href="/templates/home\-1/style\.css[^\"]*"#',
+            'href="' . $base . '/templates/home-1/style.css?v={{SCRIPT_VERSION}}"',
+            $html
+        );
+        $html = preg_replace(
+            '#src="/templates/home\-1/script\.js[^\"]*"#',
+            'src="' . $base . '/templates/home-1/script.js?v={{SCRIPT_VERSION}}"',
+            $html
+        );
+        $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
 
         // Deploy the homepage
         try {
@@ -180,7 +221,7 @@ class DeploymentService
                     'document_root' => $website->getDocumentRoot(),
                 ]);
         } catch (ConnectionException $e) {
-            Http::timeout(60)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -192,6 +233,10 @@ class DeploymentService
                     'content' => $html,
                     'document_root' => $website->getDocumentRoot(),
                 ]);
+        }
+
+        if (!$response->successful()) {
+            throw new \Exception('Homepage deployment failed: ' . $response->body());
         }
 
         Log::info("Laravel1 homepage deployed", ['website_id' => $website->id]);
@@ -227,6 +272,28 @@ class DeploymentService
         $templatePath = public_path('templates/listing-1/index.html');
         $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
 
+        $sharedDir = public_path('templates/_shared');
+        $sharedHeader = @file_get_contents($sharedDir . '/header.html');
+        $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+        if ($sharedHeader) {
+            $headerPattern = '/<header[^>]*>.*?<\/header>/s';
+            if (preg_match($headerPattern, $html)) {
+                $html = preg_replace($headerPattern, $sharedHeader, $html);
+            } elseif (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', '$1' . $sharedHeader, $html, 1);
+            }
+        }
+        if ($sharedFooter) {
+            $footerPattern = '/(?:<!--\s*Footer\s*-->\\s*)?<footer[^>]*>.*?<\/footer>/s';
+            if (preg_match($footerPattern, $html)) {
+                $html = preg_replace($footerPattern, $sharedFooter, $html);
+            } elseif (stripos($html, '</body>') !== false) {
+                $html = preg_replace('/<\/body>/i', $sharedFooter . '</body>', $html, 1);
+            } else {
+                $html .= "\n" . $sharedFooter;
+            }
+        }
+
         $folderName = $folder->name ?? 'Category';
         $folderDesc = $folder->description ?? 'Browse all properties in this category';
 
@@ -241,8 +308,23 @@ class DeploymentService
         $dataScript = '<script type="application/json" id="page-data">' . json_encode(['pages' => $pagesData]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
 
+        // Rewrite CSS/JS to shared main domain assets (listing-1)
+        $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+        $base = $protocol . $website->domain;
+        $html = preg_replace(
+            '#href="/templates/listing\-1/style\.css[^\"]*"#',
+            'href="' . $base . '/templates/listing-1/style.css?v={{SCRIPT_VERSION}}"',
+            $html
+        );
+        $html = preg_replace(
+            '#src="/templates/listing\-1/script\.js[^\"]*"#',
+            'src="' . $base . '/templates/listing-1/script.js?v={{SCRIPT_VERSION}}"',
+            $html
+        );
+        $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+
         try {
-            Http::timeout(60)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -255,7 +337,7 @@ class DeploymentService
                     'document_root' => $website->getDocumentRoot(),
                 ]);
         } catch (ConnectionException $e) {
-            Http::timeout(60)
+            $response = Http::timeout(60)
                 ->withHeaders([
                     'X-Worker-Key' => $vps->worker_key,
                     'Content-Type' => 'application/json',
@@ -267,6 +349,10 @@ class DeploymentService
                     'content' => $html,
                     'document_root' => $website->getDocumentRoot(),
                 ]);
+        }
+
+        if (!$response->successful()) {
+            throw new \Exception('Category deployment failed: ' . $response->body());
         }
 
         Log::info("Laravel1 category page deployed", ['folder_id' => $folder->id]);
@@ -323,6 +409,7 @@ class DeploymentService
         Log::info("Page deployed successfully", ['page_id' => $page->id]);
     }
 
+
     private function renderPageContent(Page $page): string
     {
         $html = $page->content;
@@ -331,6 +418,47 @@ class DeploymentService
         // If no template data, return raw content
         if (empty($data)) {
             return $html;
+        }
+
+        // Detect template name early
+        $templateName = null;
+        if (!empty($page->template_type)) {
+            $templateName = $page->template_type === 'hotel-detail' ? 'hotel-detail-1' : $page->template_type;
+        } else {
+            if (preg_match('/\/templates\/([^\/]+)\//', $html, $m)) {
+                $templateName = $m[1] ?? null;
+            }
+        }
+
+        // If this is a template-based page, always start from latest template file and shared header/footer
+        if (!empty($templateName)) {
+            $templatePath = public_path("templates/{$templateName}/index.html");
+            if (file_exists($templatePath)) {
+                $html = file_get_contents($templatePath) ?: $html;
+
+                $sharedDir = public_path('templates/_shared');
+                $sharedHeader = @file_get_contents($sharedDir . '/header.html');
+                $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+
+                if ($sharedHeader) {
+                    $headerPattern = '/<header[^>]*>[\s\S]*?<\/header>/i';
+                    if (preg_match($headerPattern, $html)) {
+                        $html = preg_replace($headerPattern, $sharedHeader, $html);
+                    } elseif (preg_match('/<body[^>]*>/i', $html)) {
+                        $html = preg_replace('/(<body[^>]*>)/i', '$1' . $sharedHeader, $html, 1);
+                    }
+                }
+                if ($sharedFooter) {
+                    $footerPattern = '/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i';
+                    if (preg_match($footerPattern, $html)) {
+                        $html = preg_replace($footerPattern, $sharedFooter, $html);
+                    } elseif (stripos($html, '</body>') !== false) {
+                        $html = preg_replace('/<\/body>/i', $sharedFooter . '</body>', $html, 1);
+                    } else {
+                        $html .= "\n" . $sharedFooter;
+                    }
+                }
+            }
         }
 
         // Add primary folder info for breadcrumb
@@ -402,12 +530,20 @@ class DeploymentService
         $protocol = $website->ssl_enabled ? 'https://' : 'http://';
         $data['main_domain_url'] = $protocol . $mainDomain;
 
+        // Sync title from page model to template data for consistency
+        $data['title'] = $page->title ?? ($data['title'] ?? 'Untitled');
+
         // Replace placeholders
-        $title = $data['title'] ?? $page->title ?? 'Untitled';
+        $title = $data['title'] ?? 'Untitled';
         $description = $data['about1'] ?? $page->meta_description ?? '';
         $gallery = $data['gallery'] ?? [];
 
+        // Title replacement: first try placeholder, then fallback to <title> tag
         $html = str_replace('{{TITLE}}', e($title), $html);
+        if (strpos($html, '{{TITLE}}') === false) {
+            $html = preg_replace('/<title>[\s\S]*?<\/title>/i', '<title>' . e($title) . '</title>', $html, 1);
+        }
+
         $html = str_replace('{{DESCRIPTION}}', e($description), $html);
         $html = str_replace('{{OG_IMAGE}}', $gallery[0] ?? '', $html);
         $html = str_replace('{{OG_URL}}', 'https://' . $website->domain . $page->path, $html);
@@ -415,14 +551,54 @@ class DeploymentService
         // Inject page data script
         $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
 
-        // Try to replace placeholder first
-        if (strpos($html, '{{PAGE_DATA_SCRIPT}}') !== false) {
+        // Replace known placeholders or fallback
+        if (strpos($html, '{{GALLERY_DATA_SCRIPT}}') !== false) {
+            $html = str_replace('{{GALLERY_DATA_SCRIPT}}', $dataScript, $html);
+        } elseif (strpos($html, '{{PAGE_DATA_SCRIPT}}') !== false) {
             $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
         } else {
-            // If no placeholder, replace hardcoded script tag
-            $html = preg_replace(
+            // If no placeholder, replace hardcoded script tag if present
+            $replaced = preg_replace(
                 '/<script[^>]*id=["\']page-data["\'][^>]*>.*?<\/script>/s',
                 $dataScript,
+                $html
+            );
+            if ($replaced !== null) {
+                $html = $replaced;
+            }
+            // If still no page-data script, inject before </body>
+            if (strpos($html, 'id="page-data"') === false) {
+                if (stripos($html, '</body>') !== false) {
+                    $html = preg_replace('/<\/body>/i', $dataScript . '</body>', $html, 1);
+                } else {
+                    $html .= "\n" . $dataScript;
+                }
+            }
+        }
+
+        // Rewrite CSS/JS asset references to use shared assets on main domain
+        if (!empty($templateName)) {
+            $base = $data['main_domain_url'] ?? ($website->ssl_enabled ? 'https://' : 'http://') . $mainDomain;
+            // Rewrite template-based URLs to absolute main domain with SCRIPT_VERSION placeholder
+            $html = preg_replace(
+                '#href="/templates/' . preg_quote($templateName, '#') . '/style\.css[^\"]*"#',
+                'href="' . $base . '/templates/' . $templateName . '/style.css?v={{SCRIPT_VERSION}}"',
+                $html
+            );
+            $html = preg_replace(
+                '#src="/templates/' . preg_quote($templateName, '#') . '/script\.js[^\"]*"#',
+                'src="' . $base . '/templates/' . $templateName . '/script.js?v={{SCRIPT_VERSION}}"',
+                $html
+            );
+            // Rewrite page-local asset names to shared main domain template assets
+            $html = preg_replace(
+                '#href="style\.css[^\"]*"#',
+                'href="' . $base . '/templates/' . $templateName . '/style.css?v={{SCRIPT_VERSION}}"',
+                $html
+            );
+            $html = preg_replace(
+                '#src="script\.js[^\"]*"#',
+                'src="' . $base . '/templates/' . $templateName . '/script.js?v={{SCRIPT_VERSION}}"',
                 $html
             );
         }
@@ -446,8 +622,9 @@ class DeploymentService
             if (!file_exists($filePath)) continue;
 
             $content = file_get_contents($filePath);
+            $response = null;
             try {
-                Http::timeout(30)
+                $response = Http::timeout(30)
                     ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
                     ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
                         'website_id' => $website->id,
@@ -457,7 +634,7 @@ class DeploymentService
                         'document_root' => $website->getDocumentRoot(),
                     ]);
             } catch (ConnectionException $e) {
-                Http::timeout(30)
+                $response = Http::timeout(30)
                     ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
                     ->post("http://127.0.0.1:8080/api/deploy-page", [
                         'website_id' => $website->id,
@@ -467,7 +644,90 @@ class DeploymentService
                         'document_root' => $website->getDocumentRoot(),
                     ]);
             }
+
+            if (!$response || !$response->successful()) {
+                \Log::error('Failed to deploy template asset', [
+                    'domain' => $website->domain,
+                    'template' => $templateName,
+                    'file' => $file,
+                    'response' => $response ? $response->body() : 'no response',
+                ]);
+                throw new \Exception('Asset deployment failed for ' . $file . ' (' . $templateName . ')');
+            }
         }
+    }
+
+    /**
+     * Deploy CSS/JS assets into a specific page directory and rewrite asset references
+     */
+    public function deployPageAssets(Page $page, string $templateName): void
+    {
+        $website = $page->website;
+        $vps = $website->vpsServer;
+        if (!$vps || !$vps->isActive()) {
+            throw new \Exception('VPS server is not active');
+        }
+
+        $templateDir = public_path("templates/{$templateName}");
+        $files = ['style.css', 'script.js'];
+
+        foreach ($files as $file) {
+            $filePath = "{$templateDir}/{$file}";
+            if (!file_exists($filePath)) continue;
+
+            $content = file_get_contents($filePath);
+            $response = null;
+            try {
+                $response = Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => $page->path,
+                        'filename' => $file,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            } catch (ConnectionException $e) {
+                $response = Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://127.0.0.1:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => $page->path,
+                        'filename' => $file,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            }
+
+            if (!$response || !$response->successful()) {
+                \Log::error('Failed to deploy page asset', [
+                    'domain' => $website->domain,
+                    'template' => $templateName,
+                    'page_id' => $page->id,
+                    'file' => $file,
+                    'response' => $response ? $response->body() : 'no response',
+                ]);
+                throw new \Exception('Asset deployment failed for page ' . $page->id . ' - ' . $file);
+            }
+        }
+
+        // Rewrite asset references in page content to use local files in the page directory
+        $html = $page->content;
+        $html = preg_replace(
+            '#href="/templates/' . preg_quote($templateName, '#') . '/style\.css[^"]*"#',
+            'href="style.css?v={{SCRIPT_VERSION}}"',
+            $html
+        );
+        $html = preg_replace(
+            '#src="/templates/' . preg_quote($templateName, '#') . '/script\.js[^"]*"#',
+            'src="script.js?v={{SCRIPT_VERSION}}"',
+            $html
+        );
+
+        // Persist and redeploy page
+        $page->content = $html;
+        $page->save();
+        $this->deployPage($page);
     }
 
     public function removePage(Page $page): void
@@ -697,7 +957,10 @@ class DeploymentService
     public function publishAllPages(Website $website): void
     {
         foreach ($website->pages as $page) {
-            $this->deployPage($page);
+            $pending = dispatch(function () use ($page) {
+                app(\App\Services\DeploymentService::class)->deployPage($page);
+            });
+            if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
         }
     }
 }

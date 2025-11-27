@@ -18,9 +18,16 @@ class VpsController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $rawHost = (string)($request->input('ip_address') ?? '');
+        $host = trim($rawHost);
+        $host = preg_replace('/^https?:\/\//i', '', $host);
+        $host = preg_replace('/[\/:].*$/', '', $host);
+
+        $request->merge(['ip_address' => $host]);
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'ip_address' => 'required|ip|unique:vps_servers,ip_address',
+            'ip_address' => 'required|string|max:255|unique:vps_servers,ip_address',
             'ssh_user' => 'required|string|max:50',
             'ssh_port' => 'required|integer|min:1|max:65535',
             'ssh_key_path' => 'nullable|string',

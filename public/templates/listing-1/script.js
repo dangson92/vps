@@ -18,6 +18,12 @@
         var p=pages[i];
         var title=p.title||'Untitled';
         var desc=p.description||p.about1||'';
+        if(desc){
+          try{
+            // Strip HTML tags and collapse whitespace so clamp works cleanly
+            desc=String(desc).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+          }catch(e){}
+        }
         var image=p.image||(p.gallery&&p.gallery[0])||'https://via.placeholder.com/400x300?text=No+Image';
         var location=p.location_text||p.location||'';
         var url=p.url||'#';

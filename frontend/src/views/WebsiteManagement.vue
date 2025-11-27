@@ -78,6 +78,13 @@
                     <FileText class="size-4" />
                   </router-link>
                   <router-link
+                    :to="`/websites/${website.id}/folders`"
+                    class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-amber-600 hover:bg-gray-50"
+                    title="Manage Categories"
+                  >
+                    <Folder class="size-4" />
+                  </router-link>
+                  <router-link
                     :to="`/websites/${website.id}/subdomains`"
                     class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-indigo-600 hover:bg-gray-50"
                     title="Manage Subdomains"
@@ -298,20 +305,26 @@
         <h2 class="text-lg font-medium text-gray-900 mb-4">Update Pages Template</h2>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Select Template</label>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <select
-            v-model="updateTemplateForm.template_name"
+            v-model="updateTemplateForm.template_names"
+            multiple
             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
           >
+            <option value="all">All templates</option>
             <option value="home-1">Home 1</option>
             <option value="listing-1">Listing 1</option>
             <option value="hotel-detail-1">Hotel Detail 1</option>
           </select>
+          <p class="mt-2 text-xs text-gray-500">Giữ Ctrl/Command để chọn nhiều. Chọn "All templates" để áp dụng cho tất cả.</p>
         </div>
 
         <div class="bg-purple-50 border border-purple-200 rounded-md p-3 mb-4">
           <p class="text-sm text-purple-800">
-            Updates header/footer in database from the template. Use this when you update template header or footer structure.
+            Cập nhật phần header/footer cho <strong>các trang đang dùng template đã chọn</strong>,
+            sau đó tự động deploy các trang đó. Tính năng này <strong>không</strong> cập nhật CSS/JS
+            (dùng mục “Redeploy Template Assets” cho CSS/JS). Với website chính, hệ thống sẽ xếp lịch
+            redeploy Trang chủ và các trang Category liên quan.
           </p>
         </div>
 
@@ -330,7 +343,7 @@
             class="px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
           >
             <Loader2 v-if="loadingRedeployIds.includes(currentRedeployWebsite?.id)" class="size-4 animate-spin" />
-            Update Template
+            Update header/footer
           </button>
         </div>
       </div>
@@ -349,7 +362,7 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
-import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid, RefreshCw, ChevronDown } from 'lucide-vue-next'
+import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid, RefreshCw, ChevronDown, Folder } from 'lucide-vue-next'
 
 const websites = ref([])
 const availableServers = ref([])
@@ -377,7 +390,7 @@ const showRedeployAssetsModal = ref(false)
 const showUpdateTemplateModal = ref(false)
 const currentRedeployWebsite = ref(null)
 const redeployAssetsForm = ref({ template_name: 'hotel-detail-1' })
-const updateTemplateForm = ref({ template_name: 'hotel-detail-1' })
+const updateTemplateForm = ref({ template_names: ['hotel-detail-1'] })
 
 const showToast = (msg, type = 'success') => {
   toastMsg.value = msg
@@ -695,14 +708,20 @@ const updatePagesTemplate = async () => {
   if (!currentRedeployWebsite.value) return
   try {
     loadingRedeployIds.value = [...loadingRedeployIds.value, currentRedeployWebsite.value.id]
+    // Nếu chọn 'all', gửi 'template_names' = ['all'] để backend áp dụng tất cả
+    const payload = {
+      template_names: (updateTemplateForm.value.template_names || []).length === 0
+        ? []
+        : updateTemplateForm.value.template_names
+    }
     const response = await axios.post(
       `/api/websites/${currentRedeployWebsite.value.id}/update-pages-template`,
-      updateTemplateForm.value
+      payload
     )
-    showToast(response.data.message || 'Pages template updated', 'success')
+    showToast(response.data.message || 'Header/footer updated', 'success')
     showUpdateTemplateModal.value = false
   } catch (error) {
-    const msg = error?.response?.data?.message || 'Failed to update pages template'
+    const msg = error?.response?.data?.message || 'Failed to update header/footer'
     showToast(msg, 'error')
   } finally {
     loadingRedeployIds.value = loadingRedeployIds.value.filter(id => id !== currentRedeployWebsite.value.id)
@@ -718,6 +737,6 @@ const closeRedeployAssetsModal = () => {
 const closeUpdateTemplateModal = () => {
   showUpdateTemplateModal.value = false
   currentRedeployWebsite.value = null
-  updateTemplateForm.value = { template_name: 'hotel-detail-1' }
+  updateTemplateForm.value = { template_names: ['hotel-detail-1'] }
 }
 </script>

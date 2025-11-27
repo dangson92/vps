@@ -21,11 +21,36 @@ class FolderController extends Controller
     {
         $root = $this->rootWebsiteFor($website);
         $folders = Folder::where('website_id', $root->id)
-            ->withCount(['pages as pages_count' => function ($q) use ($root) {
-                $q->where('website_id', $root->id);
-            }])
+            ->withCount(['pages as pages_count'])
             ->orderBy('name')
             ->get();
+
+        // Compute total pages including descendant folders
+        $childrenByParent = [];
+        foreach ($folders as $f) {
+            $pid = $f->parent_id ?: 0;
+            if (!isset($childrenByParent[$pid])) $childrenByParent[$pid] = [];
+            $childrenByParent[$pid][] = $f->id;
+        }
+        $pagesCountById = [];
+        foreach ($folders as $f) {
+            $pagesCountById[$f->id] = (int)($f->pages_count ?? 0);
+        }
+        $memo = [];
+        $sumTotal = function($id) use (&$sumTotal, &$memo, $childrenByParent, $pagesCountById) {
+            if (isset($memo[$id])) return $memo[$id];
+            $total = $pagesCountById[$id] ?? 0;
+            $children = $childrenByParent[$id] ?? [];
+            foreach ($children as $cid) {
+                $total += $sumTotal($cid);
+            }
+            $memo[$id] = $total;
+            return $total;
+        };
+        foreach ($folders as $f) {
+            $f->setAttribute('pages_total', $sumTotal($f->id));
+        }
+
         return response()->json($folders);
     }
 

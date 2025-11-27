@@ -25,3 +25,5 @@ body{overflow-x:hidden}
 .amenity-room-service{color:#a855f7}
 .amenity-kitchen{color:#84cc16}
 .amenity-default{color:#137fec}
+#about-content.collapsed{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+#about-fade{position:absolute;left:0;right:0;bottom:0;height:56px;background:linear-gradient(to top,rgba(255,255,255,0.98),rgba(255,255,255,0.6),rgba(255,255,255,0));pointer-events:none}

@@ -30,12 +30,18 @@
             </div>
 
             <div class="mt-4" v-if="templateType === 'hotel-detail-1'">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Danh mục (chọn nhiều)</label>
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-sm font-medium text-gray-700">Danh mục (chọn nhiều)</label>
+                <div class="flex items-center gap-3">
+                  <router-link :to="`/websites/${websiteId}/folders`" class="text-sm text-primary">Quản lý danh mục</router-link>
+                  <button type="button" @click="showFolderModal = true" class="text-sm text-primary">+ Tạo nhanh</button>
+                </div>
+              </div>
               <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-auto">
                 <div v-if="folders.length === 0" class="text-sm text-gray-500">Không có danh mục</div>
                 <div v-else class="space-y-2">
-                  <label v-for="f in flattenedFolders" :key="f.id" class="flex items-center gap-2">
-                    <input type="checkbox" :value="f.id" v-model="selectedFolders" @change="onFolderChange(f.id)" class="rounded" />
+                  <label v-for="f in flattenedFolders" :key="f.id" class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" :value="f.id" v-model="selectedFolders" @change="onFolderChange(f.id)" class="rounded cursor-pointer" />
                     <span class="text-sm" :style="{ paddingLeft: (f.depth > 0 ? f.depth * 16 : 0) + 'px' }">{{ '↳ '.repeat(f.depth) }}{{ f.name }}</span>
                   </label>
                 </div>
@@ -65,16 +71,16 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Giới thiệu (đoạn 1)</label>
-                  <textarea v-model="tpl.about1" rows="3" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                  <textarea id="about1-editor-sub" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Amenities</label>
                   <div class="mt-1 border border-gray-300 rounded-md p-2 max-h-64 overflow-auto">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      <label v-for="opt in AMENITIES_OPTIONS" :key="opt" class="inline-flex items-center gap-2">
-                        <input type="checkbox" :value="opt" v-model="tpl.amenities" />
-                        <span class="text-sm">{{ opt }}</span>
-                      </label>
+                    <label v-for="opt in AMENITIES_OPTIONS" :key="opt" class="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" :value="opt" v-model="tpl.amenities" class="rounded cursor-pointer border-gray-300" />
+                      <span class="text-sm">{{ opt }}</span>
+                    </label>
                     </div>
                   </div>
                 </div>
@@ -139,7 +145,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { Loader2 } from 'lucide-vue-next'
@@ -152,6 +158,11 @@ const parentDomain = ref('')
 const parentWebsite = ref(null)
 const servers = ref([])
 const folders = ref([])
+const showFolderModal = ref(false)
+const newFolderName = ref('')
+const newFolderSlug = ref('')
+const newFolderParentId = ref(null)
+const slugTouched = ref(false)
 const selectedFolders = ref([])
 const form = ref({ sub: '', vps_server_id: '' })
 const templateType = ref('blank')
@@ -300,12 +311,46 @@ const syncScroll = () => {
   if (gutterRef.value && codeRef.value) gutterRef.value.scrollTop = codeRef.value.scrollTop
 }
 
+const createFolderInModal = async () => {
+  const name = (newFolderName.value || '').trim()
+  if (!name) return
+  let slug = (newFolderSlug.value || '').trim()
+  if (!slug) slug = nameToSlug(name)
+  const payload = { name, slug }
+  if (newFolderParentId.value) payload.parent_id = Number(newFolderParentId.value)
+  const resp = await axios.post(`/api/websites/${websiteId}/folders`, payload)
+  const f = resp.data
+  folders.value = [...folders.value, f]
+  selectedFolders.value = [...selectedFolders.value, f.id]
+  newFolderName.value = ''
+  newFolderParentId.value = null
+  newFolderSlug.value = ''
+  slugTouched.value = false
+  showFolderModal.value = false
+}
+
 const buildHtmlExternal = async () => {
   const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
   const pageTitle = (tpl.value.title || '').trim()
   const crumbItems = ['Home', 'Stays', pageTitle]
   const tResp = await axios.get('/templates/hotel-detail-1/index.html')
   let base = tResp.data || ''
+  let sh = ''
+  let sf = ''
+  try { const hResp = await axios.get('/templates/_shared/header.html'); sh = hResp.data || '' } catch {}
+  try { const fResp = await axios.get('/templates/_shared/footer.html'); sf = fResp.data || '' } catch {}
+  if (sh) {
+    base = base.replace(/<header[^>]*>[\s\S]*?<\/header>/i, sh)
+  }
+  if (sf) {
+    if (/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i.test(base)) {
+      base = base.replace(/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i, sf)
+    } else if (/<\/body>/i.test(base)) {
+      base = base.replace(/<\/body>/i, sf + '</body>')
+    } else {
+      base += '\n' + sf
+    }
+  }
   const amenitiesSelected = (tpl.value.amenities || [])
   const imagesEscaped = g.map(u => String(u).replace(/<\/script>/gi,'<\\/script>'))
   const dataObj = {
@@ -446,5 +491,79 @@ const init = async () => {
   }
 }
 
-onMounted(init)
+const ensureTiny = async () => {
+  if (window.tinymce) return
+  const { default: tinymce } = await import('tinymce/tinymce')
+  await import('tinymce/icons/default')
+  await import('tinymce/themes/silver')
+  await import('tinymce/models/dom/model')
+  await import('tinymce/skins/ui/oxide/skin.js')
+  await import('tinymce/skins/ui/oxide/content.js')
+  await import('tinymce/skins/content/default/content.js')
+  await import('tinymce/plugins/link')
+  await import('tinymce/plugins/lists')
+  window.tinymce = tinymce
+}
+
+const initAboutEditor = async () => {
+  await ensureTiny()
+  await nextTick()
+  const el = document.getElementById('about1-editor-sub')
+  if (!el) return
+  el.value = tpl.value.about1 || ''
+  window.tinymce.init({
+    selector: '#about1-editor-sub',
+    menubar: false,
+    plugins: 'link lists',
+    toolbar: 'bold italic underline | bullist numlist | link',
+    height: 320,
+    setup: (editor) => {
+      editor.on('Change KeyUp SetContent', () => {
+        tpl.value.about1 = editor.getContent() || ''
+      })
+    }
+  }).then((editors) => {
+    const ed = editors && editors[0]
+    if (ed && (tpl.value.about1 || '').trim()) {
+      ed.setContent(tpl.value.about1)
+    }
+  })
+}
+
+onMounted(async () => {
+  await init()
+  if (templateType.value === 'hotel-detail-1') {
+    await initAboutEditor()
+  }
+})
+
+watch(templateType, async (val) => {
+  if (val === 'hotel-detail-1') {
+    await initAboutEditor()
+  } else {
+    if (window.tinymce) {
+      const ed = window.tinymce.get('about1-editor-sub')
+      if (ed) ed.remove()
+    }
+  }
+})
+
+onUnmounted(() => {
+  if (window.tinymce) {
+    const ed = window.tinymce.get('about1-editor-sub')
+    if (ed) ed.remove()
+  }
+})
 </script>
+const nameToSlug = (s) => {
+  const v = (s || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim().replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+  return v
+}
+
+const onNewFolderNameInput = () => {
+  if (!slugTouched.value) newFolderSlug.value = nameToSlug(newFolderName.value)
+}

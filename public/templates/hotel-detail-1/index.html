@@ -11,23 +11,7 @@
 </head>
 <body class="font-display bg-gray-50 text-neutral-900">
 <div class="relative flex min-h-screen w-full flex-col">
-<header class="bg-white border-b border-gray-200">
-  <div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-4 max-w-7xl mx-auto">
-    <div class="flex items-center gap-4">
-      <div class="size-8 text-primary"><svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path clip-rule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fill-rule="evenodd"></path></svg></div>
-      <h1 id="site-name" class="text-2xl font-bold">StayFinder</h1>
-    </div>
-    <nav class="hidden md:flex items-center gap-6">
-      <a href="#" class="text-neutral-700 hover:text-primary font-medium">Home</a>
-      <a href="#" class="text-neutral-700 hover:text-primary font-medium">My Bookings</a>
-      <a href="#" class="text-neutral-700 hover:text-primary font-medium">Support</a>
-    </nav>
-    <div class="flex items-center gap-3">
-      <button class="px-4 py-2 text-sm font-medium text-neutral-700 hover:text-primary">Login</button>
-      <button class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-blue-700">Sign Up</button>
-    </div>
-  </div>
-</header>
+ 
 
 <div id="nav-sentinel" class="h-px"></div>
 <nav id="nav-bar" class="hidden md:block sticky top-[0px] z-40 bg-white border-t border-gray-200 shadow-sm">
@@ -84,7 +68,11 @@
         <div class="w-full lg:w-2/3">
           <div class="py-8 bg-white p-6 rounded-xl border border-gray-200" id="section-about">
             <h3 class="text-2xl font-bold mb-4">About <span id="about-title"></span></h3>
-            <div id="about-content" class="space-y-4 text-neutral-700 leading-relaxed"></div>
+            <div id="about-wrapper" class="relative">
+              <div id="about-content" class="space-y-4 text-neutral-700 leading-relaxed"></div>
+              <div id="about-fade" class="hidden"></div>
+            </div>
+            <a id="about-toggle" href="#" class="mt-2 inline-block text-blue-600 hover:text-blue-700 underline text-sm">Read more...</a>
           </div>
           <div class="py-8 mt-8 bg-white p-6 rounded-xl border border-gray-200" id="section-amenities">
             <h3 class="text-2xl font-bold mb-6">Amenities</h3>
@@ -132,44 +120,7 @@
     </div>
   </div>
 </main>
-<!-- Footer -->
-<footer class="bg-neutral-900 text-neutral-100 py-12">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-      <div>
-        <h3 class="text-xl font-bold mb-4">StayFinder</h3>
-        <p class="text-neutral-400 text-sm">Your trusted travel companion for finding the perfect stay.</p>
-      </div>
-      <div>
-        <h4 class="font-semibold mb-3">Company</h4>
-        <ul class="space-y-2 text-neutral-400 text-sm">
-          <li><a href="#" class="hover:text-white">About Us</a></li>
-          <li><a href="#" class="hover:text-white">Careers</a></li>
-          <li><a href="#" class="hover:text-white">Press</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 class="font-semibold mb-3">Support</h4>
-        <ul class="space-y-2 text-neutral-400 text-sm">
-          <li><a href="#" class="hover:text-white">Help Center</a></li>
-          <li><a href="#" class="hover:text-white">Contact Us</a></li>
-          <li><a href="#" class="hover:text-white">Cancellation Policy</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4 class="font-semibold mb-3">Legal</h4>
-        <ul class="space-y-2 text-neutral-400 text-sm">
-          <li><a href="#" class="hover:text-white">Privacy Policy</a></li>
-          <li><a href="#" class="hover:text-white">Terms of Service</a></li>
-          <li><a href="#" class="hover:text-white">Cookie Policy</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="border-t border-neutral-800 mt-8 pt-8 text-center text-neutral-400 text-sm">
-      <p>&copy; 2024 StayFinder. All rights reserved.</p>
-    </div>
-  </div>
-</footer>
+ 
 
 </div>
 {{GALLERY_DATA_SCRIPT}}
