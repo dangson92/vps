@@ -38,6 +38,11 @@ class VpsController extends Controller
         $server->status = 'inactive';
         $server->save();
 
+        try {
+            $this->addWorkerIpToNginx($server);
+        } catch (\Throwable $e) {
+        }
+
         return response()->json($server, 201);
     }
 
@@ -153,5 +158,30 @@ class VpsController extends Controller
     {
         // Implementation for nginx update
         return ['status' => 'updated', 'message' => 'Nginx configuration updated successfully'];
+    }
+
+    private function addWorkerIpToNginx(VpsServer $vps): void
+    {
+        $ip = trim($vps->ip_address ?? '');
+        if ($ip === '') return;
+        $path = '/etc/nginx/sites-available/vps-manager';
+        $contents = @file_get_contents($path);
+        if ($contents === false) return;
+
+        $exists = preg_match('/allow\s+' . preg_quote($ip, '/') . '\s*;/', $contents) === 1;
+        if ($exists) return;
+
+        $updated = preg_replace(
+            '/(location\s+\/api\/worker\s*\{[\s\S]*?)(deny\s+all;)/',
+            '$1allow ' . $ip . ";\n        $2",
+            $contents,
+            1,
+            $count
+        );
+
+        if ($updated !== null && $count === 1) {
+            @file_put_contents($path, $updated);
+            @shell_exec('nginx -t && systemctl reload nginx');
+        }
     }
 }

@@ -91,6 +91,13 @@
                   >
                     <LayoutGrid class="size-4" />
                   </router-link>
+                  <router-link
+                    :to="`/websites/${website.id}/settings`"
+                    class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    title="Website Settings"
+                  >
+                    <Settings class="size-4" />
+                  </router-link>
                   <a
                     :href="previewHomeUrl(website)"
                     target="_blank"
@@ -362,7 +369,7 @@
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
-import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid, RefreshCw, ChevronDown, Folder } from 'lucide-vue-next'
+import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid, RefreshCw, ChevronDown, Folder, Settings } from 'lucide-vue-next'
 
 const websites = ref([])
 const availableServers = ref([])

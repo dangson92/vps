@@ -4,6 +4,7 @@ import App from './App.vue'
 import Dashboard from './views/Dashboard.vue'
 import VpsManagement from './views/VpsManagement.vue'
 import WebsiteManagement from './views/WebsiteManagement.vue'
+import WebsiteSettings from './views/WebsiteSettings.vue'
 import Monitoring from './views/Monitoring.vue'
 import FoldersManagement from './views/FoldersManagement.vue'
 import FolderEdit from './views/FolderEdit.vue'
@@ -21,6 +22,7 @@ const routes = [
   { path: '/', name: 'Dashboard', component: Dashboard },
   { path: '/vps', name: 'VpsManagement', component: VpsManagement },
   { path: '/websites', name: 'WebsiteManagement', component: WebsiteManagement },
+  { path: '/websites/:websiteId/settings', name: 'WebsiteSettings', component: WebsiteSettings },
   { path: '/websites/:websiteId/pages', name: 'PagesManagement', component: PagesManagement },
   { path: '/websites/:websiteId/pages/new', name: 'PageCreate', component: PageEdit },
   { path: '/websites/:websiteId/pages/:pageId', name: 'PageEdit', component: PageEdit },

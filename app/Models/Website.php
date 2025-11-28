@@ -25,7 +25,8 @@ class Website extends Model
         'ssl_enabled',
         'ssl_expires_at',
         'wordpress_config',
-        'nginx_config'
+        'nginx_config',
+        'custom_settings'
     ];
 
     protected $casts = [
@@ -36,6 +37,7 @@ class Website extends Model
         'suspended_at' => 'datetime',
         'wordpress_config' => 'array',
         'nginx_config' => 'array',
+        'custom_settings' => 'array',
     ];
 
     public function vpsServer(): BelongsTo

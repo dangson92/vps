@@ -10,6 +10,8 @@ use App\Http\Controllers\SslController;
 use App\Http\Controllers\DnsController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\WebsiteSettingsController;
+use App\Http\Controllers\WebsiteAssetsController;
 
 // API routes (prefixed with 'api' via RouteServiceProvider)
 
@@ -28,6 +30,15 @@ Route::middleware('admin.token')->group(function () {
     Route::post('websites/{website}/redeploy-template-assets', [WebsiteController::class, 'redeployTemplateAssets']);
     Route::post('websites/{website}/update-pages-template', [WebsiteController::class, 'updatePagesTemplate']);
     Route::post('websites/{website}/ssl', [SslController::class, 'generate']);
+
+    // Website Settings
+    Route::get('websites/{website}/settings', [WebsiteSettingsController::class, 'show']);
+    Route::put('websites/{website}/settings', [WebsiteSettingsController::class, 'update']);
+
+    // Website Assets Uploads
+    Route::post('websites/{website}/assets/logo-header', [WebsiteAssetsController::class, 'uploadLogoHeader']);
+    Route::post('websites/{website}/assets/logo-footer', [WebsiteAssetsController::class, 'uploadLogoFooter']);
+    Route::post('websites/{website}/assets/favicon', [WebsiteAssetsController::class, 'uploadFavicon']);
 
     // Page Management
     Route::apiResource('websites.pages', PageController::class)->shallow();

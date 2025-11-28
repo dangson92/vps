@@ -160,7 +160,38 @@ class DeploymentService
         $sharedDir = public_path('templates/_shared');
         $sharedHeader = @file_get_contents($sharedDir . '/header.html');
         $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+        $sharedHead = @file_get_contents($sharedDir . '/head.html');
+        $siteSettings = $this->getMainSettings($website);
+        if (!$sharedHead) {
+            $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
+        }
+        if (!empty($siteSettings['favicon_url'])) {
+            $sharedHead = preg_replace('/<\/head>$/i', '<link rel="icon" href="' . e($siteSettings['favicon_url']) . '"></head>', $sharedHead, 1);
+        }
+        if (!empty($siteSettings['custom_head_html'])) {
+            $sharedHead = preg_replace('/<\/head>$/i', $siteSettings['custom_head_html'] . '</head>', $sharedHead, 1);
+        }
+        $html = preg_replace('/<head[^>]*>[\s\S]*?<\/head>/i', '', $html);
+        if (preg_match('/<body[^>]*>/i', $html)) {
+            $html = preg_replace('/(<body[^>]*>)/i', $sharedHead . '$1', $html, 1);
+        } else {
+            $html = $sharedHead . $html;
+        }
+        
         if ($sharedHeader) {
+            if (!empty($siteSettings['logo_header_url'])) {
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($siteSettings['logo_header_url']) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
+            } elseif (!empty($siteSettings['title'])) {
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
+            }
+            if (!empty($siteSettings['menu_html'])) {
+                $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $siteSettings['menu_html'] . '$2', $sharedHeader, 1);
+            } elseif (!empty($siteSettings['menu'])) {
+                $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+                $base = $protocol . $website->domain;
+                $menuHtml = $this->generateMenuHtml($siteSettings['menu'], $base);
+                $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $menuHtml . '$2', $sharedHeader, 1);
+            }
             $headerPattern = '/<header[^>]*>.*?<\/header>/s';
             if (preg_match($headerPattern, $html)) {
                 $html = preg_replace($headerPattern, $sharedHeader, $html);
@@ -169,6 +200,11 @@ class DeploymentService
             }
         }
         if ($sharedFooter) {
+            if (!empty($siteSettings['logo_footer_url'])) {
+                $sharedFooter = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<img id="site-logo-footer" src="' . e($siteSettings['logo_footer_url']) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-10">', $sharedFooter, 1);
+            } elseif (!empty($siteSettings['title'])) {
+                $sharedFooter = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<h3 class="text-xl font-bold mb-4">' . e($siteSettings['title']) . '</h3>', $sharedFooter, 1);
+            }
             $footerPattern = '/(?:<!--\s*Footer\s*-->\\s*)?<footer[^>]*>.*?<\/footer>/s';
             if (preg_match($footerPattern, $html)) {
                 $html = preg_replace($footerPattern, $sharedFooter, $html);
@@ -179,7 +215,7 @@ class DeploymentService
             }
         }
 
-        $html = str_replace('{{TITLE}}', e($website->domain), $html);
+        $html = str_replace('{{TITLE}}', e($siteSettings['title'] ?? $website->domain), $html);
         $html = str_replace('{{DESCRIPTION}}', 'Find your perfect stay at ' . e($website->domain), $html);
         $html = str_replace('{{OG_IMAGE}}', $featuredData[0]['image'] ?? '', $html);
         $html = str_replace('{{OG_URL}}', 'https://' . $website->domain, $html);
@@ -205,6 +241,28 @@ class DeploymentService
             $html
         );
         $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+        $html = $this->applyWebsiteSettingsHtml($html, $siteSettings, $website->domain);
+
+        
+
+        $html = $this->applyWebsiteSettingsHtml($html, $siteSettings, $website->domain);
+        if (!empty($siteSettings['custom_body_html'])) {
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', '$1' . $siteSettings['custom_body_html'], $html, 1);
+            } else {
+                $html = $siteSettings['custom_body_html'] . $html;
+            }
+        }
+        if (!empty($siteSettings['footer_links_html']) || !empty($siteSettings['custom_footer_html'])) {
+            $injected = ($siteSettings['footer_links_html'] ?? '') . ($siteSettings['custom_footer_html'] ?? '');
+            if (preg_match('/<footer[^>]*>[\s\S]*?<\/footer>/i', $html)) {
+                $html = preg_replace('/(<footer[^>]*>[\s\S]*?)(<\/footer>)/i', '$1' . $injected . '$2', $html, 1);
+            } elseif (stripos($html, '</body>') !== false) {
+                $html = preg_replace('/<\/body>/i', $injected . '</body>', $html, 1);
+            } else {
+                $html .= $injected;
+            }
+        }
 
         // Deploy the homepage
         try {
@@ -273,8 +331,40 @@ class DeploymentService
         $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
 
         $sharedDir = public_path('templates/_shared');
+        $sharedHead = @file_get_contents($sharedDir . '/head.html');
+        $siteSettings = $this->getMainSettings($website);
+        if (!$sharedHead) {
+            $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
+        }
+        if (!empty($siteSettings['favicon_url'])) {
+            $sharedHead = preg_replace('/<\/head>$/i', '<link rel="icon" href="' . e($siteSettings['favicon_url']) . '"></head>', $sharedHead, 1);
+        }
+        if (!empty($siteSettings['custom_head_html'])) {
+            $sharedHead = preg_replace('/<\/head>$/i', $siteSettings['custom_head_html'] . '</head>', $sharedHead, 1);
+        }
+        $html = preg_replace('/<head[^>]*>[\s\S]*?<\/head>/i', '', $html);
+        if (preg_match('/<body[^>]*>/i', $html)) {
+            $html = preg_replace('/(<body[^>]*>)/i', $sharedHead . '$1', $html, 1);
+        } else {
+            $html = $sharedHead . $html;
+        }
         $sharedHeader = @file_get_contents($sharedDir . '/header.html');
         $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+        if ($sharedHeader) {
+            if (!empty($siteSettings['logo_header_url'])) {
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($siteSettings['logo_header_url']) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
+            } elseif (!empty($siteSettings['title'])) {
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
+            }
+            if (!empty($siteSettings['menu_html'])) {
+                $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $siteSettings['menu_html'] . '$2', $sharedHeader, 1);
+            } elseif (!empty($siteSettings['menu'])) {
+                $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+                $base = $protocol . $website->domain;
+                $menuHtml = $this->generateMenuHtml($siteSettings['menu'], $base);
+                $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $menuHtml . '$2', $sharedHeader, 1);
+            }
+        }
         if ($sharedHeader) {
             $headerPattern = '/<header[^>]*>.*?<\/header>/s';
             if (preg_match($headerPattern, $html)) {
@@ -322,6 +412,23 @@ class DeploymentService
             $html
         );
         $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+        if (!empty($siteSettings['custom_body_html'])) {
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', '$1' . $siteSettings['custom_body_html'], $html, 1);
+            } else {
+                $html = $siteSettings['custom_body_html'] . $html;
+            }
+        }
+        if (!empty($siteSettings['footer_links_html']) || !empty($siteSettings['custom_footer_html'])) {
+            $injected = ($siteSettings['footer_links_html'] ?? '') . ($siteSettings['custom_footer_html'] ?? '');
+            if (preg_match('/<footer[^>]*>[\s\S]*?<\/footer>/i', $html)) {
+                $html = preg_replace('/(<footer[^>]*>[\s\S]*?)(<\/footer>)/i', '$1' . $injected . '$2', $html, 1);
+            } elseif (stripos($html, '</body>') !== false) {
+                $html = preg_replace('/<\/body>/i', $injected . '</body>', $html, 1);
+            } else {
+                $html .= $injected;
+            }
+        }
 
         try {
             $response = Http::timeout(60)
@@ -437,6 +544,16 @@ class DeploymentService
                 $html = file_get_contents($templatePath) ?: $html;
 
                 $sharedDir = public_path('templates/_shared');
+                $sharedHead = @file_get_contents($sharedDir . '/head.html');
+                if (!$sharedHead) {
+                    $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
+                }
+                $html = preg_replace('/<head[^>]*>[\s\S]*?<\/head>/i', '', $html);
+                if (preg_match('/<body[^>]*>/i', $html)) {
+                    $html = preg_replace('/(<body[^>]*>)/i', $sharedHead . '$1', $html, 1);
+                } else {
+                    $html = $sharedHead . $html;
+                }
                 $sharedHeader = @file_get_contents($sharedDir . '/header.html');
                 $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
 
@@ -605,6 +722,8 @@ class DeploymentService
 
         // Add script version for cache busting
         $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+
+        $html = $this->applyWebsiteSettingsHtml($html, $this->getMainSettings($page->website), $page->website->domain);
 
         return $html;
     }
@@ -952,6 +1071,158 @@ class DeploymentService
 
         // Same website, use relative path
         return $page->path;
+    }
+
+    private function getMainSettings(Website $website): array
+    {
+        $parts = explode('.', $website->domain);
+        $mainDomain = count($parts) > 2 ? implode('.', array_slice($parts, -2)) : $website->domain;
+        $main = Website::where('domain', $mainDomain)->first();
+        return $main ? ($main->custom_settings ?? []) : ($website->custom_settings ?? []);
+    }
+
+    private function applyWebsiteSettingsHtml(string $html, array $settings, string $domain): string
+    {
+        if (!empty($settings['title'])) {
+            $html = str_replace('{{TITLE}}', e($settings['title']), $html);
+            $html = preg_replace('/<title>[\s\S]*?<\/title>/i', '<title>' . e($settings['title']) . '</title>', $html, 1);
+        }
+        if (!empty($settings['favicon_url']) && stripos($html, 'rel="icon"') === false) {
+            if (preg_match('/<\/head>/i', $html)) {
+                $html = preg_replace('/<\/head>/i', '<link rel="icon" href="' . e($settings['favicon_url']) . '"></head>', $html, 1);
+            }
+        }
+        if (!empty($settings['custom_head_html'])) {
+            if (preg_match('/<\/head>/i', $html)) {
+                $html = preg_replace('/<\/head>/i', $settings['custom_head_html'] . '</head>', $html, 1);
+            }
+        }
+        if (!empty($settings['logo_header_url'])) {
+            $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($settings['logo_header_url']) . '" alt="' . e($settings['title'] ?? $domain) . '" class="h-8">', $html, 1);
+        } elseif (!empty($settings['title'])) {
+            $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($settings['title']) . '</h1>', $html, 1);
+        }
+        if (!empty($settings['menu_html'])) {
+            $html = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $settings['menu_html'] . '$2', $html, 1);
+        } elseif (!empty($settings['menu'])) {
+            $protocol = 'https://';
+            $base = $protocol . $domain;
+            $menuHtml = $this->generateMenuHtml($settings['menu'], $base);
+            if ($menuHtml) {
+                $html = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $menuHtml . '$2', $html, 1);
+            }
+        }
+        if (!empty($settings['custom_body_html'])) {
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', '$1' . $settings['custom_body_html'], $html, 1);
+            } else {
+                $html = $settings['custom_body_html'] . $html;
+            }
+        }
+        if (!empty($settings['logo_footer_url'])) {
+            $html = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<img id="site-logo-footer" src="' . e($settings['logo_footer_url']) . '" alt="' . e($settings['title'] ?? $domain) . '" class="h-10">', $html, 1);
+        } elseif (!empty($settings['title'])) {
+            $html = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<h3 class="text-xl font-bold mb-4">' . e($settings['title']) . '</h3>', $html, 1);
+        }
+        if (!empty($settings['footer_links_html']) || !empty($settings['custom_footer_html'])) {
+            $injected = ($settings['footer_links_html'] ?? '') . ($settings['custom_footer_html'] ?? '');
+            if (preg_match('/<footer[^>]*>[\s\S]*?<\/footer>/i', $html)) {
+                $html = preg_replace('/(<footer[^>]*>[\s\S]*?)(<\/footer>)/i', '$1' . $injected . '$2', $html, 1);
+            } elseif (stripos($html, '</body>') !== false) {
+                $html = preg_replace('/<\/body>/i', $injected . '</body>', $html, 1);
+            } else {
+                $html .= $injected;
+            }
+        }
+        return $html;
+    }
+
+    private function generateMenuHtml(array $menu, string $base): string
+    {
+        $build = function ($items) use (&$build, $base): string {
+            $out = '<ul class="flex items-center gap-6">';
+            foreach ($items as $it) {
+                $label = (string)($it['label'] ?? '');
+                $url = (string)($it['url'] ?? '');
+                if ($url !== '' && str_starts_with($url, '/')) $url = rtrim($base, '/') . $url;
+                $out .= '<li><a href="' . e($url ?: '#') . '" class="text-gray-700 hover:text-gray-900">' . e($label) . '</a>';
+                $children = $it['children'] ?? [];
+                if (is_array($children) && count($children) > 0) {
+                    $out .= '<ul class="ml-4 flex items-center gap-4">';
+                    foreach ($children as $ch) {
+                        $cl = (string)($ch['label'] ?? '');
+                        $cu = (string)($ch['url'] ?? '');
+                        if ($cu !== '' && str_starts_with($cu, '/')) $cu = rtrim($base, '/') . $cu;
+                        $out .= '<li><a href="' . e($cu ?: '#') . '" class="text-gray-600 hover:text-gray-900">' . e($cl) . '</a></li>';
+                    }
+                    $out .= '</ul>';
+                }
+                $out .= '</li>';
+            }
+            $out .= '</ul>';
+            return $out;
+        };
+        return $build($menu);
+    }
+
+    public function deployWebsiteAssets(Website $website): void
+    {
+        $vps = $website->vpsServer;
+        if (!$vps || !$vps->isActive()) return;
+
+        $settings = $this->getMainSettings($website);
+        $docRoot = $website->getDocumentRoot();
+
+        $items = [];
+        if (!empty($settings['logo_header_path'])) {
+            $src = public_path(ltrim($settings['logo_header_path'], '/'));
+            if (is_file($src)) {
+                $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+            }
+        }
+        if (!empty($settings['logo_footer_path'])) {
+            $src = public_path(ltrim($settings['logo_footer_path'], '/'));
+            if (is_file($src)) {
+                $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+            }
+        }
+        if (!empty($settings['favicon_path'])) {
+            $src = public_path(ltrim($settings['favicon_path'], '/'));
+            if (is_file($src)) {
+                // Put favicon at root as /favicon.ico (or given ext)
+                $items[] = ['page_path' => '/', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+            }
+        }
+
+        foreach ($items as $it) {
+            try {
+                $resp = \Illuminate\Support\Facades\Http::timeout(60)
+                    ->withHeaders([
+                        'X-Worker-Key' => $vps->worker_key,
+                        'Content-Type' => 'application/json',
+                    ])
+                    ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => $it['page_path'],
+                        'filename' => $it['filename'],
+                        'content_base64' => $it['content_base64'],
+                        'document_root' => $docRoot,
+                    ]);
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                $resp = \Illuminate\Support\Facades\Http::timeout(60)
+                    ->withHeaders([
+                        'X-Worker-Key' => $vps->worker_key,
+                        'Content-Type' => 'application/json',
+                    ])
+                    ->post("http://127.0.0.1:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => $it['page_path'],
+                        'filename' => $it['filename'],
+                        'content_base64' => $it['content_base64'],
+                        'document_root' => $docRoot,
+                    ]);
+            }
+        }
     }
 
     public function publishAllPages(Website $website): void

@@ -88,9 +88,10 @@ class FolderController extends Controller
             'description' => $validated['description'] ?? null,
         ]);
         $folder->save();
-
-        // Don't redeploy on folder creation - folder has no pages yet
-
+        
+        // Triển khai trang Category ngay khi tạo thư mục để có URL hoạt động
+        $this->redeployLaravel1IfNeeded($root, $folder);
+        
         return response()->json($folder, 201);
     }
 
