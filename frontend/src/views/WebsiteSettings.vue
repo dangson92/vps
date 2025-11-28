@@ -566,16 +566,19 @@ const buildFooterHtml = () => {
   const cols = footerColumns.value
   if (!cols.length) return ''
   let out = '<div class="grid grid-cols-' + cols.length + ' gap-6">';
-  cols.forEach(col => {
+  for (const col of cols) {
     out += '<div>';
-    if (col.title) out += '<div class="font-medium mb-2">' + (col.title) + '</div>';
+    if (col.title) {
+      out += '<div class="font-medium mb-2">' + (col.title) + '</div>';
+    }
     out += '<ul class="space-y-1">';
-    (col.links || []).forEach(lnk => {
+    const links = col.links || [];
+    for (const lnk of links) {
       out += '<li><a href="' + (lnk.url || '#') + '" class="text-gray-600 hover:text-gray-900">' + (lnk.label || '') + '</a></li>';
-    });
+    }
     out += '</ul>';
     out += '</div>';
-  });
+  }
   out += '</div>';
   return out
 }
