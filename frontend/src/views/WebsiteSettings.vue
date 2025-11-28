@@ -565,18 +565,18 @@ const removeFooterLink = (cidx, lidx) => {
 const buildFooterHtml = () => {
   const cols = footerColumns.value
   if (!cols.length) return ''
-  let out = '<div class="grid grid-cols-' + cols.length + ' gap-6">'
+  let out = '<div class="grid grid-cols-' + cols.length + ' gap-6">';
   cols.forEach(col => {
-    out += '<div>'
-    if (col.title) out += '<div class="font-medium mb-2">' + (col.title) + '</div>'
-    out += '<ul class="space-y-1">'
+    out += '<div>';
+    if (col.title) out += '<div class="font-medium mb-2">' + (col.title) + '</div>';
+    out += '<ul class="space-y-1">';
     (col.links || []).forEach(lnk => {
-      out += '<li><a href="' + (lnk.url || '#') + '" class="text-gray-600 hover:text-gray-900">' + (lnk.label || '') + '</a></li>'
-    })
-    out += '</ul>'
-    out += '</div>'
-  })
-  out += '</div>'
+      out += '<li><a href="' + (lnk.url || '#') + '" class="text-gray-600 hover:text-gray-900">' + (lnk.label || '') + '</a></li>';
+    });
+    out += '</ul>';
+    out += '</div>';
+  });
+  out += '</div>';
   return out
 }
 </script>
