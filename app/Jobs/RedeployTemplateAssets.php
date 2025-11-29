@@ -13,7 +13,6 @@ class RedeployTemplateAssets implements ShouldQueue
 
     public function __construct(
         public int $websiteId,
-        public string $templateName,
         public bool $refreshPages = true
     ) {}
 
@@ -40,8 +39,8 @@ class RedeployTemplateAssets implements ShouldQueue
 
         if ($mainWebsite) {
             try {
-                // Deploy template assets ONLY to main domain
-                $deploymentService->deployTemplateAssets($mainWebsite, $this->templateName);
+                // Deploy all template package assets ONLY to main domain
+                $deploymentService->deployTemplatePackageAssets($mainWebsite);
             } catch (\Exception $e) {
             }
         }

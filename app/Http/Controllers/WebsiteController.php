@@ -231,46 +231,45 @@ class WebsiteController extends Controller
     }
 
     /**
-     * Redeploy template assets (CSS, JS) for a specific template
+     * Redeploy template assets (CSS, JS) from template package
      */
     public function redeployTemplateAssets(Request $request, Website $website): JsonResponse
     {
         $validated = $request->validate([
-            'template_name' => 'required|string|in:home-1,listing-1,hotel-detail-1',
+            'template_names' => 'nullable|array',
+            'template_names.*' => 'string|in:home,listing,detail,all',
             'refresh_pages' => 'sometimes|boolean',
         ]);
 
         $refresh = filter_var($request->input('refresh_pages', false), FILTER_VALIDATE_BOOLEAN);
-        $pending = \App\Jobs\RedeployTemplateAssets::dispatch($website->id, $validated['template_name'], $refresh);
-        if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
+
+        // Redeploy all package assets
+        $pending = \App\Jobs\RedeployTemplateAssets::dispatch($website->id, $refresh);
+        if (method_exists($pending, 'afterResponse')) {
+            $pending->afterResponse();
+        }
+
         return response()->json([
-            'message' => 'Template asset redeploy queued',
-            'template' => $validated['template_name'],
+            'message' => 'Template package asset redeploy queued',
+            'package' => $website->template_package ?? 'laravel-hotel-1',
             'refresh_pages' => $refresh,
         ]);
     }
 
     /**
-     * Update page HTML from latest template (header/footer sync)
+     * Update page HTML from latest template package (header/footer sync)
      */
     public function updatePagesTemplate(Request $request, Website $website): JsonResponse
     {
         $validated = $request->validate([
-            'template_name' => 'nullable|string|in:home-1,listing-1,hotel-detail,hotel-detail-1',
             'template_names' => 'nullable|array',
-            'template_names.*' => 'string|in:home-1,listing-1,hotel-detail,hotel-detail-1,all',
+            'template_names.*' => 'string|in:home,listing,detail,all',
             'page_ids' => 'nullable|array',
             'page_ids.*' => 'integer|exists:pages,id'
         ]);
 
         try {
-            $sharedDir = public_path('templates/_shared');
-            $sharedHeader = @file_get_contents($sharedDir . '/header.html');
-            $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
             $templateNames = $validated['template_names'] ?? null;
-            if (!$templateNames && isset($validated['template_name'])) {
-                $templateNames = [$validated['template_name']];
-            }
             $applyAll = !$templateNames || in_array('all', $templateNames, true);
             $templateFilters = $applyAll ? null : array_values(array_unique(array_filter($templateNames)));
 
@@ -278,12 +277,8 @@ class WebsiteController extends Controller
             $skippedCount = 0;
 
             $pageIds = $validated['page_ids'] ?? [];
-            $knownTemplates = ['home-1', 'listing-1', 'hotel-detail', 'hotel-detail-1'];
-            $normalize = function($name) {
-                if ($name === 'hotel-detail') return 'hotel-detail-1';
-                return $name;
-            };
-            $normalizedFilters = $templateFilters ? array_map($normalize, $templateFilters) : null;
+            $knownTemplates = ['home', 'listing', 'detail'];
+            $normalizedFilters = $templateFilters;
             if (!empty($pageIds)) {
                 $pages = \App\Models\Page::whereIn('id', $pageIds)->get();
             } else {
@@ -302,25 +297,29 @@ class WebsiteController extends Controller
             }
 
             foreach ($pages as $page) {
-                $pageTpl = $normalize($page->template_type);
-                $templateName = null;
+                $pageTpl = $page->template_type;
+
+                // Skip blank (custom HTML) pages
+                if ($pageTpl === 'blank') {
+                    $skippedCount++;
+                    continue;
+                }
+
+                // If filtering by template, check if page matches
                 if ($normalizedFilters) {
-                    if (in_array($pageTpl, $normalizedFilters, true)) {
-                        $templateName = $pageTpl;
-                    } else {
+                    if (!in_array($pageTpl, $normalizedFilters, true)) {
                         $skippedCount++;
                         continue;
                     }
-                } else {
-                    if (in_array($pageTpl, $knownTemplates, true)) {
-                        $templateName = $pageTpl;
-                    }
                 }
 
+                // Redeploy page with latest template from package
                 $pending = dispatch(function () use ($page) {
                     app(\App\Services\DeploymentService::class)->deployPage($page);
                 });
-                if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
+                if (method_exists($pending, 'afterResponse')) {
+                    $pending->afterResponse();
+                }
                 $updatedCount++;
             }
             $domainParts = explode('.', $website->domain);
