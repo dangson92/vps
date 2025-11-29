@@ -3,11 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Website;
+use App\Services\DeploymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WebsiteSettingsController extends Controller
 {
+    private DeploymentService $deploymentService;
+
+    public function __construct(DeploymentService $deploymentService)
+    {
+        $this->deploymentService = $deploymentService;
+    }
     public function show(Website $website): JsonResponse
     {
         $parts = explode('.', $website->domain);
@@ -47,6 +54,23 @@ class WebsiteSettingsController extends Controller
         $settings = array_merge($existing, $validated);
         $website->custom_settings = $settings;
         $website->save();
+
+        // Redeploy pages to apply new settings (only for laravel1 sites)
+        if ($website->type === 'laravel1' && $website->isDeployed()) {
+            try {
+                // Redeploy homepage with new settings
+                $this->deploymentService->deployLaravel1Homepage($website);
+
+                // Redeploy all category pages with new settings
+                $this->deploymentService->deployLaravel1AllCategories($website);
+            } catch (\Exception $e) {
+                // Log error but don't fail the settings update
+                \Illuminate\Support\Facades\Log::error('Failed to redeploy after settings update', [
+                    'website_id' => $website->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
 
         return response()->json(['status' => 'updated', 'settings' => $website->custom_settings]);
     }

@@ -284,9 +284,6 @@ class DeploymentService
         $html = str_replace('{{SCRIPT_VERSION}}', $scriptVersion, $html);
         $html = $this->applyWebsiteSettingsHtml($html, $siteSettings, $website->domain);
 
-        
-
-        $html = $this->applyWebsiteSettingsHtml($html, $siteSettings, $website->domain);
         if (!empty($siteSettings['custom_body_html'])) {
             if (preg_match('/<body[^>]*>/i', $html)) {
                 $html = preg_replace('/(<body[^>]*>)/i', '$1' . $siteSettings['custom_body_html'], $html, 1);
