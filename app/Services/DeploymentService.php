@@ -1390,6 +1390,17 @@ class DeploymentService
         ]);
 
         foreach ($items as $it) {
+            $payloadSize = strlen($it['content_base64']);
+            $decodedSize = strlen(base64_decode($it['content_base64']));
+
+            Log::info('Sending asset to worker', [
+                'website_id' => $website->id,
+                'filename' => $it['filename'],
+                'page_path' => $it['page_path'],
+                'base64_size' => $payloadSize,
+                'decoded_size' => $decodedSize,
+            ]);
+
             try {
                 $resp = \Illuminate\Support\Facades\Http::timeout(60)
                     ->withHeaders([
@@ -1403,7 +1414,21 @@ class DeploymentService
                         'content_base64' => $it['content_base64'],
                         'document_root' => $docRoot,
                     ]);
+
+                Log::info('Worker response for asset', [
+                    'website_id' => $website->id,
+                    'filename' => $it['filename'],
+                    'status' => $resp->status(),
+                    'successful' => $resp->successful(),
+                    'body' => $resp->body(),
+                ]);
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                Log::warning('Connection failed, retrying with localhost', [
+                    'website_id' => $website->id,
+                    'filename' => $it['filename'],
+                    'error' => $e->getMessage(),
+                ]);
+
                 $resp = \Illuminate\Support\Facades\Http::timeout(60)
                     ->withHeaders([
                         'X-Worker-Key' => $vps->worker_key,
@@ -1416,6 +1441,14 @@ class DeploymentService
                         'content_base64' => $it['content_base64'],
                         'document_root' => $docRoot,
                     ]);
+
+                Log::info('Worker response for asset (localhost)', [
+                    'website_id' => $website->id,
+                    'filename' => $it['filename'],
+                    'status' => $resp->status(),
+                    'successful' => $resp->successful(),
+                    'body' => $resp->body(),
+                ]);
             }
         }
     }
