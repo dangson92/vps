@@ -1329,20 +1329,8 @@ class DeploymentService
 
             if ($path) {
                 $src = public_path(ltrim($path, '/'));
-                Log::info('Deploying logo header', [
-                    'website_id' => $website->id,
-                    'url' => $settings['logo_header_url'],
-                    'path' => $path,
-                    'src' => $src,
-                    'exists' => file_exists($src),
-                    'is_file' => is_file($src),
-                    'filesize' => file_exists($src) ? filesize($src) : 0,
-                ]);
-
                 if (is_file($src) && filesize($src) > 0) {
                     $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
-                } else {
-                    Log::warning('Logo header file not found or empty', ['src' => $src]);
                 }
             }
         }
@@ -1359,8 +1347,6 @@ class DeploymentService
                 $src = public_path(ltrim($path, '/'));
                 if (is_file($src) && filesize($src) > 0) {
                     $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
-                } else {
-                    Log::warning('Logo footer file not found or empty', ['src' => $src]);
                 }
             }
         }
@@ -1377,30 +1363,11 @@ class DeploymentService
                 $src = public_path(ltrim($path, '/'));
                 if (is_file($src) && filesize($src) > 0) {
                     $items[] = ['page_path' => '/', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
-                } else {
-                    Log::warning('Favicon file not found or empty', ['src' => $src]);
                 }
             }
         }
 
-        Log::info('Deploying website assets', [
-            'website_id' => $website->id,
-            'items_count' => count($items),
-            'items' => array_map(fn($i) => ['path' => $i['page_path'], 'file' => $i['filename'], 'size' => strlen(base64_decode($i['content_base64']))], $items),
-        ]);
-
         foreach ($items as $it) {
-            $payloadSize = strlen($it['content_base64']);
-            $decodedSize = strlen(base64_decode($it['content_base64']));
-
-            Log::info('Sending asset to worker', [
-                'website_id' => $website->id,
-                'filename' => $it['filename'],
-                'page_path' => $it['page_path'],
-                'base64_size' => $payloadSize,
-                'decoded_size' => $decodedSize,
-            ]);
-
             try {
                 $resp = \Illuminate\Support\Facades\Http::timeout(60)
                     ->withHeaders([
@@ -1414,21 +1381,7 @@ class DeploymentService
                         'content_base64' => $it['content_base64'],
                         'document_root' => $docRoot,
                     ]);
-
-                Log::info('Worker response for asset', [
-                    'website_id' => $website->id,
-                    'filename' => $it['filename'],
-                    'status' => $resp->status(),
-                    'successful' => $resp->successful(),
-                    'body' => $resp->body(),
-                ]);
             } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                Log::warning('Connection failed, retrying with localhost', [
-                    'website_id' => $website->id,
-                    'filename' => $it['filename'],
-                    'error' => $e->getMessage(),
-                ]);
-
                 $resp = \Illuminate\Support\Facades\Http::timeout(60)
                     ->withHeaders([
                         'X-Worker-Key' => $vps->worker_key,
@@ -1441,14 +1394,6 @@ class DeploymentService
                         'content_base64' => $it['content_base64'],
                         'document_root' => $docRoot,
                     ]);
-
-                Log::info('Worker response for asset (localhost)', [
-                    'website_id' => $website->id,
-                    'filename' => $it['filename'],
-                    'status' => $resp->status(),
-                    'successful' => $resp->successful(),
-                    'body' => $resp->body(),
-                ]);
             }
         }
     }
