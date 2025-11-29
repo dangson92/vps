@@ -14,6 +14,7 @@ class Website extends Model
     protected $fillable = [
         'domain',
         'type',
+        'template_package',
         'vps_server_id',
         'document_root',
         'status',

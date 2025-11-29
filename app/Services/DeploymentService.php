@@ -12,6 +12,47 @@ use Illuminate\Support\Facades\Log;
 
 class DeploymentService
 {
+    /**
+     * Get the template package for a website
+     */
+    private function getTemplatePackage(Website $website): ?string
+    {
+        return $website->template_package ?? 'laravel-hotel-1';
+    }
+
+    /**
+     * Get template file path based on package and type
+     */
+    private function getTemplatePath(Website $website, string $type): string
+    {
+        $package = $this->getTemplatePackage($website);
+        return public_path("templates/{$package}/{$type}/index.html");
+    }
+
+    /**
+     * Get shared template path (header/footer)
+     */
+    private function getSharedPath(Website $website, string $file): string
+    {
+        $package = $this->getTemplatePackage($website);
+        return public_path("templates/{$package}/shared/{$file}");
+    }
+
+    /**
+     * Get asset URLs for a template type
+     */
+    private function getAssetUrls(Website $website, string $type): array
+    {
+        $package = $this->getTemplatePackage($website);
+        $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+        $base = $protocol . $website->domain;
+
+        return [
+            'css' => "{$base}/templates/{$package}/assets/{$type}.css?v=" . time(),
+            'js' => "{$base}/templates/{$package}/assets/{$type}.js?v=" . time(),
+        ];
+    }
+
     public function deploy(Website $website): void
     {
         $vps = $website->vpsServer;
@@ -62,9 +103,7 @@ class DeploymentService
             $parts = explode('.', $website->domain);
             $isSubdomain = count($parts) > 2;
             if (!$isSubdomain) {
-                $this->deployTemplateAssets($website, 'home-1');
-                $this->deployTemplateAssets($website, 'listing-1');
-                $this->deployTemplateAssets($website, 'hotel-detail-1');
+                $this->deployTemplatePackageAssets($website);
                 $this->deployLaravel1Homepage($website);
                 $this->deployLaravel1AllCategories($website);
             }
@@ -154,13 +193,12 @@ class DeploymentService
             ];
         })->values()->toArray();
 
-        $templatePath = public_path('templates/home-1/index.html');
+        $templatePath = $this->getTemplatePath($website, 'home');
         $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
 
-        $sharedDir = public_path('templates/_shared');
-        $sharedHeader = @file_get_contents($sharedDir . '/header.html');
-        $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
-        $sharedHead = @file_get_contents($sharedDir . '/head.html');
+        $sharedHeader = @file_get_contents($this->getSharedPath($website, 'header.html'));
+        $sharedFooter = @file_get_contents($this->getSharedPath($website, 'footer.html'));
+        $sharedHead = @file_get_contents($this->getSharedPath($website, 'head.html'));
         $siteSettings = $this->getMainSettings($website);
         if (!$sharedHead) {
             $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
@@ -227,20 +265,23 @@ class DeploymentService
         ]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
 
-        // Rewrite CSS/JS to shared main domain assets (home-1)
+        // Rewrite CSS/JS to shared main domain assets
+        $package = $this->getTemplatePackage($website);
         $protocol = $website->ssl_enabled ? 'https://' : 'http://';
         $base = $protocol . $website->domain;
+        $scriptVersion = time();
+
         $html = preg_replace(
-            '#href="/templates/home\-1/style\.css[^\"]*"#',
-            'href="' . $base . '/templates/home-1/style.css?v={{SCRIPT_VERSION}}"',
+            '#href="[^"]*style\.css[^"]*"#',
+            'href="' . $base . '/templates/' . $package . '/assets/home.css?v=' . $scriptVersion . '"',
             $html
         );
         $html = preg_replace(
-            '#src="/templates/home\-1/script\.js[^\"]*"#',
-            'src="' . $base . '/templates/home-1/script.js?v={{SCRIPT_VERSION}}"',
+            '#src="[^"]*script\.js[^"]*"#',
+            'src="' . $base . '/templates/' . $package . '/assets/home.js?v=' . $scriptVersion . '"',
             $html
         );
-        $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+        $html = str_replace('{{SCRIPT_VERSION}}', $scriptVersion, $html);
         $html = $this->applyWebsiteSettingsHtml($html, $siteSettings, $website->domain);
 
         
@@ -327,11 +368,10 @@ class DeploymentService
             ];
         })->toArray();
 
-        $templatePath = public_path('templates/listing-1/index.html');
+        $templatePath = $this->getTemplatePath($website, 'listing');
         $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
 
-        $sharedDir = public_path('templates/_shared');
-        $sharedHead = @file_get_contents($sharedDir . '/head.html');
+        $sharedHead = @file_get_contents($this->getSharedPath($website, 'head.html'));
         $siteSettings = $this->getMainSettings($website);
         if (!$sharedHead) {
             $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
@@ -348,8 +388,8 @@ class DeploymentService
         } else {
             $html = $sharedHead . $html;
         }
-        $sharedHeader = @file_get_contents($sharedDir . '/header.html');
-        $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+        $sharedHeader = @file_get_contents($this->getSharedPath($website, 'header.html'));
+        $sharedFooter = @file_get_contents($this->getSharedPath($website, 'footer.html'));
         if ($sharedHeader) {
             if (!empty($siteSettings['logo_header_url'])) {
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($siteSettings['logo_header_url']) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
@@ -398,20 +438,23 @@ class DeploymentService
         $dataScript = '<script type="application/json" id="page-data">' . json_encode(['pages' => $pagesData]) . '</script>';
         $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
 
-        // Rewrite CSS/JS to shared main domain assets (listing-1)
+        // Rewrite CSS/JS to shared main domain assets
+        $package = $this->getTemplatePackage($website);
         $protocol = $website->ssl_enabled ? 'https://' : 'http://';
         $base = $protocol . $website->domain;
+        $scriptVersion = time();
+
         $html = preg_replace(
-            '#href="/templates/listing\-1/style\.css[^\"]*"#',
-            'href="' . $base . '/templates/listing-1/style.css?v={{SCRIPT_VERSION}}"',
+            '#href="[^"]*style\.css[^"]*"#',
+            'href="' . $base . '/templates/' . $package . '/assets/listing.css?v=' . $scriptVersion . '"',
             $html
         );
         $html = preg_replace(
-            '#src="/templates/listing\-1/script\.js[^\"]*"#',
-            'src="' . $base . '/templates/listing-1/script.js?v={{SCRIPT_VERSION}}"',
+            '#src="[^"]*script\.js[^"]*"#',
+            'src="' . $base . '/templates/' . $package . '/assets/listing.js?v=' . $scriptVersion . '"',
             $html
         );
-        $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+        $html = str_replace('{{SCRIPT_VERSION}}', $scriptVersion, $html);
         if (!empty($siteSettings['custom_body_html'])) {
             if (preg_match('/<body[^>]*>/i', $html)) {
                 $html = preg_replace('/(<body[^>]*>)/i', '$1' . $siteSettings['custom_body_html'], $html, 1);
@@ -726,6 +769,55 @@ class DeploymentService
         $html = $this->applyWebsiteSettingsHtml($html, $this->getMainSettings($page->website), $page->website->domain);
 
         return $html;
+    }
+
+    /**
+     * Deploy all assets from the template package
+     */
+    public function deployTemplatePackageAssets(Website $website): void
+    {
+        $vps = $website->vpsServer;
+        if (!$vps || !$vps->isActive()) return;
+
+        $package = $this->getTemplatePackage($website);
+        $assetsDir = public_path("templates/{$package}/assets");
+
+        if (!is_dir($assetsDir)) return;
+
+        // Deploy all CSS and JS files from assets folder
+        $files = glob($assetsDir . '/*.{css,js}', GLOB_BRACE);
+
+        foreach ($files as $filePath) {
+            $filename = basename($filePath);
+            $content = file_get_contents($filePath);
+            $response = null;
+
+            try {
+                $response = Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://{$vps->ip_address}:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => "/templates/{$package}/assets",
+                        'filename' => $filename,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            } catch (ConnectionException $e) {
+                $response = Http::timeout(30)
+                    ->withHeaders(['X-Worker-Key' => $vps->worker_key, 'Content-Type' => 'application/json'])
+                    ->post("http://127.0.0.1:8080/api/deploy-page", [
+                        'website_id' => $website->id,
+                        'page_path' => "/templates/{$package}/assets",
+                        'filename' => $filename,
+                        'content' => $content,
+                        'document_root' => $website->getDocumentRoot(),
+                    ]);
+            }
+
+            if ($response && !$response->successful()) {
+                Log::warning("Failed to deploy asset {$filename}", ['website_id' => $website->id, 'error' => $response->body()]);
+            }
+        }
     }
 
     public function deployTemplateAssets(Website $website, string $templateName): void

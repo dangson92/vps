@@ -42,6 +42,7 @@ class WebsiteController extends Controller
         $validated = $request->validate([
             'domain' => 'required|string|max:255|unique:websites',
             'type' => 'required|in:html,wordpress,laravel1',
+            'template_package' => 'required_if:type,laravel1|string|in:laravel-hotel-1',
             'vps_server_id' => 'required|exists:vps_servers,id',
             'wordpress_template' => 'required_if:type,wordpress|string|max:255',
         ]);
@@ -55,6 +56,7 @@ class WebsiteController extends Controller
         $website = new Website([
             'domain' => $validated['domain'],
             'type' => $validated['type'],
+            'template_package' => $validated['template_package'] ?? null,
             'vps_server_id' => $validated['vps_server_id'],
             'status' => 'draft',
             'content_version' => 1,
