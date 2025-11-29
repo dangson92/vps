@@ -570,24 +570,28 @@ class DeploymentService
             return $html;
         }
 
-        // Detect template name early
-        $templateName = null;
-        if (!empty($page->template_type)) {
-            $templateName = $page->template_type === 'hotel-detail' ? 'hotel-detail-1' : $page->template_type;
-        } else {
-            if (preg_match('/\/templates\/([^\/]+)\//', $html, $m)) {
-                $templateName = $m[1] ?? null;
+        // Detect template type
+        $templateType = null;
+        if (!empty($page->template_type) && $page->template_type !== 'blank') {
+            // Use explicit template type (home, listing, detail)
+            $templateType = $page->template_type;
+        } elseif ($page->template_type !== 'blank') {
+            // Auto-detect from existing HTML or default to detail for laravel1 sites
+            if (preg_match('/\/templates\/[^\/]+\/(home|listing|detail)\//', $html, $m)) {
+                $templateType = $m[1] ?? null;
+            } elseif ($page->website->type === 'laravel1') {
+                // Default to detail for laravel1 websites
+                $templateType = 'detail';
             }
         }
 
-        // If this is a template-based page, always start from latest template file and shared header/footer
-        if (!empty($templateName)) {
-            $templatePath = public_path("templates/{$templateName}/index.html");
+        // If this is a template-based page, load template from package
+        if (!empty($templateType) && $page->website->type === 'laravel1') {
+            $templatePath = $this->getTemplatePath($page->website, $templateType);
             if (file_exists($templatePath)) {
                 $html = file_get_contents($templatePath) ?: $html;
 
-                $sharedDir = public_path('templates/_shared');
-                $sharedHead = @file_get_contents($sharedDir . '/head.html');
+                $sharedHead = @file_get_contents($this->getSharedPath($page->website, 'head.html'));
                 if (!$sharedHead) {
                     $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
                 }
@@ -597,8 +601,8 @@ class DeploymentService
                 } else {
                     $html = $sharedHead . $html;
                 }
-                $sharedHeader = @file_get_contents($sharedDir . '/header.html');
-                $sharedFooter = @file_get_contents($sharedDir . '/footer.html');
+                $sharedHeader = @file_get_contents($this->getSharedPath($page->website, 'header.html'));
+                $sharedFooter = @file_get_contents($this->getSharedPath($page->website, 'footer.html'));
 
                 if ($sharedHeader) {
                     $headerPattern = '/<header[^>]*>[\s\S]*?<\/header>/i';
@@ -736,29 +740,21 @@ class DeploymentService
             }
         }
 
-        // Rewrite CSS/JS asset references to use shared assets on main domain
-        if (!empty($templateName)) {
+        // Rewrite CSS/JS asset references to use shared assets on main domain from package
+        if (!empty($templateType) && $website->type === 'laravel1') {
             $base = $data['main_domain_url'] ?? ($website->ssl_enabled ? 'https://' : 'http://') . $mainDomain;
-            // Rewrite template-based URLs to absolute main domain with SCRIPT_VERSION placeholder
+            $package = $this->getTemplatePackage($website);
+            $scriptVersion = time();
+
+            // Rewrite to package assets structure: /templates/{package}/assets/{type}.css
             $html = preg_replace(
-                '#href="/templates/' . preg_quote($templateName, '#') . '/style\.css[^\"]*"#',
-                'href="' . $base . '/templates/' . $templateName . '/style.css?v={{SCRIPT_VERSION}}"',
+                '#href="[^"]*style\.css[^"]*"#',
+                'href="' . $base . '/templates/' . $package . '/assets/' . $templateType . '.css?v=' . $scriptVersion . '"',
                 $html
             );
             $html = preg_replace(
-                '#src="/templates/' . preg_quote($templateName, '#') . '/script\.js[^\"]*"#',
-                'src="' . $base . '/templates/' . $templateName . '/script.js?v={{SCRIPT_VERSION}}"',
-                $html
-            );
-            // Rewrite page-local asset names to shared main domain template assets
-            $html = preg_replace(
-                '#href="style\.css[^\"]*"#',
-                'href="' . $base . '/templates/' . $templateName . '/style.css?v={{SCRIPT_VERSION}}"',
-                $html
-            );
-            $html = preg_replace(
-                '#src="script\.js[^\"]*"#',
-                'src="' . $base . '/templates/' . $templateName . '/script.js?v={{SCRIPT_VERSION}}"',
+                '#src="[^"]*script\.js[^"]*"#',
+                'src="' . $base . '/templates/' . $package . '/assets/' . $templateType . '.js?v=' . $scriptVersion . '"',
                 $html
             );
         }

@@ -81,11 +81,19 @@
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700">Template giao diện</label>
               <select v-model="templateType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-                <option value="blank">HTML trống</option>
-                <option value="hotel-detail-1">Hotel Detail 1</option>
+                <option :value="null">Auto (theo website)</option>
+                <option value="blank">Custom HTML</option>
+                <optgroup label="Templates trong package">
+                  <option value="home">Home Template</option>
+                  <option value="listing">Listing Template</option>
+                  <option value="detail">Detail Template</option>
+                </optgroup>
               </select>
+              <p class="mt-1 text-xs text-gray-500">
+                Auto: Tự động chọn template phù hợp. Custom HTML: Tự viết HTML. Templates: Chọn template có sẵn trong package.
+              </p>
             </div>
-            <div v-if="templateType === 'hotel-detail' || templateType === 'hotel-detail-1'" class="mb-4 space-y-4">
+            <div v-if="templateType === 'detail'" class="mb-4 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">Địa điểm</label>
