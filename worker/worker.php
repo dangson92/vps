@@ -185,11 +185,20 @@ class VpsWorker
     private function handleDeployPage(): void
     {
         $data = json_decode(file_get_contents('php://input'), true);
-        
+
         $pagePath = $data['page_path'] ?? '';
         $filename = $data['filename'] ?? '';
         $content = $data['content'] ?? '';
+        $contentBase64 = $data['content_base64'] ?? '';
         $documentRoot = $data['document_root'] ?? '';
+
+        // Prefer base64 content if provided (for binary files like images)
+        if (!empty($contentBase64)) {
+            $content = base64_decode($contentBase64);
+            if ($content === false) {
+                throw new \Exception("Failed to decode base64 content");
+            }
+        }
 
         $targetDir = $documentRoot;
         if (!empty($pagePath) && $pagePath !== '/') {
@@ -202,13 +211,20 @@ class VpsWorker
 
         $filePath = rtrim($targetDir, '/') . '/' . $filename;
         $hash = substr(sha1($content), 0, 12);
-        $this->log('info', 'Deploying page', ['path' => $pagePath, 'file' => $filename, 'hash' => $hash]);
+        $size = strlen($content);
+        $this->log('info', 'Deploying page', [
+            'path' => $pagePath,
+            'file' => $filename,
+            'hash' => $hash,
+            'size' => $size,
+            'is_base64' => !empty($contentBase64),
+        ]);
 
         if (file_put_contents($filePath, $content) === false) {
             throw new \Exception("Failed to write page to {$filePath}");
         }
 
-        echo json_encode(['status' => 'deployed', 'message' => 'Page deployed successfully', 'hash' => $hash, 'path' => $pagePath, 'file' => $filename]);
+        echo json_encode(['status' => 'ok', 'file' => $filePath]);
     }
 
     private function handleRemovePage(): void

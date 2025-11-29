@@ -49,12 +49,14 @@ if($method==='POST' && $uri==='/api/deploy-page'){
   $path=cleanPath($data['page_path']??'/');
   $fn=trim($data['filename']??'index.html');
   $content=$data['content']??'';
+  $b64=$data['content_base64']??'';
+  if($b64){$content=base64_decode($b64);if($content===false){bad('invalid base64',400);exit;}}
   if(!$root){bad('document_root missing');exit;}
   $dir=rtrim($root,'/').'/'.ltrim($path,'/');
   ensureDir($dir);
   $file=$dir.(substr($dir,-1)=='/'?'':'/').$fn;
   if(file_put_contents($file,$content)===false){bad('write failed',500);exit;}
-  logx($logf,"deploy-page {$file}");
+  logx($logf,"deploy-page {$file} size=".strlen($content).($b64?' (base64)':''));
   ok(['status'=>'ok','file'=>$file]);
   exit;
 }
