@@ -54,10 +54,13 @@ class DeploymentService
     }
 
     /**
-     * Convert control panel asset URL to local VPS path
+     * Convert control panel asset URL to local VPS path or root domain URL
      * For use in deployed HTML on the VPS
+     *
+     * - Main domain: returns local path like "/assets/logo.png"
+     * - Subdomain: returns full URL to root domain like "https://rootdomain.com/assets/logo.png"
      */
-    private function convertToLocalAssetUrl(string $settingKey, ?string $url): ?string
+    private function convertToLocalAssetUrl(string $settingKey, ?string $url, Website $website): ?string
     {
         if (empty($url)) {
             return null;
@@ -66,13 +69,27 @@ class DeploymentService
         // Extract filename from URL
         $filename = basename(parse_url($url, PHP_URL_PATH));
 
-        // Favicon goes to root, logos go to /assets/
+        // Check if this is a subdomain
+        $parts = explode('.', $website->domain);
+        $isSubdomain = count($parts) > 2;
+
+        // Build the path/URL
         if ($settingKey === 'favicon_url') {
-            return '/' . $filename;
+            $path = '/' . $filename;
+        } else {
+            // logo_header_url, logo_footer_url
+            $path = '/assets/' . $filename;
         }
 
-        // logo_header_url, logo_footer_url
-        return '/assets/' . $filename;
+        // Subdomain: return full URL to root domain
+        if ($isSubdomain) {
+            $rootDomain = $parts[count($parts)-2] . '.' . $parts[count($parts)-1];
+            $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+            return $protocol . $rootDomain . $path;
+        }
+
+        // Main domain: return local path
+        return $path;
     }
 
     public function deploy(Website $website): void
@@ -226,7 +243,7 @@ class DeploymentService
         if ($sharedHeader) {
             // Apply favicon to <head> - use local VPS path
             if (!empty($siteSettings['favicon_url'])) {
-                $localFaviconUrl = $this->convertToLocalAssetUrl('favicon_url', $siteSettings['favicon_url']);
+                $localFaviconUrl = $this->convertToLocalAssetUrl('favicon_url', $siteSettings['favicon_url'], $website);
                 $sharedHeader = preg_replace('/<\/head>/i', '<link rel="icon" href="' . e($localFaviconUrl) . '"></head>', $sharedHeader, 1);
             }
             // Apply custom head HTML
@@ -235,7 +252,7 @@ class DeploymentService
             }
             // Apply logo/title to <header> - use local VPS path
             if (!empty($siteSettings['logo_header_url'])) {
-                $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url']);
+                $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url'], $website);
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
             } elseif (!empty($siteSettings['title'])) {
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
@@ -269,7 +286,7 @@ class DeploymentService
         if ($sharedFooter) {
             // Apply logo to footer - use local VPS path
             if (!empty($siteSettings['logo_footer_url'])) {
-                $localLogoFooterUrl = $this->convertToLocalAssetUrl('logo_footer_url', $siteSettings['logo_footer_url']);
+                $localLogoFooterUrl = $this->convertToLocalAssetUrl('logo_footer_url', $siteSettings['logo_footer_url'], $website);
                 $sharedFooter = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<img id="site-logo-footer" src="' . e($localLogoFooterUrl) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-10">', $sharedFooter, 1);
             } elseif (!empty($siteSettings['title'])) {
                 $sharedFooter = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<h3 class="text-xl font-bold mb-4">' . e($siteSettings['title']) . '</h3>', $sharedFooter, 1);
@@ -313,7 +330,7 @@ class DeploymentService
             $html
         );
         $html = str_replace('{{SCRIPT_VERSION}}', $scriptVersion, $html);
-        $html = $this->applyWebsiteSettingsHtml($html, $siteSettings, $website->domain);
+        $html = $this->applyWebsiteSettingsHtml($html, $siteSettings, $website);
 
         if (!empty($siteSettings['custom_body_html'])) {
             if (preg_match('/<body[^>]*>/i', $html)) {
@@ -407,7 +424,7 @@ class DeploymentService
         if ($sharedHeader) {
             // Apply favicon to <head> - use local VPS path
             if (!empty($siteSettings['favicon_url'])) {
-                $localFaviconUrl = $this->convertToLocalAssetUrl('favicon_url', $siteSettings['favicon_url']);
+                $localFaviconUrl = $this->convertToLocalAssetUrl('favicon_url', $siteSettings['favicon_url'], $website);
                 $sharedHeader = preg_replace('/<\/head>/i', '<link rel="icon" href="' . e($localFaviconUrl) . '"></head>', $sharedHeader, 1);
             }
             // Apply custom head HTML
@@ -416,7 +433,7 @@ class DeploymentService
             }
             // Apply logo/title to <header> - use local VPS path
             if (!empty($siteSettings['logo_header_url'])) {
-                $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url']);
+                $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url'], $website);
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
             } elseif (!empty($siteSettings['title'])) {
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
@@ -794,7 +811,7 @@ class DeploymentService
         // Add script version for cache busting
         $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
 
-        $html = $this->applyWebsiteSettingsHtml($html, $this->getMainSettings($page->website), $page->website->domain);
+        $html = $this->applyWebsiteSettingsHtml($html, $this->getMainSettings($page->website), $page->website);
 
         return $html;
     }
@@ -1201,15 +1218,17 @@ class DeploymentService
         return $main ? ($main->custom_settings ?? []) : ($website->custom_settings ?? []);
     }
 
-    private function applyWebsiteSettingsHtml(string $html, array $settings, string $domain): string
+    private function applyWebsiteSettingsHtml(string $html, array $settings, Website $website): string
     {
+        $domain = $website->domain;
+
         if (!empty($settings['title'])) {
             $html = str_replace('{{TITLE}}', e($settings['title']), $html);
             $html = preg_replace('/<title>[\s\S]*?<\/title>/i', '<title>' . e($settings['title']) . '</title>', $html, 1);
         }
         if (!empty($settings['favicon_url']) && stripos($html, 'rel="icon"') === false) {
             if (preg_match('/<\/head>/i', $html)) {
-                $localFaviconUrl = $this->convertToLocalAssetUrl('favicon_url', $settings['favicon_url']);
+                $localFaviconUrl = $this->convertToLocalAssetUrl('favicon_url', $settings['favicon_url'], $website);
                 $html = preg_replace('/<\/head>/i', '<link rel="icon" href="' . e($localFaviconUrl) . '"></head>', $html, 1);
             }
         }
@@ -1219,7 +1238,7 @@ class DeploymentService
             }
         }
         if (!empty($settings['logo_header_url'])) {
-            $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $settings['logo_header_url']);
+            $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $settings['logo_header_url'], $website);
             $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($settings['title'] ?? $domain) . '" class="h-8">', $html, 1);
         } elseif (!empty($settings['title'])) {
             $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($settings['title']) . '</h1>', $html, 1);
@@ -1242,7 +1261,7 @@ class DeploymentService
             }
         }
         if (!empty($settings['logo_footer_url'])) {
-            $localLogoFooterUrl = $this->convertToLocalAssetUrl('logo_footer_url', $settings['logo_footer_url']);
+            $localLogoFooterUrl = $this->convertToLocalAssetUrl('logo_footer_url', $settings['logo_footer_url'], $website);
             $html = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<img id="site-logo-footer" src="' . e($localLogoFooterUrl) . '" alt="' . e($settings['title'] ?? $domain) . '" class="h-10">', $html, 1);
         } elseif (!empty($settings['title'])) {
             $html = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<h3 class="text-xl font-bold mb-4">' . e($settings['title']) . '</h3>', $html, 1);
