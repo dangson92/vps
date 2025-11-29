@@ -1316,25 +1316,78 @@ class DeploymentService
         $docRoot = $website->getDocumentRoot();
 
         $items = [];
-        if (!empty($settings['logo_header_path'])) {
-            $src = public_path(ltrim($settings['logo_header_path'], '/'));
-            if (is_file($src)) {
-                $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+
+        // Logo header
+        if (!empty($settings['logo_header_url'])) {
+            // Try to get path from settings, or extract from URL
+            $path = $settings['logo_header_path'] ?? null;
+            if (!$path) {
+                // Extract path from URL (e.g., http://localhost/uploads/example.com/assets/logo.png → /uploads/example.com/assets/logo.png)
+                $parsed = parse_url($settings['logo_header_url']);
+                $path = $parsed['path'] ?? null;
+            }
+
+            if ($path) {
+                $src = public_path(ltrim($path, '/'));
+                Log::info('Deploying logo header', [
+                    'website_id' => $website->id,
+                    'url' => $settings['logo_header_url'],
+                    'path' => $path,
+                    'src' => $src,
+                    'exists' => file_exists($src),
+                    'is_file' => is_file($src),
+                    'filesize' => file_exists($src) ? filesize($src) : 0,
+                ]);
+
+                if (is_file($src) && filesize($src) > 0) {
+                    $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+                } else {
+                    Log::warning('Logo header file not found or empty', ['src' => $src]);
+                }
             }
         }
-        if (!empty($settings['logo_footer_path'])) {
-            $src = public_path(ltrim($settings['logo_footer_path'], '/'));
-            if (is_file($src)) {
-                $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+
+        // Logo footer
+        if (!empty($settings['logo_footer_url'])) {
+            $path = $settings['logo_footer_path'] ?? null;
+            if (!$path) {
+                $parsed = parse_url($settings['logo_footer_url']);
+                $path = $parsed['path'] ?? null;
+            }
+
+            if ($path) {
+                $src = public_path(ltrim($path, '/'));
+                if (is_file($src) && filesize($src) > 0) {
+                    $items[] = ['page_path' => '/assets', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+                } else {
+                    Log::warning('Logo footer file not found or empty', ['src' => $src]);
+                }
             }
         }
-        if (!empty($settings['favicon_path'])) {
-            $src = public_path(ltrim($settings['favicon_path'], '/'));
-            if (is_file($src)) {
-                // Put favicon at root as /favicon.ico (or given ext)
-                $items[] = ['page_path' => '/', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+
+        // Favicon
+        if (!empty($settings['favicon_url'])) {
+            $path = $settings['favicon_path'] ?? null;
+            if (!$path) {
+                $parsed = parse_url($settings['favicon_url']);
+                $path = $parsed['path'] ?? null;
+            }
+
+            if ($path) {
+                $src = public_path(ltrim($path, '/'));
+                if (is_file($src) && filesize($src) > 0) {
+                    $items[] = ['page_path' => '/', 'filename' => basename($src), 'content_base64' => base64_encode(file_get_contents($src))];
+                } else {
+                    Log::warning('Favicon file not found or empty', ['src' => $src]);
+                }
             }
         }
+
+        Log::info('Deploying website assets', [
+            'website_id' => $website->id,
+            'items_count' => count($items),
+            'items' => array_map(fn($i) => ['path' => $i['page_path'], 'file' => $i['filename'], 'size' => strlen(base64_decode($i['content_base64']))], $items),
+        ]);
 
         foreach ($items as $it) {
             try {
