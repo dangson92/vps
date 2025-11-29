@@ -242,7 +242,19 @@
               <option value="ecommerce">E-commerce Theme</option>
             </select>
           </div>
-          
+
+          <div v-if="form.type === 'laravel1'" class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Template Package</label>
+            <select
+              v-model="form.template_package"
+              required
+              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+            >
+              <option value="laravel-hotel-1">Hotel Template</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">Includes home, listing, and detail pages with shared assets</p>
+          </div>
+
           <div class="flex justify-end space-x-3">
             <button
               type="button"
@@ -408,6 +420,7 @@ const showToast = (msg, type = 'success') => {
 const form = ref({
   domain: '',
   type: 'html',
+  template_package: 'laravel-hotel-1',
   vps_server_id: '',
   wordpress_template: 'basic'
 })
@@ -616,6 +629,7 @@ const closeModal = () => {
   form.value = {
     domain: '',
     type: 'html',
+    template_package: 'laravel-hotel-1',
     vps_server_id: '',
     wordpress_template: 'basic'
   }
