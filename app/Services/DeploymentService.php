@@ -198,30 +198,25 @@ class DeploymentService
 
         $sharedHeader = @file_get_contents($this->getSharedPath($website, 'header.html'));
         $sharedFooter = @file_get_contents($this->getSharedPath($website, 'footer.html'));
-        $sharedHead = @file_get_contents($this->getSharedPath($website, 'head.html'));
         $siteSettings = $this->getMainSettings($website);
-        if (!$sharedHead) {
-            $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
-        }
-        if (!empty($siteSettings['favicon_url'])) {
-            $sharedHead = preg_replace('/<\/head>$/i', '<link rel="icon" href="' . e($siteSettings['favicon_url']) . '"></head>', $sharedHead, 1);
-        }
-        if (!empty($siteSettings['custom_head_html'])) {
-            $sharedHead = preg_replace('/<\/head>$/i', $siteSettings['custom_head_html'] . '</head>', $sharedHead, 1);
-        }
-        $html = preg_replace('/<head[^>]*>[\s\S]*?<\/head>/i', '', $html);
-        if (preg_match('/<body[^>]*>/i', $html)) {
-            $html = preg_replace('/(<body[^>]*>)/i', $sharedHead . '$1', $html, 1);
-        } else {
-            $html = $sharedHead . $html;
-        }
-        
+
+        // Header now includes <head>, apply settings to both
         if ($sharedHeader) {
+            // Apply favicon to <head>
+            if (!empty($siteSettings['favicon_url'])) {
+                $sharedHeader = preg_replace('/<\/head>/i', '<link rel="icon" href="' . e($siteSettings['favicon_url']) . '"></head>', $sharedHeader, 1);
+            }
+            // Apply custom head HTML
+            if (!empty($siteSettings['custom_head_html'])) {
+                $sharedHeader = preg_replace('/<\/head>/i', $siteSettings['custom_head_html'] . '</head>', $sharedHeader, 1);
+            }
+            // Apply logo/title to <header>
             if (!empty($siteSettings['logo_header_url'])) {
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($siteSettings['logo_header_url']) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
             } elseif (!empty($siteSettings['title'])) {
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
             }
+            // Apply menu
             if (!empty($siteSettings['menu_html'])) {
                 $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $siteSettings['menu_html'] . '$2', $sharedHeader, 1);
             } elseif (!empty($siteSettings['menu'])) {
@@ -230,13 +225,23 @@ class DeploymentService
                 $menuHtml = $this->generateMenuHtml($siteSettings['menu'], $base);
                 $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $menuHtml . '$2', $sharedHeader, 1);
             }
-            $headerPattern = '/<header[^>]*>.*?<\/header>/s';
-            if (preg_match($headerPattern, $html)) {
-                $html = preg_replace($headerPattern, $sharedHeader, $html);
-            } elseif (preg_match('/<body[^>]*>/i', $html)) {
-                $html = preg_replace('/(<body[^>]*>)/i', '$1' . $sharedHeader, $html, 1);
+
+            // Inject header (with <head>) before <body>
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', $sharedHeader . '$1', $html, 1);
+            } else {
+                $html = $sharedHeader . $html;
+            }
+        } else {
+            // Fallback if no header found
+            $fallbackHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', $fallbackHead . '$1', $html, 1);
+            } else {
+                $html = $fallbackHead . $html;
             }
         }
+
         if ($sharedFooter) {
             if (!empty($siteSettings['logo_footer_url'])) {
                 $sharedFooter = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<img id="site-logo-footer" src="' . e($siteSettings['logo_footer_url']) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-10">', $sharedFooter, 1);
@@ -368,31 +373,27 @@ class DeploymentService
         $templatePath = $this->getTemplatePath($website, 'listing');
         $html = file_exists($templatePath) ? file_get_contents($templatePath) : '<h1>Template not found</h1>';
 
-        $sharedHead = @file_get_contents($this->getSharedPath($website, 'head.html'));
-        $siteSettings = $this->getMainSettings($website);
-        if (!$sharedHead) {
-            $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
-        }
-        if (!empty($siteSettings['favicon_url'])) {
-            $sharedHead = preg_replace('/<\/head>$/i', '<link rel="icon" href="' . e($siteSettings['favicon_url']) . '"></head>', $sharedHead, 1);
-        }
-        if (!empty($siteSettings['custom_head_html'])) {
-            $sharedHead = preg_replace('/<\/head>$/i', $siteSettings['custom_head_html'] . '</head>', $sharedHead, 1);
-        }
-        $html = preg_replace('/<head[^>]*>[\s\S]*?<\/head>/i', '', $html);
-        if (preg_match('/<body[^>]*>/i', $html)) {
-            $html = preg_replace('/(<body[^>]*>)/i', $sharedHead . '$1', $html, 1);
-        } else {
-            $html = $sharedHead . $html;
-        }
         $sharedHeader = @file_get_contents($this->getSharedPath($website, 'header.html'));
         $sharedFooter = @file_get_contents($this->getSharedPath($website, 'footer.html'));
+        $siteSettings = $this->getMainSettings($website);
+
+        // Header now includes <head>, apply settings to both
         if ($sharedHeader) {
+            // Apply favicon to <head>
+            if (!empty($siteSettings['favicon_url'])) {
+                $sharedHeader = preg_replace('/<\/head>/i', '<link rel="icon" href="' . e($siteSettings['favicon_url']) . '"></head>', $sharedHeader, 1);
+            }
+            // Apply custom head HTML
+            if (!empty($siteSettings['custom_head_html'])) {
+                $sharedHeader = preg_replace('/<\/head>/i', $siteSettings['custom_head_html'] . '</head>', $sharedHeader, 1);
+            }
+            // Apply logo/title to <header>
             if (!empty($siteSettings['logo_header_url'])) {
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($siteSettings['logo_header_url']) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
             } elseif (!empty($siteSettings['title'])) {
                 $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
             }
+            // Apply menu
             if (!empty($siteSettings['menu_html'])) {
                 $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $siteSettings['menu_html'] . '$2', $sharedHeader, 1);
             } elseif (!empty($siteSettings['menu'])) {
@@ -401,13 +402,20 @@ class DeploymentService
                 $menuHtml = $this->generateMenuHtml($siteSettings['menu'], $base);
                 $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $menuHtml . '$2', $sharedHeader, 1);
             }
-        }
-        if ($sharedHeader) {
-            $headerPattern = '/<header[^>]*>.*?<\/header>/s';
-            if (preg_match($headerPattern, $html)) {
-                $html = preg_replace($headerPattern, $sharedHeader, $html);
-            } elseif (preg_match('/<body[^>]*>/i', $html)) {
-                $html = preg_replace('/(<body[^>]*>)/i', '$1' . $sharedHeader, $html, 1);
+
+            // Inject header (with <head>) before <body>
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', $sharedHeader . '$1', $html, 1);
+            } else {
+                $html = $sharedHeader . $html;
+            }
+        } else {
+            // Fallback if no header found
+            $fallbackHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', $fallbackHead . '$1', $html, 1);
+            } else {
+                $html = $fallbackHead . $html;
             }
         }
         if ($sharedFooter) {
@@ -588,27 +596,26 @@ class DeploymentService
             if (file_exists($templatePath)) {
                 $html = file_get_contents($templatePath) ?: $html;
 
-                $sharedHead = @file_get_contents($this->getSharedPath($page->website, 'head.html'));
-                if (!$sharedHead) {
-                    $sharedHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
-                }
-                $html = preg_replace('/<head[^>]*>[\s\S]*?<\/head>/i', '', $html);
-                if (preg_match('/<body[^>]*>/i', $html)) {
-                    $html = preg_replace('/(<body[^>]*>)/i', $sharedHead . '$1', $html, 1);
-                } else {
-                    $html = $sharedHead . $html;
-                }
                 $sharedHeader = @file_get_contents($this->getSharedPath($page->website, 'header.html'));
                 $sharedFooter = @file_get_contents($this->getSharedPath($page->website, 'footer.html'));
 
+                // Header now includes <head>, inject before <body>
                 if ($sharedHeader) {
-                    $headerPattern = '/<header[^>]*>[\s\S]*?<\/header>/i';
-                    if (preg_match($headerPattern, $html)) {
-                        $html = preg_replace($headerPattern, $sharedHeader, $html);
-                    } elseif (preg_match('/<body[^>]*>/i', $html)) {
-                        $html = preg_replace('/(<body[^>]*>)/i', '$1' . $sharedHeader, $html, 1);
+                    if (preg_match('/<body[^>]*>/i', $html)) {
+                        $html = preg_replace('/(<body[^>]*>)/i', $sharedHeader . '$1', $html, 1);
+                    } else {
+                        $html = $sharedHeader . $html;
+                    }
+                } else {
+                    // Fallback if no header found
+                    $fallbackHead = '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}}</title><meta name="description" content="{{DESCRIPTION}}"><meta property="og:title" content="{{TITLE}}"><meta property="og:description" content="{{DESCRIPTION}}"><meta property="og:image" content="{{OG_IMAGE}}"><meta property="og:url" content="{{OG_URL}}"></head>';
+                    if (preg_match('/<body[^>]*>/i', $html)) {
+                        $html = preg_replace('/(<body[^>]*>)/i', $fallbackHead . '$1', $html, 1);
+                    } else {
+                        $html = $fallbackHead . $html;
                     }
                 }
+
                 if ($sharedFooter) {
                     $footerPattern = '/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i';
                     if (preg_match($footerPattern, $html)) {
