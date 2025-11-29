@@ -58,6 +58,9 @@ class WebsiteSettingsController extends Controller
         // Redeploy pages to apply new settings (only for laravel1 sites)
         if ($website->type === 'laravel1' && $website->isDeployed()) {
             try {
+                // Deploy assets (logo/favicon) to VPS first
+                $this->deploymentService->deployWebsiteAssets($website);
+
                 // Redeploy homepage with new settings
                 $this->deploymentService->deployLaravel1Homepage($website);
 
