@@ -342,6 +342,36 @@ const fetchPage = async () => {
   primaryFolderId.value = page.primary_folder_id == null ? null : Number(page.primary_folder_id)
 }
 
+const buildPageHtml = async () => {
+  const pageTitle = (form.value.title || '').trim()
+  const tResp = await axios.get('/templates/laravel-hotel-1/page/index.html')
+  let base = tResp.data || ''
+  let sh = ''
+  let sf = ''
+  try { const hResp = await axios.get('/templates/_shared/header.html'); sh = hResp.data || '' } catch {}
+  try { const fResp = await axios.get('/templates/_shared/footer.html'); sf = fResp.data || '' } catch {}
+  if (sh) {
+    base = base.replace(/<header[^>]*>[\s\S]*?<\/header>/i, sh)
+  }
+  if (sf) {
+    if (/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i.test(base)) {
+      base = base.replace(/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i, sf)
+    } else if (/<\/body>/i.test(base)) {
+      base = base.replace(/<\/body>/i, sf + '</body>')
+    } else {
+      base += '\n' + sf
+    }
+  }
+  const dataObj = {
+    title: pageTitle || 'Page',
+    content: tpl.value.pageContent || ''
+  }
+  const dataScript = `<script type="application/json" id="page-data">${JSON.stringify(dataObj)}<\/script>`
+  base = base.replace(/<\/body>/i, dataScript + '\n</body>')
+  base = base.replace(/<title>[^<]*<\/title>/i, `<title>${dataObj.title}<\/title>`)
+  return base
+}
+
 const buildHtmlExternal = async () => {
   const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
   const selectedIds = selectedFolderIds.value || []
@@ -463,6 +493,8 @@ const save = async () => {
       let adjusted
       if (templateType.value === 'blank') {
         adjusted = (htmlRaw.value || form.value.content || '')
+      } else if (templateType.value === 'page') {
+        adjusted = await buildPageHtml()
       } else {
         adjusted = await buildHtmlExternal()
       }
@@ -485,7 +517,13 @@ const save = async () => {
       }
       if (!form.value.path) form.value.path = '/'
       const payload = { ...form.value }
-      if (templateType.value !== 'blank') {
+      if (templateType.value === 'page') {
+        payload.template_type = 'page'
+        payload.template_data = {
+          title: (form.value.title || '').trim() || 'Page',
+          content: tpl.value.pageContent || ''
+        }
+      } else if (templateType.value !== 'blank') {
         payload.template_type = templateType.value
         const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
         payload.template_data = {
@@ -513,12 +551,20 @@ const save = async () => {
       let adjusted
       if (templateType.value === 'blank') {
         adjusted = (form.value.content || '')
+      } else if (templateType.value === 'page') {
+        adjusted = await buildPageHtml()
       } else {
         adjusted = await buildHtmlExternal()
       }
       payload.content = adjusted
       payload.filename = (payload.filename || 'index.html').trim()
-      if (templateType.value !== 'blank') {
+      if (templateType.value === 'page') {
+        payload.template_type = 'page'
+        payload.template_data = {
+          title: (form.value.title || '').trim() || 'Page',
+          content: tpl.value.pageContent || ''
+        }
+      } else if (templateType.value !== 'blank') {
         payload.template_type = templateType.value
         const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
         payload.template_data = {
