@@ -195,67 +195,76 @@
                 </div>
               </div>
             </div>
-            <div class="flex items-center justify-between">
-              <div class="flex flex-col gap-1">
-                <h2 class="text-lg font-semibold text-gray-900">Footer</h2>
-                <p class="text-sm text-gray-500">Quản lý các cột và liên kết footer.</p>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div class="flex flex-col gap-4">
-                <div class="rounded-lg border border-gray-200 bg-white">
-                  <div class="flex items-center justify-between p-4 text-left font-medium text-gray-900">
-                    <span>Cấu hình cột</span>
-                  </div>
-                  <div class="border-t border-gray-200 p-4">
-                    <div class="flex flex-col gap-3">
-                      <div class="flex items-center gap-2">
-                        <label class="text-sm font-medium text-gray-700">Số cột</label>
-                        <select v-model.number="footerColumnCount" @change="updateFooterColumnCount" class="form-select rounded-md border-gray-300 text-sm shadow-sm w-24">
-                          <option :value="1">1</option>
-                          <option :value="2">2</option>
-                          <option :value="3">3</option>
-                          <option :value="4">4</option>
-                        </select>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <label class="text-sm font-medium text-gray-700">Chọn cột</label>
-                        <select v-model.number="selectedFooterColumnIndex" class="form-select rounded-md border-gray-300 text-sm shadow-sm w-24">
-                          <option v-for="(col, idx) in footerColumns" :key="idx" :value="idx">Cột {{ idx + 1 }}</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label class="text-xs font-medium text-gray-700">Tiêu đề cột</label>
-                        <input v-model="footerColumns[selectedFooterColumnIndex].title" class="form-input mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm" type="text" placeholder="Ví dụ: Thông tin" />
-                      </div>
-                      <div>
-                        <label class="text-xs font-medium text-gray-700">Thêm liên kết</label>
-                        <input v-model="footerLinkLabel" placeholder="Label" class="form-input mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                        <input v-model="footerLinkUrl" placeholder="URL" class="form-input mt-2 w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                        <button type="button" @click="addFooterLink" class="mt-2 w-full px-3 py-2 text-xs rounded-md border border-gray-300 bg-white">+ Thêm</button>
-                      </div>
-                    </div>
-                  </div>
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-gray-900">Footer</h2>
+                  <p class="text-sm text-gray-500 mt-1">Kéo thả để sắp xếp, click để chỉnh sửa</p>
                 </div>
+                <button type="button" @click="showAddFooterColumnModal = true" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium">
+                  <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Thêm cột
+                </button>
               </div>
-              <div class="flex flex-col gap-4">
-                <div class="rounded-lg border border-gray-200 bg-white p-4">
-                  <div class="flex items-center justify-between pb-3">
-                    <h3 class="text-base font-medium text-gray-900">Cấu trúc footer</h3>
-                  </div>
-                  <div class="min-h-[200px] rounded-lg border border-dashed border-gray-300 bg-gray-50/50 p-4">
-                    <div :class="`grid grid-cols-${footerColumns.length} gap-4`">
-                      <div v-for="(col, cidx) in footerColumns" :key="cidx" class="rounded-lg border border-gray-200 bg-white">
-                        <div class="p-3">
-                          <div class="text-sm font-medium text-gray-800">{{ col.title || (`Cột ${cidx + 1}`) }}</div>
-                          <ul class="mt-2 flex flex-col gap-1">
-                            <li v-for="(lnk, lidx) in col.links" :key="lidx" class="flex items-center justify-between text-sm">
-                              <span class="truncate">{{ lnk.label }} — {{ lnk.url }}</span>
-                              <button type="button" @click="removeFooterLink(cidx, lidx)" class="text-gray-500">×</button>
-                            </li>
-                          </ul>
+
+              <!-- Footer Columns List -->
+              <div class="space-y-3">
+                <div v-if="footerColumns.length === 0" class="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                  <p class="text-gray-500 text-sm">Chưa có cột footer nào. Click "Thêm cột" để bắt đầu.</p>
+                </div>
+                <div v-for="(col, cidx) in footerColumns" :key="cidx" class="rounded-lg border border-gray-200 bg-white" draggable="true" @dragstart="onFooterColumnDragStart(cidx)" @dragover.prevent @drop="onFooterColumnDrop(cidx)">
+                  <div class="p-4">
+                    <div class="flex items-start justify-between gap-4 mb-3">
+                      <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <svg class="size-5 text-gray-400 mt-0.5 flex-shrink-0 cursor-move" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                        <div class="flex-1 min-w-0">
+                          <input
+                            v-model="col.title"
+                            @input="updateFooter"
+                            type="text"
+                            class="w-full px-2 py-1 text-sm font-medium border border-transparent hover:border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            :placeholder="`Tiêu đề cột ${cidx + 1}`"
+                          />
                         </div>
                       </div>
+                      <div class="flex items-center gap-2 flex-shrink-0">
+                        <button type="button" @click="openAddFooterLinkModal(cidx)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded" title="Thêm liên kết">
+                          <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        </button>
+                        <button type="button" @click="removeFooterColumn(cidx)" class="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Xóa cột">
+                          <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Footer Links in Column -->
+                    <div v-if="col.links && col.links.length > 0" class="ml-8 space-y-2 pt-3 border-t border-gray-100">
+                      <div v-for="(lnk, lidx) in col.links" :key="lidx" class="flex items-center gap-3 group" draggable="true" @dragstart="onFooterLinkDragStart(cidx, lidx)" @dragover.prevent @drop="onFooterLinkDrop(cidx, lidx)">
+                        <svg class="size-4 text-gray-300 flex-shrink-0 cursor-move" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                        <svg class="size-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                        <div class="flex-1 min-w-0 space-y-1">
+                          <input
+                            v-model="lnk.label"
+                            @input="updateFooter"
+                            type="text"
+                            class="w-full px-2 py-1 text-sm border border-transparent hover:border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            placeholder="Tên liên kết"
+                          />
+                          <input
+                            v-model="lnk.url"
+                            @input="updateFooter"
+                            type="text"
+                            class="w-full px-2 py-1 text-xs text-gray-600 border border-transparent hover:border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            placeholder="URL"
+                          />
+                        </div>
+                        <button type="button" @click="removeFooterLink(cidx, lidx)" class="opacity-0 group-hover:opacity-100 p-1 text-red-600 hover:bg-red-50 rounded flex-shrink-0">
+                          <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div v-else class="ml-8 pt-3 border-t border-gray-100">
+                      <p class="text-xs text-gray-400 italic">Chưa có liên kết</p>
                     </div>
                   </div>
                 </div>
@@ -331,6 +340,56 @@
         <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
           <button type="button" @click="showAddChildModal = false" class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
           <button type="button" @click="addChild" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700">Thêm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Footer Column Modal -->
+    <div v-if="showAddFooterColumnModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showAddFooterColumnModal = false">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" @click.stop>
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Thêm cột footer mới</h3>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tiêu đề cột</label>
+            <input v-model="newFooterColumnTitle" type="text" class="w-full rounded-md border-gray-300 text-sm" placeholder="Ví dụ: Thông tin" />
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+          <button type="button" @click="showAddFooterColumnModal = false" class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
+          <button type="button" @click="addFooterColumn" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700">Thêm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Footer Link Modal -->
+    <div v-if="showAddFooterLinkModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showAddFooterLinkModal = false">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" @click.stop>
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Thêm liên kết footer</h3>
+          <p class="text-sm text-gray-500 mt-1">Thêm vào: <strong>{{ footerColumns[selectedFooterColumnForLink]?.title || `Cột ${selectedFooterColumnForLink + 1}` }}</strong></p>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Chọn từ danh mục</label>
+            <select v-model="newFooterLinkFromFolder" class="w-full rounded-md border-gray-300 text-sm">
+              <option value="">-- Hoặc nhập thủ công --</option>
+              <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.name }}</option>
+            </select>
+          </div>
+          <div class="pt-3 border-t border-gray-200">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tên liên kết</label>
+            <input v-model="newFooterLinkLabel" type="text" class="w-full rounded-md border-gray-300 text-sm" placeholder="Ví dụ: Giới thiệu" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">URL</label>
+            <input v-model="newFooterLinkUrl" type="text" class="w-full rounded-md border-gray-300 text-sm" placeholder="Ví dụ: /gioi-thieu" />
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+          <button type="button" @click="showAddFooterLinkModal = false" class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
+          <button type="button" @click="addFooterLink" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700">Thêm</button>
         </div>
       </div>
     </div>
@@ -626,32 +685,126 @@ const onChildDrop = (parentIdx, dropChildIdx) => {
   form.value.menu = menu.value
 }
 
-const footerColumnCount = ref(2)
+// Footer management
 const footerColumns = ref([])
-const selectedFooterColumnIndex = ref(0)
-const footerLinkLabel = ref('')
-const footerLinkUrl = ref('')
 
-const updateFooterColumnCount = () => {
-  const n = Number(footerColumnCount.value) || 1
-  while (footerColumns.value.length < n) footerColumns.value.push({ title: '', links: [] })
-  while (footerColumns.value.length > n) footerColumns.value.pop()
-  if (selectedFooterColumnIndex.value >= footerColumns.value.length) selectedFooterColumnIndex.value = 0
+// Footer modal states
+const showAddFooterColumnModal = ref(false)
+const showAddFooterLinkModal = ref(false)
+const selectedFooterColumnForLink = ref(-1)
+
+// New footer column form
+const newFooterColumnTitle = ref('')
+
+// New footer link form
+const newFooterLinkFromFolder = ref('')
+const newFooterLinkLabel = ref('')
+const newFooterLinkUrl = ref('')
+
+// Auto-fill from folder selection for footer link
+const watchFooterLinkFolder = () => {
+  if (newFooterLinkFromFolder.value) {
+    const f = folders.value.find(x => String(x.id) === String(newFooterLinkFromFolder.value))
+    if (f) {
+      newFooterLinkLabel.value = f.name
+      newFooterLinkUrl.value = urlForFolder(f)
+    }
+  }
 }
 
+watch(newFooterLinkFromFolder, watchFooterLinkFolder)
+
+// Add footer column
+const addFooterColumn = () => {
+  footerColumns.value.push({
+    title: newFooterColumnTitle.value || '',
+    links: []
+  })
+
+  // Reset and close
+  newFooterColumnTitle.value = ''
+  showAddFooterColumnModal.value = false
+  uiMsg.value = 'Đã thêm cột footer'
+  uiMsgType.value = 'success'
+}
+
+// Open add footer link modal
+const openAddFooterLinkModal = (colIdx) => {
+  selectedFooterColumnForLink.value = colIdx
+  showAddFooterLinkModal.value = true
+}
+
+// Add footer link
 const addFooterLink = () => {
-  if (!footerLinkLabel.value || !footerLinkUrl.value) return
-  const col = footerColumns.value[selectedFooterColumnIndex.value]
+  if (!newFooterLinkLabel.value || !newFooterLinkUrl.value) {
+    uiMsg.value = 'Vui lòng điền đầy đủ thông tin'
+    uiMsgType.value = 'error'
+    return
+  }
+
+  const col = footerColumns.value[selectedFooterColumnForLink.value]
   if (!col) return
-  col.links.push({ label: footerLinkLabel.value, url: footerLinkUrl.value })
-  footerLinkLabel.value = ''
-  footerLinkUrl.value = ''
+
+  col.links.push({
+    label: newFooterLinkLabel.value,
+    url: newFooterLinkUrl.value
+  })
+
+  // Reset and close
+  newFooterLinkFromFolder.value = ''
+  newFooterLinkLabel.value = ''
+  newFooterLinkUrl.value = ''
+  showAddFooterLinkModal.value = false
+  uiMsg.value = 'Đã thêm liên kết footer'
+  uiMsgType.value = 'success'
+}
+
+// Remove footer column
+const removeFooterColumn = (idx) => {
+  footerColumns.value.splice(idx, 1)
+}
+
+// Update footer on inline edit
+const updateFooter = () => {
+  // Trigger reactivity
 }
 
 const removeFooterLink = (cidx, lidx) => {
   const col = footerColumns.value[cidx]
   if (!col) return
   col.links.splice(lidx, 1)
+}
+
+// Drag & Drop for footer columns
+let draggingFooterColumnIndex = -1
+
+const onFooterColumnDragStart = (idx) => {
+  draggingFooterColumnIndex = idx
+}
+
+const onFooterColumnDrop = (dropIdx) => {
+  if (draggingFooterColumnIndex === -1 || dropIdx === draggingFooterColumnIndex) return
+  const cols = footerColumns.value
+  const [moved] = cols.splice(draggingFooterColumnIndex, 1)
+  cols.splice(dropIdx, 0, moved)
+  draggingFooterColumnIndex = -1
+}
+
+// Drag & Drop for footer links
+let draggingFooterLink = { column: -1, index: -1 }
+
+const onFooterLinkDragStart = (colIdx, linkIdx) => {
+  draggingFooterLink = { column: colIdx, index: linkIdx }
+}
+
+const onFooterLinkDrop = (colIdx, dropLinkIdx) => {
+  if (draggingFooterLink.column !== colIdx) return
+  const links = footerColumns.value[colIdx].links || []
+  const from = draggingFooterLink.index
+  if (from === dropLinkIdx || from < 0) return
+  const [moved] = links.splice(from, 1)
+  links.splice(dropLinkIdx, 0, moved)
+  draggingFooterLink = { column: -1, index: -1 }
 }
 
 const buildFooterHtml = () => {
