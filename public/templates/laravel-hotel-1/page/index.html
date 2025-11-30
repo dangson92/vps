@@ -45,28 +45,40 @@
 
 <script>
 (function() {
-  // Parse page data
-  const dataEl = document.getElementById('page-data');
-  if (!dataEl) return;
-
-  let data = {};
-  try {
-    data = JSON.parse(dataEl.textContent);
-  } catch (e) {
-    console.error('Failed to parse page data:', e);
-    return;
+  // Wait for DOM to be ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPage);
+  } else {
+    initPage();
   }
 
-  // Inject title
-  const titleEl = document.getElementById('page-title');
-  if (titleEl && data.title) {
-    titleEl.textContent = data.title;
-  }
+  function initPage() {
+    // Parse page data
+    const dataEl = document.getElementById('page-data');
+    if (!dataEl) {
+      console.error('page-data element not found');
+      return;
+    }
 
-  // Inject content
-  const contentEl = document.getElementById('page-content');
-  if (contentEl && data.content) {
-    contentEl.innerHTML = data.content;
+    let data = {};
+    try {
+      data = JSON.parse(dataEl.textContent);
+    } catch (e) {
+      console.error('Failed to parse page data:', e);
+      return;
+    }
+
+    // Inject title
+    const titleEl = document.getElementById('page-title');
+    if (titleEl && data.title) {
+      titleEl.textContent = data.title;
+    }
+
+    // Inject content
+    const contentEl = document.getElementById('page-content');
+    if (contentEl && data.content) {
+      contentEl.innerHTML = data.content;
+    }
   }
 })();
 </script>
