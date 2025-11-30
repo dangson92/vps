@@ -112,95 +112,83 @@
           </div>
           </div>
           <div v-if="activeTab === 'navigation'" class="space-y-6">
-            <div class="flex items-center justify-between">
-              <div class="flex flex-col gap-1">
-                <h2 class="text-lg font-semibold text-gray-900">Menu Header</h2>
-                <p class="text-sm text-gray-500">Tổ chức và tuỳ chỉnh menu điều hướng.</p>
+            <!-- Menu Header Section -->
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold text-gray-900">Menu Header</h2>
+                  <p class="text-sm text-gray-500 mt-1">Kéo thả để sắp xếp, click để chỉnh sửa</p>
+                </div>
+                <button type="button" @click="showAddMenuModal = true" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium">
+                  <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                  Thêm menu
+                </button>
               </div>
-            </div>
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div class="flex flex-col gap-4">
-                <div class="rounded-lg border border-gray-200 bg-white">
-                  <div class="flex items-center justify-between p-4 text-left font-medium text-gray-900">
-                    <span>Danh mục</span>
-                  </div>
-                  <div class="border-t border-gray-200 p-4">
-                    <div class="flex flex-col gap-2">
-                      <label class="text-sm font-medium text-gray-700">Chọn danh mục</label>
-                      <select v-model="menuParentFolderId" class="form-select w-full rounded-md border-gray-300 text-sm shadow-sm">
-                        <option value="">Chọn danh mục</option>
-                        <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.name }}</option>
-                      </select>
-                      <button type="button" @click="addParentFromFolder" class="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-100 h-9 px-3 text-gray-700 text-sm font-bold hover:bg-gray-200">Thêm vào menu</button>
-                    </div>
-                  </div>
+
+              <!-- Menu List -->
+              <div class="space-y-2">
+                <div v-if="menu.length === 0" class="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+                  <p class="text-gray-500 text-sm">Chưa có menu nào. Click "Thêm menu" để bắt đầu.</p>
                 </div>
-                <div class="rounded-lg border border-gray-200 bg-white">
-                  <div class="flex items-center justify-between p-4 text-left font-medium text-gray-900">
-                    <span>Liên kết tuỳ chỉnh</span>
-                  </div>
-                  <div class="border-t border-gray-200 p-4">
-                    <div class="flex flex-col gap-2">
-                      <label class="text-sm font-medium text-gray-700">Nhãn điều hướng</label>
-                      <input v-model="customParentLabel" class="form-input mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm" type="text" placeholder="Ví dụ: Khuyến mãi" />
-                      <label class="text-sm font-medium text-gray-700">URL</label>
-                      <input v-model="customParentUrl" class="form-input mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm" type="text" placeholder="/khuyen-mai" />
-                      <button type="button" @click="addParentCustom" class="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-100 h-9 px-3 text-gray-700 text-sm font-bold hover:bg-gray-200">Thêm vào menu</button>
-                    </div>
-                  </div>
-                </div>
-                <div class="rounded-lg border border-gray-200 bg-white">
-                  <div class="flex items-center justify-between p-4 text-left font-medium text-gray-900">
-                    <span>Thêm menu con</span>
-                    <span class="text-xs text-gray-500">{{ menu[selectedMenuIndex]?.label || 'Chưa chọn' }}</span>
-                  </div>
-                  <div class="border-t border-gray-200 p-4">
-                    <div class="flex flex-col gap-4">
-                      <div>
-                        <label class="text-xs font-medium text-gray-700">Chọn danh mục</label>
-                        <select v-model="childFolderId" class="form-select mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
-                          <option value="">Chọn danh mục</option>
-                          <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.name }}</option>
-                        </select>
-                        <button type="button" @click="addChildFromFolder(selectedMenuIndex)" :disabled="selectedMenuIndex < 0" class="mt-2 w-full px-3 py-2 text-xs rounded-md border border-gray-300 bg-white disabled:opacity-50">+ Thêm</button>
+                <div v-for="(mi, idx) in menu" :key="idx" class="rounded-lg border border-gray-200 bg-white" draggable="true" @dragstart="onParentDragStart(idx)" @dragover.prevent @drop="onParentDrop(idx)">
+                  <!-- Parent Menu Item -->
+                  <div class="p-4">
+                    <div class="flex items-start justify-between gap-4">
+                      <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <svg class="size-5 text-gray-400 mt-0.5 flex-shrink-0 cursor-move" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                        <div class="flex-1 min-w-0 space-y-2">
+                          <div class="flex items-center gap-2">
+                            <input
+                              v-model="mi.label"
+                              @input="updateMenu"
+                              type="text"
+                              class="flex-1 px-2 py-1 text-sm font-medium border border-transparent hover:border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                              placeholder="Tên menu"
+                            />
+                          </div>
+                          <input
+                            v-model="mi.url"
+                            @input="updateMenu"
+                            type="text"
+                            class="w-full px-2 py-1 text-xs text-gray-600 border border-transparent hover:border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            placeholder="URL (ví dụ: /khach-san)"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label class="text-xs font-medium text-gray-700">Liên kết tuỳ chỉnh</label>
-                        <input v-model="customChildLabel" placeholder="Label" class="form-input mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                        <input v-model="customChildUrl" placeholder="URL" class="form-input mt-2 w-full rounded-md border-gray-300 text-sm shadow-sm" />
-                        <button type="button" @click="addChildCustom(selectedMenuIndex)" :disabled="selectedMenuIndex < 0" class="mt-2 w-full px-3 py-2 text-xs rounded-md border border-gray-300 bg-white disabled:opacity-50">+ Thêm</button>
-                        <div v-if="selectedMenuIndex < 0" class="mt-2 text-xs text-gray-500">Chọn mục menu ở danh sách bên phải trước khi thêm menu con</div>
+                      <div class="flex items-center gap-2 flex-shrink-0">
+                        <button type="button" @click="openAddChildModal(idx)" class="p-1.5 text-gray-600 hover:bg-gray-100 rounded" title="Thêm menu con">
+                          <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        </button>
+                        <button type="button" @click="removeParent(idx)" class="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Xóa">
+                          <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-              <div class="flex flex-col gap-4">
-                <div class="rounded-lg border border-gray-200 bg-white p-4">
-                  <div class="flex items-center justify-between pb-3">
-                    <h3 class="text-base font-medium text-gray-900">Cấu trúc menu</h3>
-                  </div>
-                  <div class="min-h-[200px] rounded-lg border border-dashed border-gray-300 bg-gray-50/50 p-4">
-                    <div class="flex flex-col gap-2">
-                      <div v-for="(mi, idx) in menu" :key="idx" class="rounded-lg border border-gray-200 bg-white" draggable="true" @dragstart="onParentDragStart(idx)" @dragover.prevent @drop="onParentDrop(idx)">
-                        <div class="flex items-center justify-between p-3" @click="selectedMenuIndex = idx" :class="selectedMenuIndex === idx ? 'ring-1 ring-blue-500' : ''">
-                          <div class="flex items-center gap-2">
-                            <span class="text-sm font-medium text-gray-800">{{ mi.label }}</span>
-                            <span class="text-xs text-gray-500">{{ mi.url }}</span>
-                          </div>
-                          <div class="flex items-center gap-2">
-                            <button type="button" @click="removeParent(idx)" class="text-sm text-red-600">Xoá</button>
-                          </div>
+
+                    <!-- Child Menu Items -->
+                    <div v-if="mi.children && mi.children.length > 0" class="mt-4 ml-8 space-y-2 pt-3 border-t border-gray-100">
+                      <div v-for="(ch, cidx) in mi.children" :key="cidx" class="flex items-center gap-3 group" draggable="true" @dragstart="onChildDragStart(idx, cidx)" @dragover.prevent @drop="onChildDrop(idx, cidx)">
+                        <svg class="size-4 text-gray-300 flex-shrink-0 cursor-move" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/></svg>
+                        <svg class="size-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <div class="flex-1 min-w-0 space-y-1">
+                          <input
+                            v-model="ch.label"
+                            @input="updateMenu"
+                            type="text"
+                            class="w-full px-2 py-1 text-sm border border-transparent hover:border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            placeholder="Tên menu con"
+                          />
+                          <input
+                            v-model="ch.url"
+                            @input="updateMenu"
+                            type="text"
+                            class="w-full px-2 py-1 text-xs text-gray-600 border border-transparent hover:border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                            placeholder="URL"
+                          />
                         </div>
-                        <div class="border-t border-gray-200 p-3">
-                          <div class="text-xs text-gray-600 mb-2">Menu con</div>
-                          <ul class="flex flex-wrap items-center gap-2">
-                            <li v-for="(ch, cidx) in mi.children" :key="cidx" class="px-2 py-1 text-xs rounded-md border border-gray-300 bg-gray-50 flex items-center gap-2" draggable="true" @dragstart="onChildDragStart(idx, cidx)" @dragover.prevent @drop="onChildDrop(idx, cidx)">
-                              <span>↳ {{ ch.label }}</span>
-                              <button type="button" @click="removeChild(idx, cidx)" class="text-gray-500">×</button>
-                            </li>
-                          </ul>
-                        </div>
+                        <button type="button" @click="removeChild(idx, cidx)" class="opacity-0 group-hover:opacity-100 p-1 text-red-600 hover:bg-red-50 rounded flex-shrink-0">
+                          <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -285,11 +273,72 @@
         </div>
       </div>
     </div>
+
+    <!-- Add Menu Modal -->
+    <div v-if="showAddMenuModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showAddMenuModal = false">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" @click.stop>
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Thêm menu mới</h3>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Chọn từ danh mục</label>
+            <select v-model="newMenuFromFolder" class="w-full rounded-md border-gray-300 text-sm">
+              <option value="">-- Hoặc nhập thủ công --</option>
+              <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.name }}</option>
+            </select>
+          </div>
+          <div class="pt-3 border-t border-gray-200">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tên menu</label>
+            <input v-model="newMenuLabel" type="text" class="w-full rounded-md border-gray-300 text-sm" placeholder="Ví dụ: Khách sạn" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">URL</label>
+            <input v-model="newMenuUrl" type="text" class="w-full rounded-md border-gray-300 text-sm" placeholder="Ví dụ: /khach-san" />
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+          <button type="button" @click="showAddMenuModal = false" class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
+          <button type="button" @click="addMenu" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700">Thêm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Child Menu Modal -->
+    <div v-if="showAddChildModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click="showAddChildModal = false">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4" @click.stop>
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Thêm menu con</h3>
+          <p class="text-sm text-gray-500 mt-1">Thêm vào: <strong>{{ menu[selectedParentForChild]?.label }}</strong></p>
+        </div>
+        <div class="px-6 py-4 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Chọn từ danh mục</label>
+            <select v-model="newChildFromFolder" class="w-full rounded-md border-gray-300 text-sm">
+              <option value="">-- Hoặc nhập thủ công --</option>
+              <option v-for="f in folders" :key="f.id" :value="f.id">{{ f.name }}</option>
+            </select>
+          </div>
+          <div class="pt-3 border-t border-gray-200">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Tên menu con</label>
+            <input v-model="newChildLabel" type="text" class="w-full rounded-md border-gray-300 text-sm" placeholder="Ví dụ: Khách sạn 5 sao" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">URL</label>
+            <input v-model="newChildUrl" type="text" class="w-full rounded-md border-gray-300 text-sm" placeholder="Ví dụ: /khach-san-5-sao" />
+          </div>
+        </div>
+        <div class="px-6 py-4 bg-gray-50 rounded-b-lg flex gap-3 justify-end">
+          <button type="button" @click="showAddChildModal = false" class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
+          <button type="button" @click="addChild" class="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700">Thêm</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import { Upload, Image as ImageIcon } from 'lucide-vue-next'
@@ -421,13 +470,21 @@ onMounted(async () => {
  
 const folders = ref([])
 const menu = ref([])
-const selectedMenuIndex = ref(-1)
-const menuParentFolderId = ref('')
-const customParentLabel = ref('')
-const customParentUrl = ref('')
-const childFolderId = ref('')
-const customChildLabel = ref('')
-const customChildUrl = ref('')
+
+// Modal states
+const showAddMenuModal = ref(false)
+const showAddChildModal = ref(false)
+const selectedParentForChild = ref(-1)
+
+// New menu form
+const newMenuFromFolder = ref('')
+const newMenuLabel = ref('')
+const newMenuUrl = ref('')
+
+// New child form
+const newChildFromFolder = ref('')
+const newChildLabel = ref('')
+const newChildUrl = ref('')
 
 const fetchFolders = async () => {
   try {
@@ -441,55 +498,90 @@ const urlForFolder = (folder) => {
   return `/${slug}`
 }
 
-  const addParentFromFolder = () => {
-    const f = folders.value.find(x => String(x.id) === String(menuParentFolderId.value))
-    if (!f) return
-    menu.value.push({ label: f.name, url: urlForFolder(f), children: [] })
-    menuParentFolderId.value = ''
-    selectedMenuIndex.value = menu.value.length - 1
-    uiMsg.value = 'Đã thêm danh mục vào menu'
-    uiMsgType.value = 'success'
-    form.value.menu = menu.value
+// Auto-fill from folder selection
+const watchMenuFolder = () => {
+  if (newMenuFromFolder.value) {
+    const f = folders.value.find(x => String(x.id) === String(newMenuFromFolder.value))
+    if (f) {
+      newMenuLabel.value = f.name
+      newMenuUrl.value = urlForFolder(f)
+    }
   }
+}
 
-  const addParentCustom = () => {
-    if (!customParentLabel.value || !customParentUrl.value) return
-    menu.value.push({ label: customParentLabel.value, url: customParentUrl.value, children: [] })
-    customParentLabel.value = ''
-    customParentUrl.value = ''
-    selectedMenuIndex.value = menu.value.length - 1
-    uiMsg.value = 'Đã thêm liên kết vào menu'
-    uiMsgType.value = 'success'
-    form.value.menu = menu.value
+const watchChildFolder = () => {
+  if (newChildFromFolder.value) {
+    const f = folders.value.find(x => String(x.id) === String(newChildFromFolder.value))
+    if (f) {
+      newChildLabel.value = f.name
+      newChildUrl.value = urlForFolder(f)
+    }
   }
+}
 
-  const addChildFromFolder = (idx) => {
-    if (idx < 0) { uiMsg.value = 'Chọn mục menu trước'; uiMsgType.value = 'error'; return }
-    const f = folders.value.find(x => String(x.id) === String(childFolderId.value))
-    if (!f) return
-    const item = menu.value[idx]
-    if (!item) return
-    item.children = item.children || []
-    item.children.push({ label: f.name, url: urlForFolder(f) })
-    childFolderId.value = ''
-    uiMsg.value = 'Đã thêm menu con từ danh mục'
-    uiMsgType.value = 'success'
-    form.value.menu = menu.value
-  }
+// Watch folder selections
+watch(newMenuFromFolder, watchMenuFolder)
+watch(newChildFromFolder, watchChildFolder)
 
-  const addChildCustom = (idx) => {
-    if (!customChildLabel.value || !customChildUrl.value) return
-    if (idx < 0) { uiMsg.value = 'Chọn mục menu trước'; uiMsgType.value = 'error'; return }
-    const item = menu.value[idx]
-    if (!item) return
-    item.children = item.children || []
-    item.children.push({ label: customChildLabel.value, url: customChildUrl.value })
-    customChildLabel.value = ''
-    customChildUrl.value = ''
-    uiMsg.value = 'Đã thêm menu con tuỳ chỉnh'
-    uiMsgType.value = 'success'
-    form.value.menu = menu.value
+// Add menu
+const addMenu = () => {
+  if (!newMenuLabel.value || !newMenuUrl.value) {
+    uiMsg.value = 'Vui lòng điền đầy đủ thông tin'
+    uiMsgType.value = 'error'
+    return
   }
+  menu.value.push({
+    label: newMenuLabel.value,
+    url: newMenuUrl.value,
+    children: []
+  })
+  form.value.menu = menu.value
+
+  // Reset and close
+  newMenuFromFolder.value = ''
+  newMenuLabel.value = ''
+  newMenuUrl.value = ''
+  showAddMenuModal.value = false
+  uiMsg.value = 'Đã thêm menu'
+  uiMsgType.value = 'success'
+}
+
+// Open add child modal
+const openAddChildModal = (parentIdx) => {
+  selectedParentForChild.value = parentIdx
+  showAddChildModal.value = true
+}
+
+// Add child
+const addChild = () => {
+  if (!newChildLabel.value || !newChildUrl.value) {
+    uiMsg.value = 'Vui lòng điền đầy đủ thông tin'
+    uiMsgType.value = 'error'
+    return
+  }
+  const item = menu.value[selectedParentForChild.value]
+  if (!item) return
+
+  item.children = item.children || []
+  item.children.push({
+    label: newChildLabel.value,
+    url: newChildUrl.value
+  })
+  form.value.menu = menu.value
+
+  // Reset and close
+  newChildFromFolder.value = ''
+  newChildLabel.value = ''
+  newChildUrl.value = ''
+  showAddChildModal.value = false
+  uiMsg.value = 'Đã thêm menu con'
+  uiMsgType.value = 'success'
+}
+
+// Update menu on inline edit
+const updateMenu = () => {
+  form.value.menu = menu.value
+}
 
 const removeParent = (idx) => {
   menu.value.splice(idx, 1)
