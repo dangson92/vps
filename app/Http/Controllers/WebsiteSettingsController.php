@@ -66,6 +66,9 @@ class WebsiteSettingsController extends Controller
 
                 // Redeploy all category pages with new settings
                 $this->deploymentService->deployLaravel1AllCategories($website);
+
+                // Redeploy all page details with new settings
+                $this->deploymentService->deployLaravel1AllPages($website);
             } catch (\Exception $e) {
                 // Log error but don't fail the settings update
                 \Illuminate\Support\Facades\Log::error('Failed to redeploy after settings update', [

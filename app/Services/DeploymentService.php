@@ -157,6 +157,17 @@ class DeploymentService
         }
     }
 
+    public function deployLaravel1AllPages(Website $website): void
+    {
+        $pages = \App\Models\Page::whereHas('folder', function ($query) use ($website) {
+            $query->where('website_id', $website->id);
+        })->get();
+
+        foreach ($pages as $page) {
+            $this->deployPage($page);
+        }
+    }
+
     public function deployLaravel1Homepage(Website $website): void
     {
         $vps = $website->vpsServer;
