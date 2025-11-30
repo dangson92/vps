@@ -87,6 +87,7 @@
                   <option value="home">Home Template</option>
                   <option value="listing">Listing Template</option>
                   <option value="detail">Detail Template</option>
+                  <option value="page">Page Template (Static Content)</option>
                 </optgroup>
               </select>
               <p class="mt-1 text-xs text-gray-500">

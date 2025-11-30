@@ -283,20 +283,20 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
             <div class="flex items-center">
-              <input id="redeploy-all" type="checkbox" value="all" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-all" class="ml-2 text-sm text-gray-700 cursor-pointer">All Templates (Home, Listing, Detail)</label>
+              <input id="redeploy-all" type="checkbox" :checked="isRedeployTemplateChecked('all')" @click="toggleRedeployTemplate('all')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="redeploy-all" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('all')">All Templates (Home, Listing, Detail)</label>
             </div>
             <div class="flex items-center">
-              <input id="redeploy-home" type="checkbox" value="home" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-home" class="ml-2 text-sm text-gray-700 cursor-pointer">Home Template</label>
+              <input id="redeploy-home" type="checkbox" :checked="isRedeployTemplateChecked('home')" @click="toggleRedeployTemplate('home')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="redeploy-home" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('home')">Home Template</label>
             </div>
             <div class="flex items-center">
-              <input id="redeploy-listing" type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-listing" class="ml-2 text-sm text-gray-700 cursor-pointer">Listing Template</label>
+              <input id="redeploy-listing" type="checkbox" :checked="isRedeployTemplateChecked('listing')" @click="toggleRedeployTemplate('listing')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="redeploy-listing" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('listing')">Listing Template</label>
             </div>
             <div class="flex items-center">
-              <input id="redeploy-detail" type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-detail" class="ml-2 text-sm text-gray-700 cursor-pointer">Detail Template</label>
+              <input id="redeploy-detail" type="checkbox" :checked="isRedeployTemplateChecked('detail')" @click="toggleRedeployTemplate('detail')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="redeploy-detail" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('detail')">Detail Template</label>
             </div>
           </div>
         </div>
@@ -337,20 +337,20 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
             <div class="flex items-center">
-              <input id="update-all" type="checkbox" value="all" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-all" class="ml-2 text-sm text-gray-700 cursor-pointer">All Templates (Home, Listing, Detail)</label>
+              <input id="update-all" type="checkbox" :checked="isUpdateTemplateChecked('all')" @click="toggleUpdateTemplate('all')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="update-all" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('all')">All Templates (Home, Listing, Detail)</label>
             </div>
             <div class="flex items-center">
-              <input id="update-home" type="checkbox" value="home" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-home" class="ml-2 text-sm text-gray-700 cursor-pointer">Home Template</label>
+              <input id="update-home" type="checkbox" :checked="isUpdateTemplateChecked('home')" @click="toggleUpdateTemplate('home')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="update-home" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('home')">Home Template</label>
             </div>
             <div class="flex items-center">
-              <input id="update-listing" type="checkbox" value="listing" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-listing" class="ml-2 text-sm text-gray-700 cursor-pointer">Listing Template</label>
+              <input id="update-listing" type="checkbox" :checked="isUpdateTemplateChecked('listing')" @click="toggleUpdateTemplate('listing')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="update-listing" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('listing')">Listing Template</label>
             </div>
             <div class="flex items-center">
-              <input id="update-detail" type="checkbox" value="detail" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-detail" class="ml-2 text-sm text-gray-700 cursor-pointer">Detail Template</label>
+              <input id="update-detail" type="checkbox" :checked="isUpdateTemplateChecked('detail')" @click="toggleUpdateTemplate('detail')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
+              <label for="update-detail" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('detail')">Detail Template</label>
             </div>
           </div>
         </div>
@@ -764,6 +764,40 @@ const updatePagesTemplate = async () => {
   } finally {
     loadingRedeployIds.value = loadingRedeployIds.value.filter(id => id !== currentRedeployWebsite.value.id)
   }
+}
+
+const toggleRedeployTemplate = (value) => {
+  const arr = redeployAssetsForm.value.template_names || []
+  const idx = arr.indexOf(value)
+  if (idx === -1) {
+    // Add the value
+    redeployAssetsForm.value.template_names = [...arr, value]
+  } else {
+    // Remove the value
+    redeployAssetsForm.value.template_names = arr.filter(v => v !== value)
+  }
+  console.log('Redeploy templates:', redeployAssetsForm.value.template_names)
+}
+
+const toggleUpdateTemplate = (value) => {
+  const arr = updateTemplateForm.value.template_names || []
+  const idx = arr.indexOf(value)
+  if (idx === -1) {
+    // Add the value
+    updateTemplateForm.value.template_names = [...arr, value]
+  } else {
+    // Remove the value
+    updateTemplateForm.value.template_names = arr.filter(v => v !== value)
+  }
+  console.log('Update templates:', updateTemplateForm.value.template_names)
+}
+
+const isRedeployTemplateChecked = (value) => {
+  return (redeployAssetsForm.value.template_names || []).includes(value)
+}
+
+const isUpdateTemplateChecked = (value) => {
+  return (updateTemplateForm.value.template_names || []).includes(value)
 }
 
 const closeRedeployAssetsModal = () => {
