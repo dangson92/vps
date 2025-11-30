@@ -1,0 +1,51 @@
+<body class="font-display bg-gray-50 text-neutral-900">
+<div class="relative flex min-h-screen w-full flex-col">
+
+<main class="flex grow flex-col">
+  <div class="px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-4xl mx-auto">
+      <!-- Page Title -->
+      <div class="mb-8">
+        <h1 id="page-title" class="text-4xl md:text-5xl font-extrabold text-neutral-900"></h1>
+      </div>
+
+      <!-- Page Content -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+        <article id="page-content" class="prose prose-lg max-w-none p-8 md:p-12">
+          <!-- Content will be injected here -->
+        </article>
+      </div>
+    </div>
+  </div>
+</main>
+
+</div>
+
+<script>
+(function() {
+  // Parse page data
+  const dataEl = document.getElementById('page-data');
+  if (!dataEl) return;
+
+  let data = {};
+  try {
+    data = JSON.parse(dataEl.textContent);
+  } catch (e) {
+    console.error('Failed to parse page data:', e);
+    return;
+  }
+
+  // Inject title
+  const titleEl = document.getElementById('page-title');
+  if (titleEl && data.title) {
+    titleEl.textContent = data.title;
+  }
+
+  // Inject content
+  const contentEl = document.getElementById('page-content');
+  if (contentEl && data.content) {
+    contentEl.innerHTML = data.content;
+  }
+})();
+</script>
+</body>

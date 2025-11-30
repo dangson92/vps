@@ -283,19 +283,19 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
             <div class="flex items-center">
-              <input id="redeploy-all" type="checkbox" value="all" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <input id="redeploy-all" type="checkbox" value="all" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="redeploy-all" class="ml-2 text-sm text-gray-700 cursor-pointer">All Templates (Home, Listing, Detail)</label>
             </div>
             <div class="flex items-center">
-              <input id="redeploy-home" type="checkbox" value="home" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <input id="redeploy-home" type="checkbox" value="home" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="redeploy-home" class="ml-2 text-sm text-gray-700 cursor-pointer">Home Template</label>
             </div>
             <div class="flex items-center">
-              <input id="redeploy-listing" type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <input id="redeploy-listing" type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="redeploy-listing" class="ml-2 text-sm text-gray-700 cursor-pointer">Listing Template</label>
             </div>
             <div class="flex items-center">
-              <input id="redeploy-detail" type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <input id="redeploy-detail" type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="redeploy-detail" class="ml-2 text-sm text-gray-700 cursor-pointer">Detail Template</label>
             </div>
           </div>
@@ -337,19 +337,19 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
             <div class="flex items-center">
-              <input id="update-all" type="checkbox" value="all" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <input id="update-all" type="checkbox" value="all" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="update-all" class="ml-2 text-sm text-gray-700 cursor-pointer">All Templates (Home, Listing, Detail)</label>
             </div>
             <div class="flex items-center">
-              <input id="update-home" type="checkbox" value="home" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <input id="update-home" type="checkbox" value="home" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="update-home" class="ml-2 text-sm text-gray-700 cursor-pointer">Home Template</label>
             </div>
             <div class="flex items-center">
-              <input id="update-listing" type="checkbox" value="listing" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <input id="update-listing" type="checkbox" value="listing" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="update-listing" class="ml-2 text-sm text-gray-700 cursor-pointer">Listing Template</label>
             </div>
             <div class="flex items-center">
-              <input id="update-detail" type="checkbox" value="detail" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <input id="update-detail" type="checkbox" value="detail" v-model="updateTemplateForm.template_names" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
               <label for="update-detail" class="ml-2 text-sm text-gray-700 cursor-pointer">Detail Template</label>
             </div>
           </div>
