@@ -545,6 +545,7 @@ const save = async () => {
       }
       payload.folder_ids = [...selectedFolderIds.value]
       payload.primary_folder_id = primaryFolderId.value
+      console.log('Creating page with payload:', JSON.stringify(payload, null, 2))
       await axios.post(`/api/websites/${websiteId}/pages`, payload)
     } else {
       const payload = { ...form.value }
@@ -602,11 +603,14 @@ const save = async () => {
       if (!payload.path) payload.path = '/'
       payload.folder_ids = [...selectedFolderIds.value]
       payload.primary_folder_id = primaryFolderId.value
+      console.log('Updating page with payload:', JSON.stringify(payload, null, 2))
       await axios.put(`/api/pages/${pageId}`, payload)
     }
     router.push(`/websites/${websiteId}/pages`)
   } catch (e) {
-    alert(e?.response?.data?.error || e?.message || 'Lưu trang thất bại')
+    console.error('Save error:', e?.response?.data)
+    const errMsg = e?.response?.data?.message || e?.response?.data?.error || e?.message || 'Lưu trang thất bại'
+    alert(errMsg)
   } finally {
     saving.value = false
   }
