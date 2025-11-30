@@ -60,20 +60,47 @@ class WebsiteSettingsController extends Controller
             try {
                 // Deploy assets (logo/favicon) to VPS first
                 $this->deploymentService->deployWebsiteAssets($website);
-
-                // Redeploy homepage with new settings
-                $this->deploymentService->deployLaravel1Homepage($website);
-
-                // Redeploy all category pages with new settings
-                $this->deploymentService->deployLaravel1AllCategories($website);
-
-                // Redeploy all page details with new settings
-                $this->deploymentService->deployLaravel1AllPages($website);
             } catch (\Exception $e) {
-                // Log error but don't fail the settings update
-                \Illuminate\Support\Facades\Log::error('Failed to redeploy after settings update', [
+                \Illuminate\Support\Facades\Log::error('Failed to deploy assets', [
                     'website_id' => $website->id,
                     'error' => $e->getMessage()
+                ]);
+            }
+
+            try {
+                // Redeploy homepage with new settings
+                $this->deploymentService->deployLaravel1Homepage($website);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to deploy homepage', [
+                    'website_id' => $website->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            try {
+                // Redeploy all category pages with new settings
+                $this->deploymentService->deployLaravel1AllCategories($website);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to deploy categories', [
+                    'website_id' => $website->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            try {
+                // Redeploy all page details with new settings
+                \Illuminate\Support\Facades\Log::info('Starting to deploy all pages', [
+                    'website_id' => $website->id
+                ]);
+                $this->deploymentService->deployLaravel1AllPages($website);
+                \Illuminate\Support\Facades\Log::info('Completed deploying all pages', [
+                    'website_id' => $website->id
+                ]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to deploy pages', [
+                    'website_id' => $website->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
                 ]);
             }
         }
