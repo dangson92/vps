@@ -29,7 +29,7 @@ class PageController extends Controller
             'filename' => 'required|string|max:255',
             'title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string|max:500',
-            'content' => 'required|string',
+            'content' => 'nullable|string',
             'template_type' => 'nullable|in:blank,home,listing,detail,page',
             'template_data' => 'nullable|array',
             'folder_ids' => 'nullable|array',
