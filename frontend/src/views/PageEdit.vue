@@ -356,6 +356,7 @@ const buildPageHtml = async () => {
   let sf = ''
   try { const hResp = await axios.get('/templates/_shared/header.html'); sh = hResp.data || '' } catch {}
   try { const fResp = await axios.get('/templates/_shared/footer.html'); sf = fResp.data || '' } catch {}
+
   if (sh) {
     base = base.replace(/<header[^>]*>[\s\S]*?<\/header>/i, sh)
   }
@@ -368,6 +369,7 @@ const buildPageHtml = async () => {
       base += '\n' + sf
     }
   }
+
   const dataObj = {
     title: pageTitle || 'Page',
     content: tpl.value.pageContent || ''
@@ -495,6 +497,11 @@ const createFolderInModal = async () => {
 const save = async () => {
   saving.value = true
   try {
+    const pageEditor = window.tinymce?.get('page-content-editor')
+    if (pageEditor) {
+      tpl.value.pageContent = pageEditor.getContent() || ''
+    }
+
     if (isNew.value) {
       let adjusted
       if (templateType.value === 'blank') {
