@@ -282,21 +282,69 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
-            <div class="flex items-center">
-              <input id="redeploy-all" type="checkbox" :checked="isRedeployTemplateChecked('all')" @click="toggleRedeployTemplate('all')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-all" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('all')">All Templates (Home, Listing, Detail)</label>
+            <div class="flex items-center cursor-pointer" @click="toggleRedeployTemplate('all')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isRedeployTemplateChecked('all') ? '#3B82F6' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isRedeployTemplateChecked('all')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
             </div>
-            <div class="flex items-center">
-              <input id="redeploy-home" type="checkbox" :checked="isRedeployTemplateChecked('home')" @click="toggleRedeployTemplate('home')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-home" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('home')">Home Template</label>
+            <div class="flex items-center cursor-pointer" @click="toggleRedeployTemplate('home')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isRedeployTemplateChecked('home') ? '#3B82F6' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isRedeployTemplateChecked('home')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">Home Template</span>
             </div>
-            <div class="flex items-center">
-              <input id="redeploy-listing" type="checkbox" :checked="isRedeployTemplateChecked('listing')" @click="toggleRedeployTemplate('listing')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-listing" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('listing')">Listing Template</label>
+            <div class="flex items-center cursor-pointer" @click="toggleRedeployTemplate('listing')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isRedeployTemplateChecked('listing') ? '#3B82F6' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isRedeployTemplateChecked('listing')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">Listing Template</span>
             </div>
-            <div class="flex items-center">
-              <input id="redeploy-detail" type="checkbox" :checked="isRedeployTemplateChecked('detail')" @click="toggleRedeployTemplate('detail')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="redeploy-detail" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleRedeployTemplate('detail')">Detail Template</label>
+            <div class="flex items-center cursor-pointer" @click="toggleRedeployTemplate('detail')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isRedeployTemplateChecked('detail') ? '#3B82F6' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isRedeployTemplateChecked('detail')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">Detail Template</span>
             </div>
           </div>
         </div>
@@ -336,21 +384,69 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
-            <div class="flex items-center">
-              <input id="update-all" type="checkbox" :checked="isUpdateTemplateChecked('all')" @click="toggleUpdateTemplate('all')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-all" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('all')">All Templates (Home, Listing, Detail)</label>
+            <div class="flex items-center cursor-pointer" @click="toggleUpdateTemplate('all')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isUpdateTemplateChecked('all') ? '#9333EA' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isUpdateTemplateChecked('all')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
             </div>
-            <div class="flex items-center">
-              <input id="update-home" type="checkbox" :checked="isUpdateTemplateChecked('home')" @click="toggleUpdateTemplate('home')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-home" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('home')">Home Template</label>
+            <div class="flex items-center cursor-pointer" @click="toggleUpdateTemplate('home')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isUpdateTemplateChecked('home') ? '#9333EA' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isUpdateTemplateChecked('home')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">Home Template</span>
             </div>
-            <div class="flex items-center">
-              <input id="update-listing" type="checkbox" :checked="isUpdateTemplateChecked('listing')" @click="toggleUpdateTemplate('listing')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-listing" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('listing')">Listing Template</label>
+            <div class="flex items-center cursor-pointer" @click="toggleUpdateTemplate('listing')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isUpdateTemplateChecked('listing') ? '#9333EA' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isUpdateTemplateChecked('listing')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">Listing Template</span>
             </div>
-            <div class="flex items-center">
-              <input id="update-detail" type="checkbox" :checked="isUpdateTemplateChecked('detail')" @click="toggleUpdateTemplate('detail')" style="width: 16px; height: 16px; cursor: pointer; margin: 0;">
-              <label for="update-detail" class="ml-2 text-sm text-gray-700 cursor-pointer" @click="toggleUpdateTemplate('detail')">Detail Template</label>
+            <div class="flex items-center cursor-pointer" @click="toggleUpdateTemplate('detail')">
+              <div :style="{
+                width: '18px',
+                height: '18px',
+                border: '2px solid #4B5563',
+                borderRadius: '3px',
+                backgroundColor: isUpdateTemplateChecked('detail') ? '#9333EA' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }">
+                <span v-if="isUpdateTemplateChecked('detail')" style="color: white; font-size: 12px; font-weight: bold;">✓</span>
+              </div>
+              <span class="ml-2 text-sm text-gray-700">Detail Template</span>
             </div>
           </div>
         </div>
