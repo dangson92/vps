@@ -282,22 +282,22 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="all" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
-            </label>
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="home" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">Home Template</span>
-            </label>
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">Listing Template</span>
-            </label>
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">Detail Template</span>
-            </label>
+            <div class="flex items-center">
+              <input id="redeploy-all" type="checkbox" value="all" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <label for="redeploy-all" class="ml-2 text-sm text-gray-700 cursor-pointer">All Templates (Home, Listing, Detail)</label>
+            </div>
+            <div class="flex items-center">
+              <input id="redeploy-home" type="checkbox" value="home" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <label for="redeploy-home" class="ml-2 text-sm text-gray-700 cursor-pointer">Home Template</label>
+            </div>
+            <div class="flex items-center">
+              <input id="redeploy-listing" type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <label for="redeploy-listing" class="ml-2 text-sm text-gray-700 cursor-pointer">Listing Template</label>
+            </div>
+            <div class="flex items-center">
+              <input id="redeploy-detail" type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+              <label for="redeploy-detail" class="ml-2 text-sm text-gray-700 cursor-pointer">Detail Template</label>
+            </div>
           </div>
         </div>
 
@@ -336,22 +336,22 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="all" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
-            </label>
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="home" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">Home Template</span>
-            </label>
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="listing" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">Listing Template</span>
-            </label>
-            <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="detail" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
-              <span class="text-sm text-gray-700">Detail Template</span>
-            </label>
+            <div class="flex items-center">
+              <input id="update-all" type="checkbox" value="all" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <label for="update-all" class="ml-2 text-sm text-gray-700 cursor-pointer">All Templates (Home, Listing, Detail)</label>
+            </div>
+            <div class="flex items-center">
+              <input id="update-home" type="checkbox" value="home" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <label for="update-home" class="ml-2 text-sm text-gray-700 cursor-pointer">Home Template</label>
+            </div>
+            <div class="flex items-center">
+              <input id="update-listing" type="checkbox" value="listing" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <label for="update-listing" class="ml-2 text-sm text-gray-700 cursor-pointer">Listing Template</label>
+            </div>
+            <div class="flex items-center">
+              <input id="update-detail" type="checkbox" value="detail" v-model="updateTemplateForm.template_names" class="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500">
+              <label for="update-detail" class="ml-2 text-sm text-gray-700 cursor-pointer">Detail Template</label>
+            </div>
           </div>
         </div>
 
@@ -396,7 +396,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import axios from 'axios'
 import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid, RefreshCw, ChevronDown, Folder, Settings } from 'lucide-vue-next'
 
@@ -765,48 +765,6 @@ const updatePagesTemplate = async () => {
     loadingRedeployIds.value = loadingRedeployIds.value.filter(id => id !== currentRedeployWebsite.value.id)
   }
 }
-
-// Watch for redeploy template selection changes
-watch(() => redeployAssetsForm.value.template_names, (newVal, oldVal) => {
-  if (!newVal || newVal.length === 0) {
-    // Always have at least one selected
-    redeployAssetsForm.value.template_names = ['all']
-    return
-  }
-
-  const hasAll = newVal.includes('all')
-  const oldHasAll = oldVal?.includes('all')
-
-  // If 'all' was just added, remove other options
-  if (hasAll && !oldHasAll) {
-    redeployAssetsForm.value.template_names = ['all']
-  }
-  // If a specific option was added while 'all' exists, remove 'all'
-  else if (hasAll && newVal.length > 1) {
-    redeployAssetsForm.value.template_names = newVal.filter(v => v !== 'all')
-  }
-}, { deep: true })
-
-// Watch for update template selection changes
-watch(() => updateTemplateForm.value.template_names, (newVal, oldVal) => {
-  if (!newVal || newVal.length === 0) {
-    // Always have at least one selected
-    updateTemplateForm.value.template_names = ['all']
-    return
-  }
-
-  const hasAll = newVal.includes('all')
-  const oldHasAll = oldVal?.includes('all')
-
-  // If 'all' was just added, remove other options
-  if (hasAll && !oldHasAll) {
-    updateTemplateForm.value.template_names = ['all']
-  }
-  // If a specific option was added while 'all' exists, remove 'all'
-  else if (hasAll && newVal.length > 1) {
-    updateTemplateForm.value.template_names = newVal.filter(v => v !== 'all')
-  }
-}, { deep: true })
 
 const closeRedeployAssetsModal = () => {
   showRedeployAssetsModal.value = false
