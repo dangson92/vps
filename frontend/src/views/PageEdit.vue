@@ -344,8 +344,14 @@ const fetchPage = async () => {
 
 const buildPageHtml = async () => {
   const pageTitle = (form.value.title || '').trim()
-  const tResp = await axios.get('/templates/laravel-hotel-1/page/index.html')
-  let base = tResp.data || ''
+  let base = ''
+  try {
+    const tResp = await axios.get('/templates/laravel-hotel-1/page/index.html')
+    base = tResp.data || ''
+  } catch (e) {
+    base = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>{{TITLE}}</title></head><body></body></html>'
+  }
+
   let sh = ''
   let sf = ''
   try { const hResp = await axios.get('/templates/_shared/header.html'); sh = hResp.data || '' } catch {}
@@ -369,7 +375,7 @@ const buildPageHtml = async () => {
   const dataScript = `<script type="application/json" id="page-data">${JSON.stringify(dataObj)}<\/script>`
   base = base.replace(/<\/body>/i, dataScript + '\n</body>')
   base = base.replace(/<title>[^<]*<\/title>/i, `<title>${dataObj.title}<\/title>`)
-  return base
+  return base || '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + (pageTitle || 'Page') + '</title></head><body><div id="page-content">' + (tpl.value.pageContent || '') + '</div></body></html>'
 }
 
 const buildHtmlExternal = async () => {
@@ -606,7 +612,8 @@ const save = async () => {
     }
     router.push(`/websites/${websiteId}/pages`)
   } catch (e) {
-    alert(e?.response?.data?.error || e?.message || 'Lưu trang thất bại')
+    const errMsg = e?.response?.data?.message || e?.response?.data?.error || e?.message || 'Lưu trang thất bại'
+    alert(errMsg)
   } finally {
     saving.value = false
   }
