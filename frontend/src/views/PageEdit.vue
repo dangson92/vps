@@ -193,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { Loader2, ExternalLink } from 'lucide-vue-next'
@@ -840,36 +840,78 @@ const syncScroll = () => {
   if (gutterRef.value && codeRef.value) gutterRef.value.scrollTop = codeRef.value.scrollTop
 }
 
+const ensureTiny = async () => {
+  if (window.tinymce) return
+  const { default: tinymce } = await import('tinymce/tinymce')
+  await import('tinymce/icons/default')
+  await import('tinymce/themes/silver')
+  await import('tinymce/models/dom/model')
+  await import('tinymce/skins/ui/oxide/skin.js')
+  await import('tinymce/skins/ui/oxide/content.js')
+  await import('tinymce/skins/content/default/content.js')
+  await import('tinymce/plugins/link')
+  await import('tinymce/plugins/lists')
+  await import('tinymce/plugins/table')
+  await import('tinymce/plugins/image')
+  await import('tinymce/plugins/code')
+  await import('tinymce/plugins/charmap')
+  await import('tinymce/plugins/anchor')
+  await import('tinymce/plugins/searchreplace')
+  await import('tinymce/plugins/visualblocks')
+  await import('tinymce/plugins/fullscreen')
+  await import('tinymce/plugins/insertdatetime')
+  await import('tinymce/plugins/media')
+  await import('tinymce/plugins/help')
+  await import('tinymce/plugins/wordcount')
+  window.tinymce = tinymce
+}
+
+const initPageEditor = async () => {
+  await nextTick()
+  const pageEl = document.getElementById('page-content-editor')
+  if (pageEl) {
+    await ensureTiny()
+    const existingEditor = window.tinymce.get('page-content-editor')
+    if (existingEditor) {
+      existingEditor.remove()
+    }
+    pageEl.value = tpl.value.pageContent || ''
+    window.tinymce.init({
+      selector: '#page-content-editor',
+      menubar: true,
+      plugins: 'link lists table image code charmap anchor searchreplace visualblocks fullscreen insertdatetime media help wordcount',
+      toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | charmap anchor | code fullscreen | help',
+      height: 500,
+      table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+      image_title: true,
+      automatic_uploads: false,
+      file_picker_types: 'image',
+      content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+      setup: (editor) => {
+        editor.on('Change KeyUp SetContent', () => {
+          tpl.value.pageContent = editor.getContent() || ''
+        })
+      }
+    }).then((editors) => {
+      const ed = editors && editors[0]
+      if (ed && (tpl.value.pageContent || '').trim()) {
+        ed.setContent(tpl.value.pageContent)
+      }
+    })
+  }
+}
+
+watch(templateType, async (newVal) => {
+  if (newVal === 'page') {
+    await initPageEditor()
+  }
+})
+
 onMounted(async () => {
   await fetchSettings()
   await Promise.all([fetchWebsite(), fetchAllWebsites()])
   await fetchFolders()
   await fetchPage()
-  const ensureTiny = async () => {
-    if (window.tinymce) return
-    const { default: tinymce } = await import('tinymce/tinymce')
-    await import('tinymce/icons/default')
-    await import('tinymce/themes/silver')
-    await import('tinymce/models/dom/model')
-    await import('tinymce/skins/ui/oxide/skin.js')
-    await import('tinymce/skins/ui/oxide/content.js')
-    await import('tinymce/skins/content/default/content.js')
-    await import('tinymce/plugins/link')
-    await import('tinymce/plugins/lists')
-    await import('tinymce/plugins/table')
-    await import('tinymce/plugins/image')
-    await import('tinymce/plugins/code')
-    await import('tinymce/plugins/charmap')
-    await import('tinymce/plugins/anchor')
-    await import('tinymce/plugins/searchreplace')
-    await import('tinymce/plugins/visualblocks')
-    await import('tinymce/plugins/fullscreen')
-    await import('tinymce/plugins/insertdatetime')
-    await import('tinymce/plugins/media')
-    await import('tinymce/plugins/help')
-    await import('tinymce/plugins/wordcount')
-    window.tinymce = tinymce
-  }
   await nextTick()
   const el = document.getElementById('about1-editor')
   if (el) {
@@ -894,33 +936,8 @@ onMounted(async () => {
     })
   }
 
-  // Initialize TinyMCE for page template
-  const pageEl = document.getElementById('page-content-editor')
-  if (pageEl) {
-    await ensureTiny()
-    pageEl.value = tpl.value.pageContent || ''
-    window.tinymce.init({
-      selector: '#page-content-editor',
-      menubar: true,
-      plugins: 'link lists table image code charmap anchor searchreplace visualblocks fullscreen insertdatetime media help wordcount',
-      toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | charmap anchor | code fullscreen | help',
-      height: 500,
-      table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
-      image_title: true,
-      automatic_uploads: false,
-      file_picker_types: 'image',
-      content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
-      setup: (editor) => {
-        editor.on('Change KeyUp SetContent', () => {
-          tpl.value.pageContent = editor.getContent() || ''
-        })
-      }
-    }).then((editors) => {
-      const ed = editors && editors[0]
-      if (ed && (tpl.value.pageContent || '').trim()) {
-        ed.setContent(tpl.value.pageContent)
-      }
-    })
+  if (templateType.value === 'page') {
+    await initPageEditor()
   }
 })
 
