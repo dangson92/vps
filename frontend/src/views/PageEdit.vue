@@ -880,37 +880,39 @@ const ensureTiny = async () => {
 
 const initPageEditor = async () => {
   await nextTick()
+  await new Promise(resolve => setTimeout(resolve, 100))
   const pageEl = document.getElementById('page-content-editor')
-  if (pageEl) {
-    await ensureTiny()
-    const existingEditor = window.tinymce.get('page-content-editor')
-    if (existingEditor) {
-      existingEditor.remove()
-    }
-    pageEl.value = tpl.value.pageContent || ''
-    window.tinymce.init({
-      selector: '#page-content-editor',
-      menubar: true,
-      plugins: 'link lists table image code charmap anchor searchreplace visualblocks fullscreen insertdatetime media help wordcount',
-      toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | charmap anchor | code fullscreen | help',
-      height: 500,
-      table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
-      image_title: true,
-      automatic_uploads: false,
-      file_picker_types: 'image',
-      content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
-      setup: (editor) => {
-        editor.on('Change KeyUp SetContent', () => {
-          tpl.value.pageContent = editor.getContent() || ''
-        })
-      }
-    }).then((editors) => {
-      const ed = editors && editors[0]
-      if (ed && (tpl.value.pageContent || '').trim()) {
-        ed.setContent(tpl.value.pageContent)
-      }
-    })
+  if (!pageEl) {
+    return
   }
+  await ensureTiny()
+  const existingEditor = window.tinymce.get('page-content-editor')
+  if (existingEditor) {
+    existingEditor.remove()
+  }
+  pageEl.value = tpl.value.pageContent || ''
+  window.tinymce.init({
+    selector: '#page-content-editor',
+    menubar: true,
+    plugins: 'link lists table image code charmap anchor searchreplace visualblocks fullscreen insertdatetime media help wordcount',
+    toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | charmap anchor | code fullscreen | help',
+    height: 500,
+    table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+    image_title: true,
+    automatic_uploads: false,
+    file_picker_types: 'image',
+    content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+    setup: (editor) => {
+      editor.on('Change KeyUp SetContent', () => {
+        tpl.value.pageContent = editor.getContent() || ''
+      })
+    }
+  }).then((editors) => {
+    const ed = editors && editors[0]
+    if (ed && (tpl.value.pageContent || '').trim()) {
+      ed.setContent(tpl.value.pageContent)
+    }
+  })
 }
 
 watch(templateType, async (newVal) => {
