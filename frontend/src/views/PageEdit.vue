@@ -349,8 +349,6 @@ const buildPageHtml = async () => {
     const tResp = await axios.get('/templates/laravel-hotel-1/page/index.html')
     base = tResp.data || ''
   } catch (e) {
-    console.error('Failed to load page template:', e)
-    // Fallback to minimal HTML if template not found
     base = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>{{TITLE}}</title></head><body></body></html>'
   }
 
@@ -553,7 +551,6 @@ const save = async () => {
       }
       payload.folder_ids = [...selectedFolderIds.value]
       payload.primary_folder_id = primaryFolderId.value
-      console.log('Creating page with payload:', JSON.stringify(payload, null, 2))
       await axios.post(`/api/websites/${websiteId}/pages`, payload)
     } else {
       const payload = { ...form.value }
@@ -611,12 +608,10 @@ const save = async () => {
       if (!payload.path) payload.path = '/'
       payload.folder_ids = [...selectedFolderIds.value]
       payload.primary_folder_id = primaryFolderId.value
-      console.log('Updating page with payload:', JSON.stringify(payload, null, 2))
       await axios.put(`/api/pages/${pageId}`, payload)
     }
     router.push(`/websites/${websiteId}/pages`)
   } catch (e) {
-    console.error('Save error:', e?.response?.data)
     const errMsg = e?.response?.data?.message || e?.response?.data?.error || e?.message || 'Lưu trang thất bại'
     alert(errMsg)
   } finally {
