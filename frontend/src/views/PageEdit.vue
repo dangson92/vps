@@ -315,10 +315,13 @@ const fetchPage = async () => {
     content: page.content || ''
   }
   if (page.template_type) {
-    templateType.value = page.template_type
     isTemplatePage.value = !!page.template_type
-    if ((page.template_type === 'hotel-detail' || page.template_type === 'hotel-detail-1') && page.template_data) {
-      // Convert gallery array to galleryRaw string if needed
+    if (page.template_type === 'page' && page.template_data) {
+      tpl.value = {
+        ...tpl.value,
+        pageContent: page.template_data.content || ''
+      }
+    } else if ((page.template_type === 'hotel-detail' || page.template_type === 'hotel-detail-1' || page.template_type === 'detail') && page.template_data) {
       let galleryRaw = page.template_data.galleryRaw || ''
       if (!galleryRaw && Array.isArray(page.template_data.gallery)) {
         galleryRaw = page.template_data.gallery.join('\n')
@@ -329,11 +332,13 @@ const fetchPage = async () => {
         phone: page.template_data.phone || '',
         galleryRaw: galleryRaw,
         about1: page.template_data.about1 || '',
+        pageContent: '',
         amenities: Array.isArray(page.template_data.amenities) ? page.template_data.amenities : [],
         info: Array.isArray(page.template_data.info) ? page.template_data.info : [{ subject: '', description: '' }, { subject: '', description: '' }],
         faqs: Array.isArray(page.template_data.faqs) ? page.template_data.faqs : [{ q: '', a: '' }, { q: '', a: '' }]
       }
     }
+    templateType.value = page.template_type
   } else {
     templateType.value = 'blank'
     isTemplatePage.value = false
