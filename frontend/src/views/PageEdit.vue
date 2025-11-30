@@ -380,7 +380,7 @@ const buildPageHtml = async () => {
     content: tpl.value.pageContent || ''
   }
   const dataScript = `<script type="application/json" id="page-data">${JSON.stringify(dataObj)}<\/script>`
-  base = base.replace(/<\/body>/i, dataScript + '\n</body>')
+  base = base.replace(/<\/head>/i, dataScript + '\n</head>')
   base = base.replace(/<title>[^<]*<\/title>/i, `<title>${dataObj.title}<\/title>`)
   return base || '<!DOCTYPE html><html><head><meta charset="utf-8"><title>' + (pageTitle || 'Page') + '</title></head><body><div id="page-content">' + (tpl.value.pageContent || '') + '</div></body></html>'
 }
