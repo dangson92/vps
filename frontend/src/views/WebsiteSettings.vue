@@ -463,10 +463,11 @@ const fetchSettings = async () => {
       menu: Array.isArray(s.menu) ? s.menu : [],
       footer_links_html: s.footer_links_html || ''
     }
+    menu.value = Array.isArray(s.menu) ? s.menu : []
     if (Array.isArray(s.footer_columns)) {
       footerColumns.value = s.footer_columns
-      footerColumnCount.value = s.footer_columns.length || 1
-      if (selectedFooterColumnIndex.value >= footerColumns.value.length) selectedFooterColumnIndex.value = 0
+    } else {
+      footerColumns.value = []
     }
   } catch (error) {
     uiMsg.value = error?.response?.data?.error || 'Failed to load settings'
