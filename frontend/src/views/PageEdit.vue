@@ -352,22 +352,6 @@ const buildPageHtml = async () => {
     base = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>{{TITLE}}</title></head><body></body></html>'
   }
 
-  let sh = ''
-  let sf = ''
-  try { const hResp = await axios.get('/templates/_shared/header.html'); sh = hResp.data || '' } catch {}
-  try { const fResp = await axios.get('/templates/_shared/footer.html'); sf = fResp.data || '' } catch {}
-  if (sh) {
-    base = base.replace(/<header[^>]*>[\s\S]*?<\/header>/i, sh)
-  }
-  if (sf) {
-    if (/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i.test(base)) {
-      base = base.replace(/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i, sf)
-    } else if (/<\/body>/i.test(base)) {
-      base = base.replace(/<\/body>/i, sf + '</body>')
-    } else {
-      base += '\n' + sf
-    }
-  }
   const dataObj = {
     title: pageTitle || 'Page',
     content: tpl.value.pageContent || ''
@@ -495,6 +479,11 @@ const createFolderInModal = async () => {
 const save = async () => {
   saving.value = true
   try {
+    const pageEditor = window.tinymce?.get('page-content-editor')
+    if (pageEditor) {
+      tpl.value.pageContent = pageEditor.getContent() || ''
+    }
+
     if (isNew.value) {
       let adjusted
       if (templateType.value === 'blank') {
