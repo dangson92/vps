@@ -854,28 +854,28 @@ const syncScroll = () => {
 
 const ensureTiny = async () => {
   if (window.tinymce) return
-  const { default: tinymce } = await import('tinymce/tinymce')
-  await import('tinymce/icons/default')
-  await import('tinymce/themes/silver')
-  await import('tinymce/models/dom/model')
-  await import('tinymce/skins/ui/oxide/skin.js')
-  await import('tinymce/skins/ui/oxide/content.js')
-  await import('tinymce/skins/content/default/content.js')
-  await import('tinymce/plugins/link')
-  await import('tinymce/plugins/lists')
-  await import('tinymce/plugins/table')
-  await import('tinymce/plugins/image')
-  await import('tinymce/plugins/code')
-  await import('tinymce/plugins/charmap')
-  await import('tinymce/plugins/anchor')
-  await import('tinymce/plugins/searchreplace')
-  await import('tinymce/plugins/visualblocks')
-  await import('tinymce/plugins/fullscreen')
-  await import('tinymce/plugins/insertdatetime')
-  await import('tinymce/plugins/media')
-  await import('tinymce/plugins/help')
-  await import('tinymce/plugins/wordcount')
-  window.tinymce = tinymce
+
+  if (!document.querySelector('script[src*="tinymce.min.js"]')) {
+    const script = document.createElement('script')
+    script.src = '/dist/tinymce/tinymce.min.js'
+    document.head.appendChild(script)
+
+    await new Promise((resolve, reject) => {
+      script.onload = resolve
+      script.onerror = reject
+    })
+  }
+
+  await new Promise(resolve => {
+    const check = () => {
+      if (window.tinymce) {
+        resolve()
+      } else {
+        setTimeout(check, 50)
+      }
+    }
+    check()
+  })
 }
 
 const initPageEditor = async () => {
@@ -893,6 +893,8 @@ const initPageEditor = async () => {
   pageEl.value = tpl.value.pageContent || ''
   window.tinymce.init({
     selector: '#page-content-editor',
+    base_url: '/dist/tinymce',
+    suffix: '.min',
     menubar: true,
     plugins: 'link lists table image code charmap anchor searchreplace visualblocks fullscreen insertdatetime media help wordcount',
     toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | charmap anchor | code fullscreen | help',
@@ -933,6 +935,8 @@ onMounted(async () => {
     el.value = tpl.value.about1 || ''
     window.tinymce.init({
       selector: '#about1-editor',
+      base_url: '/dist/tinymce',
+      suffix: '.min',
       menubar: false,
       plugins: 'link lists',
       toolbar: 'bold italic underline | bullist numlist | link',
