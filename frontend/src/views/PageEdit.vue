@@ -87,12 +87,18 @@
                   <option value="home">Home Template</option>
                   <option value="listing">Listing Template</option>
                   <option value="detail">Detail Template</option>
-                  <option value="page">Page Template (Static Content)</option>
+                  <option value="page">Page Template</option>
                 </optgroup>
               </select>
               <p class="mt-1 text-xs text-gray-500">
                 Auto: Tự động chọn template phù hợp. Custom HTML: Tự viết HTML. Templates: Chọn template có sẵn trong package.
               </p>
+            </div>
+            <div v-if="templateType === 'page'" class="mb-4 space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Nội dung trang</label>
+                <textarea id="page-content-editor" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+              </div>
             </div>
             <div v-if="templateType === 'detail'" class="mb-4 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -200,7 +206,7 @@ const isNew = ref(route.name === 'PageCreate' || pageId === 'new' || !pageId)
 const templateType = ref('blank')
 const isTemplatePage = ref(false)
 const htmlRaw = ref('')
-const tpl = ref({ title: '', location: '', phone: '', galleryRaw: '', about1: '', amenities: [], info: [{ subject: '', description: '' }, { subject: '', description: '' }], faqs: [{ q: '', a: '' }, { q: '', a: '' }] })
+const tpl = ref({ title: '', location: '', phone: '', galleryRaw: '', about1: '', pageContent: '', amenities: [], info: [{ subject: '', description: '' }, { subject: '', description: '' }], faqs: [{ q: '', a: '' }, { q: '', a: '' }] })
 const folders = ref([])
 const selectedFolderIds = ref([])
 const primaryFolderId = ref(null)
@@ -822,12 +828,38 @@ onMounted(async () => {
       }
     })
   }
+
+  // Initialize TinyMCE for page template
+  const pageEl = document.getElementById('page-content-editor')
+  if (pageEl) {
+    await ensureTiny()
+    pageEl.value = tpl.value.pageContent || ''
+    window.tinymce.init({
+      selector: '#page-content-editor',
+      menubar: false,
+      plugins: 'link lists',
+      toolbar: 'bold italic underline | bullist numlist | link',
+      height: 400,
+      setup: (editor) => {
+        editor.on('Change KeyUp SetContent', () => {
+          tpl.value.pageContent = editor.getContent() || ''
+        })
+      }
+    }).then((editors) => {
+      const ed = editors && editors[0]
+      if (ed && (tpl.value.pageContent || '').trim()) {
+        ed.setContent(tpl.value.pageContent)
+      }
+    })
+  }
 })
 
 onUnmounted(() => {
   if (window.tinymce) {
-    const ed = window.tinymce.get('about1-editor')
-    if (ed) ed.remove()
+    const ed1 = window.tinymce.get('about1-editor')
+    if (ed1) ed1.remove()
+    const ed2 = window.tinymce.get('page-content-editor')
+    if (ed2) ed2.remove()
   }
 })
 </script>
