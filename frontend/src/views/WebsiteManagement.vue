@@ -283,19 +283,19 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="all" v-model="redeployAssetsForm.template_names" @change="handleRedeployTemplateChange('all')" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="all" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
             </label>
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="home" v-model="redeployAssetsForm.template_names" @change="handleRedeployTemplateChange('home')" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="home" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">Home Template</span>
             </label>
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" @change="handleRedeployTemplateChange('listing')" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">Listing Template</span>
             </label>
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" @change="handleRedeployTemplateChange('detail')" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">Detail Template</span>
             </label>
           </div>
@@ -337,19 +337,19 @@
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
           <div class="space-y-2">
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="all" v-model="updateTemplateForm.template_names" @change="handleUpdateTemplateChange('all')" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="all" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
             </label>
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="home" v-model="updateTemplateForm.template_names" @change="handleUpdateTemplateChange('home')" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="home" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">Home Template</span>
             </label>
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="listing" v-model="updateTemplateForm.template_names" @change="handleUpdateTemplateChange('listing')" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="listing" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">Listing Template</span>
             </label>
             <label class="flex items-center cursor-pointer">
-              <input type="checkbox" value="detail" v-model="updateTemplateForm.template_names" @change="handleUpdateTemplateChange('detail')" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
+              <input type="checkbox" value="detail" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2 cursor-pointer">
               <span class="text-sm text-gray-700">Detail Template</span>
             </label>
           </div>
@@ -396,7 +396,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue'
 import axios from 'axios'
 import { FileText, Play, ShieldCheck, ShieldOff, Trash2, Power, Pencil, Loader2, Globe, CheckCircle, AlertTriangle, Clock, LayoutGrid, RefreshCw, ChevronDown, Folder, Settings } from 'lucide-vue-next'
 
@@ -766,45 +766,47 @@ const updatePagesTemplate = async () => {
   }
 }
 
-const handleRedeployTemplateChange = (value) => {
-  const names = redeployAssetsForm.value.template_names
-  if (value === 'all') {
-    // If 'all' is checked, clear other options
-    if (names.includes('all')) {
-      redeployAssetsForm.value.template_names = ['all']
-    }
-  } else {
-    // If a specific template is checked, remove 'all'
-    const index = names.indexOf('all')
-    if (index > -1) {
-      names.splice(index, 1)
-    }
-    // Ensure at least one is selected
-    if (names.length === 0) {
-      redeployAssetsForm.value.template_names = ['all']
-    }
+// Watch for redeploy template selection changes
+watch(() => redeployAssetsForm.value.template_names, (newVal, oldVal) => {
+  if (!newVal || newVal.length === 0) {
+    // Always have at least one selected
+    redeployAssetsForm.value.template_names = ['all']
+    return
   }
-}
 
-const handleUpdateTemplateChange = (value) => {
-  const names = updateTemplateForm.value.template_names
-  if (value === 'all') {
-    // If 'all' is checked, clear other options
-    if (names.includes('all')) {
-      updateTemplateForm.value.template_names = ['all']
-    }
-  } else {
-    // If a specific template is checked, remove 'all'
-    const index = names.indexOf('all')
-    if (index > -1) {
-      names.splice(index, 1)
-    }
-    // Ensure at least one is selected
-    if (names.length === 0) {
-      updateTemplateForm.value.template_names = ['all']
-    }
+  const hasAll = newVal.includes('all')
+  const oldHasAll = oldVal?.includes('all')
+
+  // If 'all' was just added, remove other options
+  if (hasAll && !oldHasAll) {
+    redeployAssetsForm.value.template_names = ['all']
   }
-}
+  // If a specific option was added while 'all' exists, remove 'all'
+  else if (hasAll && newVal.length > 1) {
+    redeployAssetsForm.value.template_names = newVal.filter(v => v !== 'all')
+  }
+}, { deep: true })
+
+// Watch for update template selection changes
+watch(() => updateTemplateForm.value.template_names, (newVal, oldVal) => {
+  if (!newVal || newVal.length === 0) {
+    // Always have at least one selected
+    updateTemplateForm.value.template_names = ['all']
+    return
+  }
+
+  const hasAll = newVal.includes('all')
+  const oldHasAll = oldVal?.includes('all')
+
+  // If 'all' was just added, remove other options
+  if (hasAll && !oldHasAll) {
+    updateTemplateForm.value.template_names = ['all']
+  }
+  // If a specific option was added while 'all' exists, remove 'all'
+  else if (hasAll && newVal.length > 1) {
+    updateTemplateForm.value.template_names = newVal.filter(v => v !== 'all')
+  }
+}, { deep: true })
 
 const closeRedeployAssetsModal = () => {
   showRedeployAssetsModal.value = false
