@@ -335,24 +335,31 @@
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
-          <select
-            v-model="updateTemplateForm.template_names"
-            multiple
-            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-          >
-            <option value="all">All templates</option>
-            <option value="home-1">Home 1</option>
-            <option value="listing-1">Listing 1</option>
-            <option value="hotel-detail-1">Hotel Detail 1</option>
-          </select>
-          <p class="mt-2 text-xs text-gray-500">Giữ Ctrl/Command để chọn nhiều. Chọn "All templates" để áp dụng cho tất cả.</p>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="checkbox" value="all" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2">
+              <span class="text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="home" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2">
+              <span class="text-sm text-gray-700">Home Template</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="listing" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2">
+              <span class="text-sm text-gray-700">Listing Template</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="detail" v-model="updateTemplateForm.template_names" class="rounded border-gray-300 text-purple-600 mr-2">
+              <span class="text-sm text-gray-700">Detail Template</span>
+            </label>
+          </div>
         </div>
 
         <div class="bg-purple-50 border border-purple-200 rounded-md p-3 mb-4">
           <p class="text-sm text-purple-800">
             Cập nhật phần header/footer cho <strong>các trang đang dùng template đã chọn</strong>,
             sau đó tự động deploy các trang đó. Tính năng này <strong>không</strong> cập nhật CSS/JS
-            (dùng mục “Redeploy Template Assets” cho CSS/JS). Với website chính, hệ thống sẽ xếp lịch
+            (dùng mục "Redeploy Template Assets" cho CSS/JS). Với website chính, hệ thống sẽ xếp lịch
             redeploy Trang chủ và các trang Category liên quan.
           </p>
         </div>
@@ -419,7 +426,7 @@ const showRedeployAssetsModal = ref(false)
 const showUpdateTemplateModal = ref(false)
 const currentRedeployWebsite = ref(null)
 const redeployAssetsForm = ref({ template_names: ['all'] })
-const updateTemplateForm = ref({ template_names: ['hotel-detail-1'] })
+const updateTemplateForm = ref({ template_names: ['all'] })
 
 const showToast = (msg, type = 'success') => {
   toastMsg.value = msg
@@ -768,6 +775,6 @@ const closeRedeployAssetsModal = () => {
 const closeUpdateTemplateModal = () => {
   showUpdateTemplateModal.value = false
   currentRedeployWebsite.value = null
-  updateTemplateForm.value = { template_names: ['hotel-detail-1'] }
+  updateTemplateForm.value = { template_names: ['all'] }
 }
 </script>

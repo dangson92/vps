@@ -679,11 +679,17 @@ class DeploymentService
                     if (!empty($siteSettings['logo_header_url'])) {
                         $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url'], $page->website);
                         $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
-                        $homeUrl = $protocol . $page->website->domain . '/';
+                        // Always link to root domain, not subdomain
+                        $domainParts = explode('.', $page->website->domain);
+                        $rootDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $page->website->domain;
+                        $homeUrl = $protocol . $rootDomain . '/';
                         $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $page->website->domain) . '" class="h-8"></a>', $sharedHeader, 1);
                     } elseif (!empty($siteSettings['title'])) {
                         $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
-                        $homeUrl = $protocol . $page->website->domain . '/';
+                        // Always link to root domain, not subdomain
+                        $domainParts = explode('.', $page->website->domain);
+                        $rootDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $page->website->domain;
+                        $homeUrl = $protocol . $rootDomain . '/';
                         $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1></a>', $sharedHeader, 1);
                     }
                     // Apply menu
