@@ -264,9 +264,13 @@ class DeploymentService
             // Apply logo/title to <header> - use local VPS path
             if (!empty($siteSettings['logo_header_url'])) {
                 $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url'], $website);
-                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
+                $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+                $homeUrl = $protocol . $website->domain . '/';
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8"></a>', $sharedHeader, 1);
             } elseif (!empty($siteSettings['title'])) {
-                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
+                $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+                $homeUrl = $protocol . $website->domain . '/';
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1></a>', $sharedHeader, 1);
             }
             // Apply menu
             if (!empty($siteSettings['menu_html'])) {
@@ -445,9 +449,13 @@ class DeploymentService
             // Apply logo/title to <header> - use local VPS path
             if (!empty($siteSettings['logo_header_url'])) {
                 $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url'], $website);
-                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8">', $sharedHeader, 1);
+                $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+                $homeUrl = $protocol . $website->domain . '/';
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $website->domain) . '" class="h-8"></a>', $sharedHeader, 1);
             } elseif (!empty($siteSettings['title'])) {
-                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1>', $sharedHeader, 1);
+                $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+                $homeUrl = $protocol . $website->domain . '/';
+                $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1></a>', $sharedHeader, 1);
             }
             // Apply menu
             if (!empty($siteSettings['menu_html'])) {
@@ -654,9 +662,41 @@ class DeploymentService
 
                 $sharedHeader = @file_get_contents($this->getSharedPath($page->website, 'header.html'));
                 $sharedFooter = @file_get_contents($this->getSharedPath($page->website, 'footer.html'));
+                $siteSettings = $this->getMainSettings($page->website);
 
-                // Header now includes <head>, inject before <body>
+                // Header now includes <head>, apply settings to both
                 if ($sharedHeader) {
+                    // Apply favicon to <head> - use local VPS path
+                    if (!empty($siteSettings['favicon_url'])) {
+                        $localFaviconUrl = $this->convertToLocalAssetUrl('favicon_url', $siteSettings['favicon_url'], $page->website);
+                        $sharedHeader = preg_replace('/<\/head>/i', '<link rel="icon" href="' . e($localFaviconUrl) . '"></head>', $sharedHeader, 1);
+                    }
+                    // Apply custom head HTML
+                    if (!empty($siteSettings['custom_head_html'])) {
+                        $sharedHeader = preg_replace('/<\/head>/i', $siteSettings['custom_head_html'] . '</head>', $sharedHeader, 1);
+                    }
+                    // Apply logo/title to <header> - use local VPS path
+                    if (!empty($siteSettings['logo_header_url'])) {
+                        $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $siteSettings['logo_header_url'], $page->website);
+                        $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
+                        $homeUrl = $protocol . $page->website->domain . '/';
+                        $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($siteSettings['title'] ?? $page->website->domain) . '" class="h-8"></a>', $sharedHeader, 1);
+                    } elseif (!empty($siteSettings['title'])) {
+                        $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
+                        $homeUrl = $protocol . $page->website->domain . '/';
+                        $sharedHeader = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><h1 id="site-name" class="text-2xl font-bold">' . e($siteSettings['title']) . '</h1></a>', $sharedHeader, 1);
+                    }
+                    // Apply menu
+                    if (!empty($siteSettings['menu_html'])) {
+                        $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $siteSettings['menu_html'] . '$2', $sharedHeader, 1);
+                    } elseif (!empty($siteSettings['menu'])) {
+                        $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
+                        $base = $protocol . $page->website->domain;
+                        $menuHtml = $this->generateMenuHtml($siteSettings['menu'], $base);
+                        $sharedHeader = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $menuHtml . '$2', $sharedHeader, 1);
+                    }
+
+                    // Inject header (with <head>) before <body>
                     if (preg_match('/<body[^>]*>/i', $html)) {
                         $html = preg_replace('/(<body[^>]*>)/i', $sharedHeader . '$1', $html, 1);
                     } else {
@@ -673,6 +713,13 @@ class DeploymentService
                 }
 
                 if ($sharedFooter) {
+                    // Apply logo to footer - use local VPS path
+                    if (!empty($siteSettings['logo_footer_url'])) {
+                        $localLogoFooterUrl = $this->convertToLocalAssetUrl('logo_footer_url', $siteSettings['logo_footer_url'], $page->website);
+                        $sharedFooter = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<img id="site-logo-footer" src="' . e($localLogoFooterUrl) . '" alt="' . e($siteSettings['title'] ?? $page->website->domain) . '" class="h-10">', $sharedFooter, 1);
+                    } elseif (!empty($siteSettings['title'])) {
+                        $sharedFooter = preg_replace('/<h3[^>]*class=["\']text-xl[^>]*>[\s\S]*?<\/h3>/i', '<h3 class="text-xl font-bold mb-4">' . e($siteSettings['title']) . '</h3>', $sharedFooter, 1);
+                    }
                     $footerPattern = '/(?:<!--\s*Footer\s*-->\s*)?<footer[^>]*>[\s\S]*?<\/footer>/i';
                     if (preg_match($footerPattern, $html)) {
                         $html = preg_replace($footerPattern, $sharedFooter, $html);
@@ -1250,9 +1297,13 @@ class DeploymentService
         }
         if (!empty($settings['logo_header_url'])) {
             $localLogoUrl = $this->convertToLocalAssetUrl('logo_header_url', $settings['logo_header_url'], $website);
-            $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($settings['title'] ?? $domain) . '" class="h-8">', $html, 1);
+            $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+            $homeUrl = $protocol . $website->domain . '/';
+            $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><img id="site-logo-header" src="' . e($localLogoUrl) . '" alt="' . e($settings['title'] ?? $domain) . '" class="h-8"></a>', $html, 1);
         } elseif (!empty($settings['title'])) {
-            $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<h1 id="site-name" class="text-2xl font-bold">' . e($settings['title']) . '</h1>', $html, 1);
+            $protocol = $website->ssl_enabled ? 'https://' : 'http://';
+            $homeUrl = $protocol . $website->domain . '/';
+            $html = preg_replace('/<h1[^>]*id=["\']site-name["\'][^>]*>[\s\S]*?<\/h1>/i', '<a href="' . e($homeUrl) . '"><h1 id="site-name" class="text-2xl font-bold">' . e($settings['title']) . '</h1></a>', $html, 1);
         }
         if (!empty($settings['menu_html'])) {
             $html = preg_replace('/(<nav[^>]*>)[\s\S]*?(<\/nav>)/i', '$1' . $settings['menu_html'] . '$2', $html, 1);
@@ -1298,7 +1349,7 @@ class DeploymentService
                 $label = (string)($it['label'] ?? '');
                 $url = (string)($it['url'] ?? '');
                 if ($url !== '' && str_starts_with($url, '/')) $url = rtrim($base, '/') . $url;
-                $out .= '<li><a href="' . e($url ?: '#') . '" class="text-gray-700 hover:text-gray-900">' . e($label) . '</a>';
+                $out .= '<li><a href="' . e($url ?: '#') . '" class="text-gray-700 hover:text-gray-900"><strong>' . e($label) . '</strong></a>';
                 $children = $it['children'] ?? [];
                 if (is_array($children) && count($children) > 0) {
                     $out .= '<ul class="ml-4 flex items-center gap-4">';

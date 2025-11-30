@@ -280,20 +280,30 @@
         <h2 class="text-lg font-medium text-gray-900 mb-4">Redeploy Template Assets</h2>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Select Template</label>
-          <select
-            v-model="redeployAssetsForm.template_name"
-            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-          >
-            <option value="home-1">Home 1</option>
-            <option value="listing-1">Listing 1</option>
-            <option value="hotel-detail-1">Hotel Detail 1</option>
-          </select>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Select Templates</label>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="checkbox" value="all" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2">
+              <span class="text-sm text-gray-700">All Templates (Home, Listing, Detail)</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="home" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2">
+              <span class="text-sm text-gray-700">Home Template</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="listing" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2">
+              <span class="text-sm text-gray-700">Listing Template</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="detail" v-model="redeployAssetsForm.template_names" class="rounded border-gray-300 text-blue-600 mr-2">
+              <span class="text-sm text-gray-700">Detail Template</span>
+            </label>
+          </div>
         </div>
 
         <div class="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
           <p class="text-sm text-blue-800">
-            Deploys CSS/JS files from the template to all pages. Use this when you update template scripts or styles.
+            Deploys CSS/JS files from the selected templates to all pages. Use this when you update template scripts or styles.
           </p>
         </div>
 
@@ -408,7 +418,7 @@ const loadingRedeployIds = ref([])
 const showRedeployAssetsModal = ref(false)
 const showUpdateTemplateModal = ref(false)
 const currentRedeployWebsite = ref(null)
-const redeployAssetsForm = ref({ template_name: 'hotel-detail-1' })
+const redeployAssetsForm = ref({ template_names: ['all'] })
 const updateTemplateForm = ref({ template_names: ['hotel-detail-1'] })
 
 const showToast = (msg, type = 'success') => {
@@ -752,7 +762,7 @@ const updatePagesTemplate = async () => {
 const closeRedeployAssetsModal = () => {
   showRedeployAssetsModal.value = false
   currentRedeployWebsite.value = null
-  redeployAssetsForm.value = { template_name: 'hotel-detail-1' }
+  redeployAssetsForm.value = { template_names: ['all'] }
 }
 
 const closeUpdateTemplateModal = () => {
