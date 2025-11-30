@@ -165,7 +165,7 @@
               <label class="block text-sm font-medium text-gray-700">HTML</label>
               <textarea v-model="htmlRaw" rows="12" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm font-mono"></textarea>
             </div>
-            <div v-if="templateType === 'blank' || (!isNew && !isTemplatePage)" class="mb-4">
+            <div v-if="(templateType === 'blank' || (!isNew && !isTemplatePage)) && templateType !== 'page'" class="mb-4">
               <label class="block text-sm font-medium text-gray-700">Content</label>
               <div v-if="website?.type === 'html' && (!isNew || templateType === 'blank')" class="mt-1 grid" style="grid-template-columns: 48px 1fr;">
                 <div ref="gutterRef" class="border border-gray-300 rounded-l-md bg-gray-50 overflow-auto" style="max-height: 360px;">
@@ -856,6 +856,18 @@ onMounted(async () => {
     await import('tinymce/skins/content/default/content.js')
     await import('tinymce/plugins/link')
     await import('tinymce/plugins/lists')
+    await import('tinymce/plugins/table')
+    await import('tinymce/plugins/image')
+    await import('tinymce/plugins/code')
+    await import('tinymce/plugins/charmap')
+    await import('tinymce/plugins/anchor')
+    await import('tinymce/plugins/searchreplace')
+    await import('tinymce/plugins/visualblocks')
+    await import('tinymce/plugins/fullscreen')
+    await import('tinymce/plugins/insertdatetime')
+    await import('tinymce/plugins/media')
+    await import('tinymce/plugins/help')
+    await import('tinymce/plugins/wordcount')
     window.tinymce = tinymce
   }
   await nextTick()
@@ -889,10 +901,15 @@ onMounted(async () => {
     pageEl.value = tpl.value.pageContent || ''
     window.tinymce.init({
       selector: '#page-content-editor',
-      menubar: false,
-      plugins: 'link lists',
-      toolbar: 'bold italic underline | bullist numlist | link',
-      height: 400,
+      menubar: true,
+      plugins: 'link lists table image code charmap anchor searchreplace visualblocks fullscreen insertdatetime media help wordcount',
+      toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | charmap anchor | code fullscreen | help',
+      height: 500,
+      table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+      image_title: true,
+      automatic_uploads: false,
+      file_picker_types: 'image',
+      content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
       setup: (editor) => {
         editor.on('Change KeyUp SetContent', () => {
           tpl.value.pageContent = editor.getContent() || ''
