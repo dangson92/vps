@@ -362,6 +362,249 @@ class WebsiteController extends Controller
         }
     }
 
+    /**
+     * Bulk deploy multiple websites
+     */
+    public function bulkDeploy(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'website_ids' => 'required|array|min:1',
+            'website_ids.*' => 'required|integer|exists:websites,id',
+        ]);
+
+        $results = [
+            'success' => [],
+            'failed' => [],
+        ];
+
+        foreach ($validated['website_ids'] as $websiteId) {
+            try {
+                $website = Website::findOrFail($websiteId);
+
+                if ($website->status === 'deploying') {
+                    $results['failed'][] = [
+                        'id' => $websiteId,
+                        'domain' => $website->domain,
+                        'error' => 'Website is already being deployed',
+                    ];
+                    continue;
+                }
+
+                $website->update(['status' => 'deploying']);
+
+                $this->deploymentService->deploy($website);
+                $this->deploymentService->publishAllPages($website);
+
+                // Create DNS records
+                $dnsService = new DnsService($website);
+                $dnsService->createRecords($website);
+
+                // Generate SSL if enabled
+                if ($website->ssl_enabled) {
+                    $this->sslService->generate($website);
+                }
+
+                $website->update([
+                    'status' => 'deployed',
+                    'deployed_at' => now(),
+                    'deployed_version' => $website->content_version,
+                ]);
+                $this->monitoringService->checkUptime($website);
+
+                $results['success'][] = [
+                    'id' => $websiteId,
+                    'domain' => $website->domain,
+                ];
+            } catch (\Throwable $e) {
+                if (isset($website)) {
+                    $website->update(['status' => 'error']);
+                }
+
+                $results['failed'][] = [
+                    'id' => $websiteId,
+                    'domain' => $website->domain ?? 'unknown',
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => sprintf(
+                'Deployed %d websites successfully, %d failed',
+                count($results['success']),
+                count($results['failed'])
+            ),
+            'results' => $results,
+        ]);
+    }
+
+    /**
+     * Bulk install SSL for multiple websites
+     */
+    public function bulkInstallSsl(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'website_ids' => 'required|array|min:1',
+            'website_ids.*' => 'required|integer|exists:websites,id',
+        ]);
+
+        $results = [
+            'success' => [],
+            'failed' => [],
+        ];
+
+        foreach ($validated['website_ids'] as $websiteId) {
+            try {
+                $website = Website::findOrFail($websiteId);
+
+                if ($website->status !== 'deployed') {
+                    $results['failed'][] = [
+                        'id' => $websiteId,
+                        'domain' => $website->domain,
+                        'error' => 'Website must be deployed first',
+                    ];
+                    continue;
+                }
+
+                $this->sslService->generate($website);
+                $website->update(['ssl_enabled' => true]);
+
+                $results['success'][] = [
+                    'id' => $websiteId,
+                    'domain' => $website->domain,
+                ];
+            } catch (\Throwable $e) {
+                $results['failed'][] = [
+                    'id' => $websiteId,
+                    'domain' => $website->domain ?? 'unknown',
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => sprintf(
+                'Installed SSL for %d websites successfully, %d failed',
+                count($results['success']),
+                count($results['failed'])
+            ),
+            'results' => $results,
+        ]);
+    }
+
+    /**
+     * Bulk delete multiple websites
+     */
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'website_ids' => 'required|array|min:1',
+            'website_ids.*' => 'required|integer|exists:websites,id',
+        ]);
+
+        $results = [
+            'success' => [],
+            'failed' => [],
+        ];
+
+        foreach ($validated['website_ids'] as $websiteId) {
+            try {
+                $website = Website::findOrFail($websiteId);
+                $domain = $website->domain;
+
+                // Remove from VPS
+                $this->deploymentService->removeWebsite($website);
+
+                // Delete DNS records
+                $dnsService = new DnsService($website);
+                $dnsService->deleteWebsiteRecords($website);
+
+                // Delete monitoring stats (FK constraint)
+                try {
+                    $website->monitoringStats()->delete();
+                } catch (\Throwable $e) {
+                }
+
+                // Delete pages before deleting website to satisfy FK constraints
+                $website->pages()->delete();
+
+                $website->delete();
+
+                $results['success'][] = [
+                    'id' => $websiteId,
+                    'domain' => $domain,
+                ];
+            } catch (\Throwable $e) {
+                $results['failed'][] = [
+                    'id' => $websiteId,
+                    'domain' => $website->domain ?? 'unknown',
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => sprintf(
+                'Deleted %d websites successfully, %d failed',
+                count($results['success']),
+                count($results['failed'])
+            ),
+            'results' => $results,
+        ]);
+    }
+
+    /**
+     * Bulk deactivate multiple websites
+     */
+    public function bulkDeactivate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'website_ids' => 'required|array|min:1',
+            'website_ids.*' => 'required|integer|exists:websites,id',
+        ]);
+
+        $results = [
+            'success' => [],
+            'failed' => [],
+        ];
+
+        foreach ($validated['website_ids'] as $websiteId) {
+            try {
+                $website = Website::findOrFail($websiteId);
+
+                try {
+                    $this->deploymentService->deactivateWebsite($website);
+                } catch (\Exception $e) {
+                }
+
+                $website->update([
+                    'status' => 'suspended',
+                    'suspended_at' => now(),
+                ]);
+
+                $results['success'][] = [
+                    'id' => $websiteId,
+                    'domain' => $website->domain,
+                ];
+            } catch (\Throwable $e) {
+                $results['failed'][] = [
+                    'id' => $websiteId,
+                    'domain' => $website->domain ?? 'unknown',
+                    'error' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => sprintf(
+                'Deactivated %d websites successfully, %d failed',
+                count($results['success']),
+                count($results['failed'])
+            ),
+            'results' => $results,
+        ]);
+    }
+
     private function createDefaultPages(Website $website): void
     {
         // Create homepage
