@@ -48,6 +48,12 @@ class DnsService
 
     public function createRecords(Website $website): void
     {
+        // Skip DNS creation if website has no Cloudflare account assigned
+        if (!$website->cloudflare_account_id) {
+            Log::info("Skipping DNS records for {$website->domain} - no Cloudflare account assigned (using wildcard record)");
+            return;
+        }
+
         if (!$this->dns) {
             Log::warning('Cloudflare not configured, skipping DNS records');
             return;
@@ -56,7 +62,7 @@ class DnsService
         try {
             // Create A record
             $aRecord = $this->createARecord($website);
-            
+
             // Create www CNAME record
             $cnameRecord = $this->createCnameRecord($website);
 
@@ -153,6 +159,14 @@ class DnsService
 
     public function deleteWebsiteRecords(Website $website): void
     {
+        // Skip DNS deletion if website has no Cloudflare account assigned
+        if (!$website->cloudflare_account_id) {
+            Log::info("Skipping DNS deletion for {$website->domain} - no Cloudflare account assigned");
+            // Delete local records only
+            $website->dnsRecords()->delete();
+            return;
+        }
+
         // Try to resolve zone ID, but don't fail if not found (website may not be deployed)
         try {
             $zoneId = $this->resolveZoneIdForDomain($website->domain);
