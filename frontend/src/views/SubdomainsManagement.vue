@@ -217,21 +217,14 @@ const bulkDeploy = async () => {
       website_ids: selectedIds.value
     })
 
-    await fetchAll()
     selectedIds.value = []
+    const message = response.data.message || 'Operations queued successfully'
+    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
 
-    const { results } = response.data
-    const successCount = results.success.length
-    const failedCount = results.failed.length
-
-    let message = `✓ Deployed ${successCount} subdomains successfully`
-    if (failedCount > 0) {
-      message += `\n✗ ${failedCount} failed:\n`
-      results.failed.forEach(f => {
-        message += `  - ${f.domain}: ${f.error}\n`
-      })
-    }
-    alert(message)
+    // Refresh after 3 seconds to show updated status
+    setTimeout(() => {
+      fetchAll()
+    }, 3000)
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk deploy failed'
     alert(`✗ ${msg}`)
@@ -250,21 +243,14 @@ const bulkInstallSsl = async () => {
       website_ids: selectedIds.value
     })
 
-    await fetchAll()
     selectedIds.value = []
+    const message = response.data.message || 'Operations queued successfully'
+    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
 
-    const { results } = response.data
-    const successCount = results.success.length
-    const failedCount = results.failed.length
-
-    let message = `✓ Installed SSL for ${successCount} subdomains successfully`
-    if (failedCount > 0) {
-      message += `\n✗ ${failedCount} failed:\n`
-      results.failed.forEach(f => {
-        message += `  - ${f.domain}: ${f.error}\n`
-      })
-    }
-    alert(message)
+    // Refresh after 3 seconds to show updated status
+    setTimeout(() => {
+      fetchAll()
+    }, 3000)
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk SSL installation failed'
     alert(`✗ ${msg}`)
@@ -283,21 +269,14 @@ const bulkDeactivate = async () => {
       website_ids: selectedIds.value
     })
 
-    await fetchAll()
     selectedIds.value = []
+    const message = response.data.message || 'Operations queued successfully'
+    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
 
-    const { results } = response.data
-    const successCount = results.success.length
-    const failedCount = results.failed.length
-
-    let message = `✓ Deactivated ${successCount} subdomains successfully`
-    if (failedCount > 0) {
-      message += `\n✗ ${failedCount} failed:\n`
-      results.failed.forEach(f => {
-        message += `  - ${f.domain}: ${f.error}\n`
-      })
-    }
-    alert(message)
+    // Refresh after 3 seconds to show updated status
+    setTimeout(() => {
+      fetchAll()
+    }, 3000)
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk deactivate failed'
     alert(`✗ ${msg}`)
@@ -316,21 +295,14 @@ const bulkDelete = async () => {
       website_ids: selectedIds.value
     })
 
-    await fetchAll()
     selectedIds.value = []
+    const message = response.data.message || 'Operations queued successfully'
+    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
 
-    const { results } = response.data
-    const successCount = results.success.length
-    const failedCount = results.failed.length
-
-    let message = `✓ Deleted ${successCount} subdomains successfully`
-    if (failedCount > 0) {
-      message += `\n✗ ${failedCount} failed:\n`
-      results.failed.forEach(f => {
-        message += `  - ${f.domain}: ${f.error}\n`
-      })
-    }
-    alert(message)
+    // Refresh after 3 seconds to show updated status
+    setTimeout(() => {
+      fetchAll()
+    }, 3000)
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk delete failed'
     alert(`✗ ${msg}`)
