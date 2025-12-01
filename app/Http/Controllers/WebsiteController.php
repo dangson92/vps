@@ -101,10 +101,11 @@ class WebsiteController extends Controller
     {
         // Remove from VPS
         $this->deploymentService->removeWebsite($website);
-        
+
         // Delete DNS records
-        $this->dnsService->deleteWebsiteRecords($website);
-        
+        $dnsService = new DnsService($website);
+        $dnsService->deleteWebsiteRecords($website);
+
         // Delete monitoring stats (FK constraint)
         try {
             $website->monitoringStats()->delete();
@@ -113,9 +114,9 @@ class WebsiteController extends Controller
 
         // Delete pages before deleting website to satisfy FK constraints
         $website->pages()->delete();
-        
+
         $website->delete();
-        
+
         return response()->json(null, 204);
     }
 
