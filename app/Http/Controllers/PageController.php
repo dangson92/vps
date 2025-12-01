@@ -128,6 +128,9 @@ class PageController extends Controller
 
         $oldPath = $page->path;
         $oldFilename = $page->filename;
+        $pathChanged = isset($validated['path']) && $validated['path'] !== $oldPath;
+        $filenameChanged = isset($validated['filename']) && $validated['filename'] !== $oldFilename;
+
         $page->update($validated);
 
         if (array_key_exists('folder_ids', $validated)) {
@@ -152,7 +155,13 @@ class PageController extends Controller
 
         if ($isSubdomain) {
             // Deploy the subdomain page itself
-            $this->redeployLaravel1IfNeeded($website, $page);
+            $this->redeployLaravel1IfNeeded(
+                $website,
+                $page,
+                null,
+                $pathChanged ? $oldPath : null,
+                $filenameChanged ? $oldFilename : null
+            );
 
             // Also deploy homepage and categories of the main website
             $mainDomain = implode('.', array_slice($domainParts, -2));
@@ -165,7 +174,13 @@ class PageController extends Controller
                 $this->redeployLaravel1IfNeeded($mainWebsite, null, $page->folders);
             }
         } else {
-            $this->redeployLaravel1IfNeeded($website, $page);
+            $this->redeployLaravel1IfNeeded(
+                $website,
+                $page,
+                null,
+                $pathChanged ? $oldPath : null,
+                $filenameChanged ? $oldFilename : null
+            );
         }
 
         return response()->json($page);
@@ -204,26 +219,27 @@ class PageController extends Controller
         return response()->json(null, 204);
     }
 
-    private function redeployLaravel1IfNeeded(Website $website, ?Page $page = null, $folders = null): void
-    {
+    private function redeployLaravel1IfNeeded(
+        Website $website,
+        ?Page $page = null,
+        $folders = null,
+        ?string $oldPath = null,
+        ?string $oldFilename = null
+    ): void {
         if ($website->type !== 'laravel1' || $website->status !== 'deployed') {
             return;
         }
 
-        // Check if this is a subdomain - don't deploy homepage for subdomains
+        // Check if this is a subdomain
         $domainParts = explode('.', $website->domain);
         $isSubdomain = count($domainParts) > 2;
 
-        // For subdomains, deploy the page itself
-        if ($isSubdomain && $page) {
-            $pending = dispatch(function () use ($page) {
-                app(\App\Services\DeploymentService::class)->deployPage($page);
-            });
-            if (method_exists($pending, 'afterResponse')) { $pending->afterResponse(); }
-            return;
+        // Deploy the specific page if provided
+        if ($page) {
+            \App\Jobs\DeployLaravel1Page::dispatch($page->id, $oldPath, $oldFilename);
         }
 
-        // Only deploy homepage for main domain, not subdomains
+        // For main domain, also deploy homepage and category pages
         if (!$isSubdomain) {
             \App\Jobs\DeployLaravel1Homepage::dispatch($website->id);
 
