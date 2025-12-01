@@ -400,7 +400,17 @@ const submit = async () => {
       saving.value = false
       return
     }
-    const websitePayload = { domain: fullDomain.value, type: parentWebsite.value?.type || 'html', vps_server_id: vpsId }
+    const websitePayload = {
+      domain: fullDomain.value,
+      type: parentWebsite.value?.type || 'html',
+      vps_server_id: vpsId
+    }
+
+    // Add template_package for laravel1 type
+    if (parentWebsite.value?.type === 'laravel1') {
+      websitePayload.template_package = 'laravel-hotel-1'
+    }
+
     let site
     try {
       const resp = await axios.post('/api/websites', websitePayload)
