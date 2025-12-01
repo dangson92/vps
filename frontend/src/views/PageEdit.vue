@@ -398,7 +398,7 @@ const buildHtmlExternal = async () => {
   const chainReduced = chain.length > 1 ? [chain[0], chain[chain.length - 1]] : chain
   const pageTitle = (form.value.title || '').trim()
   const crumbItems = ['Home', ...chainReduced.map(c => c.name || ''), pageTitle]
-  const tResp = await axios.get('/templates/hotel-detail-1/index.html')
+  const tResp = await axios.get('/templates/laravel-hotel-1/detail/index.html')
   let base = tResp.data || ''
   let sh = ''
   let sf = ''

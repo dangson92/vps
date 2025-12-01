@@ -25,11 +25,11 @@
               <label class="block text-sm font-medium text-gray-700">Template giao diện</label>
               <select v-model="templateType" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                 <option value="blank">HTML mặc định</option>
-                <option value="hotel-detail-1">Hotel Detail 1</option>
+                <option value="detail">Hotel Detail</option>
               </select>
             </div>
 
-            <div class="mt-4" v-if="templateType === 'hotel-detail-1'">
+            <div class="mt-4" v-if="templateType === 'detail'">
               <div class="flex items-center justify-between mb-2">
                 <label class="block text-sm font-medium text-gray-700">Danh mục (chọn nhiều)</label>
                 <div class="flex items-center gap-3">
@@ -50,7 +50,7 @@
 
             <div class="mt-6">
               <h2 class="text-lg font-semibold text-gray-900">Nội dung template</h2>
-              <div v-if="templateType === 'hotel-detail-1'" class="mt-4 space-y-4">
+              <div v-if="templateType === 'detail'" class="mt-4 space-y-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Tiêu đề khách sạn</label>
@@ -333,7 +333,7 @@ const buildHtmlExternal = async () => {
   const g = (tpl.value.galleryRaw || '').split('\n').map(s => s.trim()).filter(Boolean)
   const pageTitle = (tpl.value.title || '').trim()
   const crumbItems = ['Home', 'Stays', pageTitle]
-  const tResp = await axios.get('/templates/hotel-detail-1/index.html')
+  const tResp = await axios.get('/templates/laravel-hotel-1/detail/index.html')
   let base = tResp.data || ''
   let sh = ''
   let sf = ''
@@ -542,13 +542,13 @@ const initAboutEditor = async () => {
 
 onMounted(async () => {
   await init()
-  if (templateType.value === 'hotel-detail-1') {
+  if (templateType.value === 'detail') {
     await initAboutEditor()
   }
 })
 
 watch(templateType, async (val) => {
-  if (val === 'hotel-detail-1') {
+  if (val === 'detail') {
     await initAboutEditor()
   } else {
     if (window.tinymce) {
