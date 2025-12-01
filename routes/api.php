@@ -12,6 +12,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\FolderController;
 use App\Http\Controllers\WebsiteSettingsController;
 use App\Http\Controllers\WebsiteAssetsController;
+use App\Http\Controllers\CloudflareAccountController;
 
 // API routes (prefixed with 'api' via RouteServiceProvider)
 
@@ -60,6 +61,10 @@ Route::middleware('admin.token')->group(function () {
     // Settings
     Route::get('settings', [SettingsController::class, 'index']);
     Route::put('settings', [SettingsController::class, 'update']);
+
+    // Cloudflare Accounts
+    Route::apiResource('cloudflare-accounts', CloudflareAccountController::class);
+    Route::post('cloudflare-accounts/{cloudflareAccount}/set-default', [CloudflareAccountController::class, 'setDefault']);
 });
 
 // Worker API

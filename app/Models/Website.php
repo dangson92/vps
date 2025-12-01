@@ -16,6 +16,7 @@ class Website extends Model
         'type',
         'template_package',
         'vps_server_id',
+        'cloudflare_account_id',
         'document_root',
         'status',
         'content_version',
@@ -44,6 +45,11 @@ class Website extends Model
     public function vpsServer(): BelongsTo
     {
         return $this->belongsTo(VpsServer::class);
+    }
+
+    public function cloudflareAccount(): BelongsTo
+    {
+        return $this->belongsTo(CloudflareAccount::class);
     }
 
     public function pages(): HasMany

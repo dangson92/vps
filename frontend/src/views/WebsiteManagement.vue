@@ -229,7 +229,21 @@
               </option>
             </select>
           </div>
-          
+
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">Cloudflare Account</label>
+            <select
+              v-model="form.cloudflare_account_id"
+              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+            >
+              <option :value="null">Select Account (optional)</option>
+              <option v-for="acc in cloudflareAccounts" :key="acc.id" :value="acc.id">
+                {{ acc.name }} - {{ acc.email }}
+              </option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">Chọn Cloudflare account để quản lý DNS và SSL cho website này</p>
+          </div>
+
           <div v-if="form.type === 'wordpress'" class="mb-4">
             <label class="block text-sm font-medium text-gray-700">WordPress Template</label>
             <select
@@ -535,8 +549,11 @@ const form = ref({
   type: 'html',
   template_package: 'laravel-hotel-1',
   vps_server_id: '',
+  cloudflare_account_id: null,
   wordpress_template: 'basic'
 })
+
+const cloudflareAccounts = ref([])
 
 const pageForm = ref({
   path: '',
@@ -760,9 +777,24 @@ const closePageModal = () => {
   }
 }
 
+const fetchCloudflareAccounts = async () => {
+  try {
+    const { data } = await axios.get('/api/cloudflare-accounts')
+    cloudflareAccounts.value = data
+    // Auto-select default account if available
+    const defaultAccount = data.find(acc => acc.is_default)
+    if (defaultAccount && !form.value.cloudflare_account_id) {
+      form.value.cloudflare_account_id = defaultAccount.id
+    }
+  } catch (e) {
+    console.error('Failed to load Cloudflare accounts', e)
+  }
+}
+
 onMounted(() => {
   fetchWebsites()
   fetchServers()
+  fetchCloudflareAccounts()
   pollTimer = setInterval(fetchWebsites, 3000)
 
   // Close dropdown when clicking outside
