@@ -8,49 +8,45 @@
         </div>
 
         <div class="bg-white shadow rounded-lg p-6">
-          <!-- Bulk Actions Bar -->
-          <div v-if="selectedIds.length > 0" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div class="flex justify-between items-center">
-              <div class="flex items-center gap-2">
+          <!-- Select All & Bulk Actions Bar -->
+          <div v-if="subdomains.length > 0" class="mb-3 flex items-center justify-between pb-3 border-b">
+            <div class="flex items-center gap-3">
+              <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+              <label class="text-sm text-gray-700 font-medium cursor-pointer" @click="toggleSelectAll">Select All</label>
+              <div v-if="selectedIds.length > 0" class="flex items-center gap-2 ml-2 pl-2 border-l border-gray-300">
                 <span class="text-sm font-medium text-blue-900">{{ selectedIds.length }} selected</span>
                 <button @click="selectedIds = []" class="text-sm text-blue-600 hover:text-blue-800">Clear</button>
               </div>
-              <div class="flex gap-2">
-                <button @click="bulkDeploy" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-1">
-                  <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
-                  <Play v-else class="size-4" />
-                  Deploy
-                </button>
-                <button @click="bulkInstallSsl" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-1">
-                  <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
-                  <ShieldCheck v-else class="size-4" />
-                  Install SSL
-                </button>
-                <button @click="bulkDeactivate" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:bg-gray-400 flex items-center gap-1">
-                  <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
-                  <Power v-else class="size-4" />
-                  Deactivate
-                </button>
-                <button @click="bulkDelete" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 flex items-center gap-1">
-                  <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
-                  <Trash2 v-else class="size-4" />
-                  Delete
-                </button>
-              </div>
             </div>
-          </div>
-
-          <!-- Select All -->
-          <div v-if="subdomains.length > 0" class="mb-3 flex items-center gap-2 pb-3 border-b">
-            <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-            <label class="text-sm text-gray-700 font-medium">Select All</label>
+            <div v-if="selectedIds.length > 0" class="flex gap-2">
+              <button @click="bulkDeploy" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-1">
+                <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
+                <Play v-else class="size-4" />
+                Deploy
+              </button>
+              <button @click="bulkInstallSsl" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 flex items-center gap-1">
+                <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
+                <ShieldCheck v-else class="size-4" />
+                SSL
+              </button>
+              <button @click="bulkDeactivate" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 disabled:bg-gray-400 flex items-center gap-1">
+                <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
+                <Power v-else class="size-4" />
+                Deactivate
+              </button>
+              <button @click="bulkDelete" :disabled="bulkActionInProgress" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 flex items-center gap-1">
+                <Loader2 v-if="bulkActionInProgress" class="size-4 animate-spin" />
+                <Trash2 v-else class="size-4" />
+                Delete
+              </button>
+            </div>
           </div>
 
           <div class="space-y-4">
             <div v-for="site in subdomains" :key="site.id" class="border rounded-lg p-4">
               <div class="flex items-start gap-3">
                 <!-- Checkbox -->
-                <input type="checkbox" :value="site.id" v-model="selectedIds" class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <input type="checkbox" :value="site.id" v-model="selectedIds" class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
 
                 <div class="flex-1 flex justify-between items-start">
                   <div>
