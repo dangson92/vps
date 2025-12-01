@@ -32,6 +32,17 @@
             <input v-model="form.title" type="text" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="Website title" />
           </div>
 
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Cloudflare Account</label>
+            <select v-model="selectedCloudflareAccountId" @change="updateCloudflareAccount" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+              <option :value="null">-- Sử dụng account mặc định --</option>
+              <option v-for="acc in cloudflareAccounts" :key="acc.id" :value="acc.id">
+                {{ acc.email }} {{ acc.is_default ? '(Default)' : '' }}
+              </option>
+            </select>
+            <p class="mt-1 text-sm text-gray-500">Chọn Cloudflare account để quản lý DNS cho website này</p>
+          </div>
+
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-700">Logo Header</label>
@@ -424,6 +435,9 @@ const form = ref({
   footer_links_html: ''
 })
 
+const cloudflareAccounts = ref([])
+const selectedCloudflareAccountId = ref(null)
+
 const gutterHead = ref(null)
 const gutterBody = ref(null)
 const gutterFooter = ref(null)
@@ -445,7 +459,30 @@ const fetchWebsite = async () => {
   try {
     const resp = await axios.get(`/api/websites/${websiteId}`)
     website.value = resp.data
+    selectedCloudflareAccountId.value = resp.data.cloudflare_account_id
   } catch {}
+}
+
+const fetchCloudflareAccounts = async () => {
+  try {
+    const resp = await axios.get('/api/cloudflare-accounts')
+    cloudflareAccounts.value = resp.data || []
+  } catch (error) {
+    console.error('Failed to fetch Cloudflare accounts:', error)
+  }
+}
+
+const updateCloudflareAccount = async () => {
+  try {
+    await axios.put(`/api/websites/${websiteId}`, {
+      cloudflare_account_id: selectedCloudflareAccountId.value
+    })
+    uiMsg.value = 'Cloudflare account đã được cập nhật'
+    uiMsgType.value = 'success'
+  } catch (error) {
+    uiMsg.value = error?.response?.data?.message || 'Không thể cập nhật Cloudflare account'
+    uiMsgType.value = 'error'
+  }
 }
 
 const fetchSettings = async () => {
@@ -520,7 +557,7 @@ const onUpload = async (e, type) => {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchWebsite(), fetchSettings(), fetchFolders()])
+  await Promise.all([fetchWebsite(), fetchSettings(), fetchFolders(), fetchCloudflareAccounts()])
   menu.value = Array.isArray(form.value.menu) ? [...form.value.menu] : []
   if (!footerColumns.value.length) {
     updateFooterColumnCount()

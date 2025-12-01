@@ -90,6 +90,7 @@ class WebsiteController extends Controller
         $validated = $request->validate([
             'ssl_enabled' => 'sometimes|boolean',
             'status' => 'sometimes|in:pending,deploying,deployed,error',
+            'cloudflare_account_id' => 'sometimes|nullable|exists:cloudflare_accounts,id',
         ]);
 
         $website->update($validated);
