@@ -559,9 +559,6 @@ const onUpload = async (e, type) => {
 onMounted(async () => {
   await Promise.all([fetchWebsite(), fetchSettings(), fetchFolders(), fetchCloudflareAccounts()])
   menu.value = Array.isArray(form.value.menu) ? [...form.value.menu] : []
-  if (!footerColumns.value.length) {
-    updateFooterColumnCount()
-  }
   loading.value = false
 })
  
