@@ -35,12 +35,12 @@
           <div>
             <label class="block text-sm font-medium text-gray-700">Cloudflare Account</label>
             <select v-model="selectedCloudflareAccountId" @change="updateCloudflareAccount" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-              <option :value="null">-- Sử dụng account mặc định --</option>
+              <option :value="null">-- Không sử dụng Cloudflare (dùng bản ghi *) --</option>
               <option v-for="acc in cloudflareAccounts" :key="acc.id" :value="acc.id">
-                {{ acc.email }} {{ acc.is_default ? '(Default)' : '' }}
+                {{ acc.email }}
               </option>
             </select>
-            <p class="mt-1 text-sm text-gray-500">Chọn Cloudflare account để quản lý DNS cho website này</p>
+            <p class="mt-1 text-sm text-gray-500">Chọn Cloudflare account để quản lý DNS cho website này. Để trống nếu đã có wildcard DNS record</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
