@@ -15,18 +15,15 @@ use Illuminate\Support\Str;
 class WebsiteController extends Controller
 {
     private DeploymentService $deploymentService;
-    private DnsService $dnsService;
     private SslService $sslService;
     private MonitoringService $monitoringService;
 
     public function __construct(
         DeploymentService $deploymentService,
-        DnsService $dnsService,
         SslService $sslService,
         MonitoringService $monitoringService
     ) {
         $this->deploymentService = $deploymentService;
-        $this->dnsService = $dnsService;
         $this->sslService = $sslService;
         $this->monitoringService = $monitoringService;
     }
@@ -44,6 +41,7 @@ class WebsiteController extends Controller
             'type' => 'required|in:html,wordpress,laravel1',
             'template_package' => 'required_if:type,laravel1|string|in:laravel-hotel-1',
             'vps_server_id' => 'required|exists:vps_servers,id',
+            'cloudflare_account_id' => 'nullable|exists:cloudflare_accounts,id',
             'wordpress_template' => 'required_if:type,wordpress|string|max:255',
         ]);
 
@@ -134,7 +132,8 @@ class WebsiteController extends Controller
             $this->deploymentService->publishAllPages($website);
             
             // Create DNS records
-            $this->dnsService->createRecords($website);
+            $dnsService = new DnsService($website);
+            $dnsService->createRecords($website);
             
             // Generate SSL if enabled
             if ($website->ssl_enabled) {

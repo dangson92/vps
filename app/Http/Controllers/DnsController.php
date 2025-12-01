@@ -10,17 +10,11 @@ use Illuminate\Http\JsonResponse;
 
 class DnsController extends Controller
 {
-    private DnsService $dnsService;
-
-    public function __construct(DnsService $dnsService)
-    {
-        $this->dnsService = $dnsService;
-    }
-
     public function createRecord(Request $request, Website $website): JsonResponse
     {
         try {
-            $record = $this->dnsService->createRecord($request, $website);
+            $dnsService = new DnsService($website);
+            $record = $dnsService->createRecord($request, $website);
             return response()->json($record, 201);
         } catch (\Exception $e) {
             return response()->json([
@@ -33,7 +27,10 @@ class DnsController extends Controller
     public function deleteRecord(string $recordId): JsonResponse
     {
         try {
-            $this->dnsService->deleteRecord($recordId);
+            // For delete, we need to find the website first
+            $record = \App\Models\DnsRecord::findOrFail($recordId);
+            $dnsService = new DnsService($record->website);
+            $dnsService->deleteRecord($recordId);
             return response()->json(null, 204);
         } catch (\Exception $e) {
             return response()->json([

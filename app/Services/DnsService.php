@@ -4,23 +4,40 @@ namespace App\Services;
 
 use App\Models\Website;
 use App\Models\DnsRecord;
+use App\Models\CloudflareAccount;
 use Cloudflare\API\Auth\APIToken;
 use Cloudflare\API\Endpoints\DNS;
 use Cloudflare\API\Endpoints\Zones;
 use Cloudflare\API\Adapter\Guzzle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Crypt;
 
 class DnsService
 {
     private $dns;
     private $zoneId;
     private $zones;
+    private $website;
 
-    public function __construct()
+    public function __construct(?Website $website = null)
     {
+        $this->website = $website;
+        $this->initializeCloudflare();
+    }
+
+    private function initializeCloudflare(): void
+    {
+        // Try to use website's Cloudflare account first
+        if ($this->website && $this->website->cloudflareAccount) {
+            $apiToken = Crypt::decryptString($this->website->cloudflareAccount->api_key);
+        } else {
+            // Fallback to config if no website or no account assigned
+            $apiToken = config('services.cloudflare.api_token');
+        }
+
         $this->zoneId = config('services.cloudflare.zone_id');
-        $apiToken = config('services.cloudflare.api_token');
+
         if ($apiToken) {
             $key = new APIToken($apiToken);
             $adapter = new Guzzle($key);
