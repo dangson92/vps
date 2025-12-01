@@ -153,7 +153,16 @@ class DnsService
 
     public function deleteWebsiteRecords(Website $website): void
     {
-        $zoneId = $this->resolveZoneIdForDomain($website->domain);
+        // Try to resolve zone ID, but don't fail if not found (website may not be deployed)
+        try {
+            $zoneId = $this->resolveZoneIdForDomain($website->domain);
+        } catch (\Throwable $e) {
+            Log::info("Zone not found for domain {$website->domain}, deleting local DNS records only");
+            // Delete local records even if Cloudflare zone not found
+            $website->dnsRecords()->delete();
+            return;
+        }
+
         foreach ($website->dnsRecords as $record) {
             try {
                 $cfId = $record->cloudflare_id;
