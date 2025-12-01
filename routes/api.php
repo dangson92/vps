@@ -24,6 +24,12 @@ Route::middleware('admin.token')->group(function () {
     Route::apiResource('vps', VpsController::class);
 
     // Website Management
+    // Bulk Website Operations (must be before apiResource)
+    Route::post('websites/bulk/deploy', [WebsiteController::class, 'bulkDeploy']);
+    Route::post('websites/bulk/ssl', [WebsiteController::class, 'bulkInstallSsl']);
+    Route::post('websites/bulk/delete', [WebsiteController::class, 'bulkDelete']);
+    Route::post('websites/bulk/deactivate', [WebsiteController::class, 'bulkDeactivate']);
+
     Route::apiResource('websites', WebsiteController::class);
     Route::post('websites/{website}/deploy', [WebsiteController::class, 'deploy']);
     Route::post('websites/{website}/deactivate', [WebsiteController::class, 'deactivate']);
