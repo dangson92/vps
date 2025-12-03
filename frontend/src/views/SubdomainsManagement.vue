@@ -194,6 +194,24 @@
                 </div>
               </div>
 
+              <!-- Step 4: Select Folders -->
+              <div v-if="importData && folders.length > 0" class="border-t pt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">4</span>
+                    Assign to Folders (optional)
+                  </span>
+                </label>
+                <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-auto">
+                  <label v-for="f in folders" :key="f.id" class="flex items-center gap-2 cursor-pointer mb-2 hover:bg-gray-50 p-1 rounded">
+                    <input type="checkbox" :value="f.id" v-model="selectedFolderIds" class="rounded cursor-pointer border-gray-300" />
+                    <span class="text-sm">{{ f.name }}</span>
+                  </label>
+                  <p v-if="folders.length === 0" class="text-sm text-gray-500">No folders available</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Select folders to assign imported pages to</p>
+              </div>
+
               <!-- Import Results -->
               <div v-if="importResult" class="p-4 rounded-md border-t pt-4" :class="importResult.errors.length > 0 ? 'bg-yellow-50' : 'bg-green-50'">
                 <p class="font-medium mb-2">Import Results:</p>
@@ -256,6 +274,8 @@ const importing = ref(false)
 const importResult = ref(null)
 const availableFields = ref([])
 const selectedTemplate = ref('detail')
+const folders = ref([])
+const selectedFolderIds = ref([])
 
 // Template-specific field mappings
 const templateFieldConfigs = {
@@ -329,7 +349,20 @@ const fetchAll = async () => {
   subdomains.value = list.filter(w => w.domain.endsWith('.' + parentDomain.value))
 }
 
-onMounted(fetchAll)
+const fetchFolders = async () => {
+  try {
+    const resp = await axios.get(`/api/websites/${websiteId}/folders`)
+    folders.value = resp.data || []
+  } catch (error) {
+    console.error('Failed to fetch folders:', error)
+    folders.value = []
+  }
+}
+
+onMounted(() => {
+  fetchAll()
+  fetchFolders()
+})
 
 const deploy = async (site) => {
   try {
@@ -690,7 +723,7 @@ const performImport = async () => {
         // Import page data for the subdomain
         await axios.post(`/api/websites/${newWebsiteId}/pages/import`, {
           data: [mapped],
-          folder_ids: [],
+          folder_ids: selectedFolderIds.value,
           template_type: selectedTemplate.value
         })
 
