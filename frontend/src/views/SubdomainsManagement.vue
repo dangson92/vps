@@ -130,9 +130,18 @@
                     Upload JSON File
                   </span>
                 </label>
-                <input type="file" @change="handleFileUpload" accept=".json" class="block w-full text-sm text-gray-500 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer"/>
-                <p v-if="importData" class="text-sm text-green-600 mt-2">✓ Loaded {{ importData.length }} items</p>
-                <p class="text-xs text-gray-500 mt-1">Each item will create a new subdomain with initial page</p>
+                <div class="flex items-center gap-3">
+                  <label class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-md border border-blue-200 text-sm font-semibold cursor-pointer hover:bg-blue-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <span>Choose File</span>
+                    <input type="file" @change="handleFileUpload" accept=".json" class="hidden"/>
+                  </label>
+                  <span v-if="!importData" class="text-sm text-gray-500">No file chosen</span>
+                  <span v-else class="text-sm text-green-600 font-medium">✓ {{ importData.length }} items loaded</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Each item will create a new subdomain with initial page</p>
               </div>
 
               <!-- Step 2: Select Template -->
