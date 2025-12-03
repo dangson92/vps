@@ -130,9 +130,18 @@
                     Upload JSON File
                   </span>
                 </label>
-                <input type="file" @change="handleFileUpload" accept=".json" class="block w-full text-sm text-gray-500 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer"/>
-                <p v-if="importData" class="text-sm text-green-600 mt-2">✓ Loaded {{ importData.length }} items</p>
-                <p class="text-xs text-gray-500 mt-1">Each item will create a new subdomain with initial page</p>
+                <div class="flex items-center gap-3">
+                  <label class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-md border border-blue-200 text-sm font-semibold cursor-pointer hover:bg-blue-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <span>Choose File</span>
+                    <input type="file" @change="handleFileUpload" accept=".json" class="hidden"/>
+                  </label>
+                  <span v-if="!importData" class="text-sm text-gray-500">No file chosen</span>
+                  <span v-else class="text-sm text-green-600 font-medium">✓ {{ importData.length }} items loaded</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Each item will create a new subdomain with initial page</p>
               </div>
 
               <!-- Step 2: Select Template -->
@@ -183,6 +192,24 @@
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <!-- Step 4: Select Folders -->
+              <div v-if="importData && folders.length > 0" class="border-t pt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">4</span>
+                    Assign to Folders (optional)
+                  </span>
+                </label>
+                <div class="border border-gray-300 rounded-md p-3 max-h-48 overflow-auto">
+                  <label v-for="f in folders" :key="f.id" class="flex items-center gap-2 cursor-pointer mb-2 hover:bg-gray-50 p-1 rounded">
+                    <input type="checkbox" :value="f.id" v-model="selectedFolderIds" class="rounded cursor-pointer border-gray-300" />
+                    <span class="text-sm">{{ f.name }}</span>
+                  </label>
+                  <p v-if="folders.length === 0" class="text-sm text-gray-500">No folders available</p>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Select folders to assign imported pages to</p>
               </div>
 
               <!-- Import Results -->
@@ -247,6 +274,8 @@ const importing = ref(false)
 const importResult = ref(null)
 const availableFields = ref([])
 const selectedTemplate = ref('detail')
+const folders = ref([])
+const selectedFolderIds = ref([])
 
 // Template-specific field mappings
 const templateFieldConfigs = {
@@ -320,7 +349,20 @@ const fetchAll = async () => {
   subdomains.value = list.filter(w => w.domain.endsWith('.' + parentDomain.value))
 }
 
-onMounted(fetchAll)
+const fetchFolders = async () => {
+  try {
+    const resp = await axios.get(`/api/websites/${websiteId}/folders`)
+    folders.value = resp.data || []
+  } catch (error) {
+    console.error('Failed to fetch folders:', error)
+    folders.value = []
+  }
+}
+
+onMounted(() => {
+  fetchAll()
+  fetchFolders()
+})
 
 const deploy = async (site) => {
   try {
@@ -681,7 +723,7 @@ const performImport = async () => {
         // Import page data for the subdomain
         await axios.post(`/api/websites/${newWebsiteId}/pages/import`, {
           data: [mapped],
-          folder_ids: [],
+          folder_ids: selectedFolderIds.value,
           template_type: selectedTemplate.value
         })
 
