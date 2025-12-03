@@ -274,7 +274,37 @@ class PageController extends Controller
 
         $html = file_get_contents($templatePath);
 
-        // Inject template data
+        // Load shared header and footer
+        $sharedHeaderPath = public_path("templates/{$package}/shared/header.html");
+        $sharedFooterPath = public_path("templates/{$package}/shared/footer.html");
+
+        $sharedHeader = file_exists($sharedHeaderPath) ? file_get_contents($sharedHeaderPath) : '';
+        $sharedFooter = file_exists($sharedFooterPath) ? file_get_contents($sharedFooterPath) : '';
+
+        // Inject shared header before <body>
+        if ($sharedHeader) {
+            if (preg_match('/<body[^>]*>/i', $html)) {
+                $html = preg_replace('/(<body[^>]*>)/i', $sharedHeader . '$1', $html, 1);
+            } else {
+                $html = $sharedHeader . $html;
+            }
+        }
+
+        // Inject shared footer before closing </body> or at end
+        if ($sharedFooter) {
+            if (preg_match('/<\/body>/i', $html)) {
+                $html = preg_replace('/<\/body>/i', $sharedFooter . '</body>', $html, 1);
+            } else {
+                $html .= $sharedFooter;
+            }
+        }
+
+        // Wrap with <!DOCTYPE html> and <html> if not present
+        if (!preg_match('/<!DOCTYPE/i', $html)) {
+            $html = "<!DOCTYPE html>\n<html lang=\"en\">\n" . $html . "\n</html>";
+        }
+
+        // Inject template data and replace placeholders
         $html = $this->injectTemplateData($html, $templateData, $page);
 
         $page->content = $html;
