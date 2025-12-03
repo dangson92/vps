@@ -309,6 +309,7 @@ class PageController extends Controller
         $validated = $request->validate([
             'data' => 'required|array',
             'data.*.name' => 'required|string',
+            'data.*.path' => 'nullable|string',
             'data.*.address' => 'nullable|string',
             'data.*.rating' => 'nullable|numeric',
             'data.*.ratingCategory' => 'nullable|string',
@@ -365,15 +366,20 @@ class PageController extends Controller
                     $stats['updated']++;
                 } else {
                     // Create new page
-                    // Generate slug from title
-                    $slug = \Illuminate\Support\Str::slug($title);
-                    $path = '/' . $slug;
+                    // Use custom path if provided, otherwise generate from title
+                    if (isset($item['path']) && !empty($item['path'])) {
+                        $path = $item['path'];
+                    } else {
+                        // Generate slug from title
+                        $slug = \Illuminate\Support\Str::slug($title);
+                        $path = '/' . $slug;
 
-                    // Check if path exists, add number if needed
-                    $counter = 1;
-                    while ($website->pages()->where('path', $path)->exists()) {
-                        $path = '/' . $slug . '-' . $counter;
-                        $counter++;
+                        // Check if path exists, add number if needed
+                        $counter = 1;
+                        while ($website->pages()->where('path', $path)->exists()) {
+                            $path = '/' . $slug . '-' . $counter;
+                            $counter++;
+                        }
                     }
 
                     $page = $website->pages()->create([

@@ -680,6 +680,9 @@ const performImport = async () => {
           }
         })
 
+        // Set path to '/' for subdomain homepage
+        mapped.path = '/'
+
         const title = mapped.name
         if (!title) {
           result.skipped++
