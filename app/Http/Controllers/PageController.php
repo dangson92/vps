@@ -316,6 +316,34 @@ class PageController extends Controller
         return $html;
     }
 
+    /**
+     * Parse rating from text or number
+     * Supports formats like "3 out of 5 stars", "4.5/5", or just "4"
+     */
+    private function parseRating($rating): float
+    {
+        if (is_numeric($rating)) {
+            return (float) $rating;
+        }
+
+        if (is_string($rating)) {
+            // Handle "3 out of 5 stars" format
+            if (preg_match('/(\d+(?:\.\d+)?)\s*out\s*of\s*5/i', $rating, $matches)) {
+                return (float) $matches[1];
+            }
+            // Handle "4.5/5" format
+            if (preg_match('/(\d+(?:\.\d+)?)\s*\/\s*5/i', $rating, $matches)) {
+                return (float) $matches[1];
+            }
+            // Try to extract any number
+            if (preg_match('/(\d+(?:\.\d+)?)/', $rating, $matches)) {
+                return (float) $matches[1];
+            }
+        }
+
+        return 0;
+    }
+
     private function buildTemplateData(string $templateType, array $item, string $title): array
     {
         switch ($templateType) {
@@ -325,6 +353,7 @@ class PageController extends Controller
                     'location' => $item['address'] ?? '',
                     'location_text' => $item['address'] ?? '',
                     'phone' => '',
+                    'rating' => $this->parseRating($item['rating'] ?? null),
                     'about1' => $item['about'] ?? '',
                     'amenities' => $item['facilities'] ?? [],
                     'faqs' => array_map(function($faq) {

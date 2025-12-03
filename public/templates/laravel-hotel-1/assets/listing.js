@@ -36,6 +36,20 @@
         if(amenities.length>3){
           amenityHtml+='<span class="text-xs text-neutral-500">+'+(amenities.length-3)+' more</span>';
         }
+        var rating=parseFloat(p.rating||0);
+        var ratingHtml='';
+        if(rating>0){
+          var full=Math.floor(rating);
+          var hasHalf=rating%1>=0.5;
+          ratingHtml='<div class="flex items-center gap-1">';
+          for(var s=0;s<full;s++){
+            ratingHtml+='<span class="material-symbols-outlined text-accent-gold text-sm" style="font-variation-settings:\'FILL\' 1">star</span>';
+          }
+          if(hasHalf){
+            ratingHtml+='<span class="material-symbols-outlined text-accent-gold text-sm">star_half</span>';
+          }
+          ratingHtml+='</div>';
+        }
 
         html+='<a href="'+url+'" class="block bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition group">';
         html+='<div class="flex flex-col md:flex-row">';
@@ -43,7 +57,7 @@
         html+='<div class="flex-1 p-6">';
         html+='<div class="flex items-start justify-between mb-2">';
         html+='<h3 class="text-xl font-bold group-hover:text-primary transition">'+title+'</h3>';
-        html+='<div class="flex items-center gap-1 text-amber-500"><span class="material-symbols-outlined text-sm" style="font-variation-settings:\'FILL\' 1">star</span><span class="text-sm font-medium">4.5</span></div>';
+        html+=ratingHtml;
         html+='</div>';
         if(location){html+='<p class="text-neutral-500 text-sm mb-3 flex items-center gap-1"><span class="material-symbols-outlined text-base">location_on</span>'+location+'</p>';}
         if(desc){html+='<p class="text-neutral-600 text-sm mb-4 line-clamp-2">'+desc+'</p>';}

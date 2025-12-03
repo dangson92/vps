@@ -101,7 +101,7 @@
               </div>
             </div>
             <div v-if="templateType === 'detail'" class="mb-4 space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">Địa điểm</label>
                 <input v-model="tpl.location" type="text" placeholder="Sunny Isles, Florida, United States hoặc iframe Google Maps embed" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
@@ -109,6 +109,11 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700">Số điện thoại liên hệ</label>
                 <input v-model="tpl.phone" type="text" placeholder="(305) 555–1234" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Đánh giá (Rating)</label>
+                <input v-model="tpl.rating" type="number" min="0" max="5" step="0.1" placeholder="4.5" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
+                <p class="mt-1 text-xs text-gray-500">Nhập số từ 0 đến 5 (ví dụ: 4.5)</p>
               </div>
             </div>
               <div>
@@ -330,6 +335,7 @@ const fetchPage = async () => {
         title: page.template_data.title || '',
         location: page.template_data.location || page.template_data.location_text || '',
         phone: page.template_data.phone || '',
+        rating: page.template_data.rating || 0,
         galleryRaw: galleryRaw,
         about1: page.template_data.about1 || '',
         pageContent: '',
@@ -549,6 +555,7 @@ const save = async () => {
           location: tpl.value.location || '',
           location_text: tpl.value.location || '',
           phone: tpl.value.phone || '',
+          rating: parseFloat(tpl.value.rating) || 0,
           about1: tpl.value.about1 || '',
           amenities: tpl.value.amenities || [],
           faqs: tpl.value.faqs || [],
@@ -590,6 +597,7 @@ const save = async () => {
           location: tpl.value.location || '',
           location_text: tpl.value.location || '',
           phone: tpl.value.phone || '',
+          rating: parseFloat(tpl.value.rating) || 0,
           about1: tpl.value.about1 || '',
           amenities: tpl.value.amenities || [],
           faqs: tpl.value.faqs || [],
