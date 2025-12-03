@@ -162,7 +162,7 @@
                 </label>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div v-for="(mapping, key) in fieldMappings" :key="key" class="flex items-center gap-3">
+                  <div v-for="(mapping, key) in visibleFieldMappings" :key="key" class="flex items-center gap-3">
                     <label class="text-sm font-medium text-gray-700 w-32">{{ mapping.label }}:</label>
                     <select v-model="mapping.jsonField" class="flex-1 text-sm border-gray-300 rounded-md">
                       <option :value="null">-- Skip --</option>
@@ -175,7 +175,7 @@
                 <div v-if="previewItem" class="bg-gray-50 rounded-md p-4 mt-4">
                   <h3 class="text-sm font-semibold text-gray-700 mb-2">Preview (First Item):</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <div v-for="(mapping, key) in fieldMappings" :key="key" v-show="mapping.jsonField">
+                    <div v-for="(mapping, key) in visibleFieldMappings" :key="key" v-show="mapping.jsonField">
                       <span class="font-medium text-gray-600">{{ mapping.label }}:</span>
                       <span class="ml-2 text-gray-800">
                         {{ getPreviewValue(mapping.jsonField) }}
@@ -286,6 +286,22 @@ const fieldMappings = ref({
   facilities: { label: 'Facilities', jsonField: 'facilities' },
   faqs: { label: 'FAQs', jsonField: 'faqs' },
   houseRules: { label: 'House Rules', jsonField: 'houseRules' }
+})
+
+// Filter field mappings to only show fields that exist in JSON or are required
+const visibleFieldMappings = computed(() => {
+  const result = {}
+  const requiredFields = ['name'] // Always show required fields
+
+  Object.keys(fieldMappings.value).forEach(key => {
+    const mapping = fieldMappings.value[key]
+    // Show field if it's required OR if it's mapped to an available field
+    if (requiredFields.includes(key) || (mapping.jsonField && availableFields.value.includes(mapping.jsonField))) {
+      result[key] = mapping
+    }
+  })
+
+  return result
 })
 
 const allSelected = computed(() => {
