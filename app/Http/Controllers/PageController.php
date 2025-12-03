@@ -338,10 +338,27 @@ class PageController extends Controller
         $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
         $ogUrl = $protocol . $page->website->domain . $page->path;
 
+        // Get root domain URL for assets
+        $domainParts = explode('.', $page->website->domain);
+        $rootDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $page->website->domain;
+        $assetBaseUrl = $protocol . $rootDomain;
+
         $html = str_replace('{{TITLE}}', htmlspecialchars($title, ENT_QUOTES, 'UTF-8'), $html);
         $html = str_replace('{{DESCRIPTION}}', htmlspecialchars($description, ENT_QUOTES, 'UTF-8'), $html);
         $html = str_replace('{{OG_IMAGE}}', htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8'), $html);
         $html = str_replace('{{OG_URL}}', htmlspecialchars($ogUrl, ENT_QUOTES, 'UTF-8'), $html);
+
+        // Convert relative script and link URLs to absolute URLs pointing to root domain
+        $html = preg_replace(
+            '/<script([^>]*)\ssrc=["\'](\/[^"\']+)["\']/',
+            '<script$1 src="' . $assetBaseUrl . '$2"',
+            $html
+        );
+        $html = preg_replace(
+            '/<link([^>]*)\shref=["\'](\/[^"\']+)["\']/',
+            '<link$1 href="' . $assetBaseUrl . '$2"',
+            $html
+        );
 
         return $html;
     }
