@@ -216,11 +216,10 @@ const selectedTemplate = ref('detail')
 const templateFieldConfigs = {
   detail: {
     name: { label: 'Title', jsonField: 'name' },
-    address: { label: 'Address', jsonField: 'address' },
-    about: { label: 'About', jsonField: 'about' },
-    rating: { label: 'Rating', jsonField: 'rating' },
-    images: { label: 'Images', jsonField: 'images' },
-    facilities: { label: 'Facilities', jsonField: 'facilities' },
+    address: { label: 'Địa điểm', jsonField: 'address' },
+    about: { label: 'Giới thiệu', jsonField: 'about' },
+    images: { label: 'Ảnh gallery', jsonField: 'images' },
+    facilities: { label: 'Amenities', jsonField: 'facilities' },
     faqs: { label: 'FAQs', jsonField: 'faqs' },
     houseRules: { label: 'Useful Information', jsonField: 'houseRules' }
   },
@@ -243,11 +242,10 @@ const templateFieldConfigs = {
 
 const fieldMappings = ref({
   name: { label: 'Title', jsonField: 'name' },
-  address: { label: 'Address', jsonField: 'address' },
-  about: { label: 'About', jsonField: 'about' },
-  rating: { label: 'Rating', jsonField: 'rating' },
-  images: { label: 'Images', jsonField: 'images' },
-  facilities: { label: 'Facilities', jsonField: 'facilities' },
+  address: { label: 'Địa điểm', jsonField: 'address' },
+  about: { label: 'Giới thiệu', jsonField: 'about' },
+  images: { label: 'Ảnh gallery', jsonField: 'images' },
+  facilities: { label: 'Amenities', jsonField: 'facilities' },
   faqs: { label: 'FAQs', jsonField: 'faqs' },
   houseRules: { label: 'Useful Information', jsonField: 'houseRules' }
 })
