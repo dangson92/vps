@@ -193,6 +193,13 @@ EOF
 systemctl daemon-reload
 systemctl enable vps-worker-api
 systemctl restart vps-worker-api
+
+# Configure nginx for long domain names
+if ! grep -q "server_names_hash_bucket_size" /etc/nginx/nginx.conf; then
+  echo "Configuring nginx for long domain names..."
+  sed -i '/http {/a \    # Support for long domain names\n    server_names_hash_bucket_size 128;' /etc/nginx/nginx.conf
+fi
+
 systemctl enable nginx || true
 systemctl start nginx || true
 
