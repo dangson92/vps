@@ -580,11 +580,10 @@ const updateFieldMappingsForTemplate = () => {
       name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
       address: fields.find(f => f.toLowerCase().includes('address') || f.toLowerCase().includes('location')),
       about: fields.find(f => f.toLowerCase().includes('about') || f.toLowerCase().includes('description')),
-      rating: fields.find(f => f.toLowerCase().includes('rating') || f.toLowerCase().includes('score')),
       images: fields.find(f => f.toLowerCase().includes('image') || f.toLowerCase().includes('photo')),
       facilities: fields.find(f => f.toLowerCase().includes('facilit') || f.toLowerCase().includes('amenity')),
       faqs: fields.find(f => f.toLowerCase().includes('faq') || f.toLowerCase().includes('question')),
-      houseRules: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy'))
+      houseRules: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy') || f.toLowerCase().includes('info'))
     }
     Object.keys(autoMap).forEach(key => {
       if (autoMap[key] && fieldMappings.value[key]) {

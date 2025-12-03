@@ -251,6 +251,71 @@ class PageController extends Controller
         }
     }
 
+    private function generatePageContent(Page $page): Page
+    {
+        // If template_type is blank or no template_data, keep content as is
+        if ($page->template_type === 'blank' || empty($page->template_data)) {
+            return $page;
+        }
+
+        $website = $page->website;
+        $templateType = $page->template_type;
+        $templateData = $page->template_data;
+
+        // Get template package
+        $package = $website->template_package ?? 'laravel-hotel-1';
+        $templatePath = public_path("templates/{$package}/{$templateType}/index.html");
+
+        // Load template HTML
+        if (!file_exists($templatePath)) {
+            // Template file doesn't exist, keep content empty
+            return $page;
+        }
+
+        $html = file_get_contents($templatePath);
+
+        // Inject template data
+        $html = $this->injectTemplateData($html, $templateData, $page);
+
+        $page->content = $html;
+        return $page;
+    }
+
+    private function injectTemplateData(string $html, array $data, Page $page): string
+    {
+        // Create JavaScript data object
+        $jsData = json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+
+        // Inject data as GALLERY_DATA_SCRIPT placeholder
+        $dataScript = "<script>window.HOTEL_DATA = {$jsData};</script>";
+        $html = str_replace('{{GALLERY_DATA_SCRIPT}}', $dataScript, $html);
+
+        // Inject SCRIPT_VERSION
+        $html = str_replace('{{SCRIPT_VERSION}}', time(), $html);
+
+        // Inject meta tags
+        $title = $data['title'] ?? $page->title ?? 'Page';
+        $description = $data['about1'] ?? $data['about'] ?? '';
+        if (strlen($description) > 160) {
+            $description = substr($description, 0, 157) . '...';
+        }
+
+        $ogImage = '';
+        if (!empty($data['gallery']) && is_array($data['gallery']) && count($data['gallery']) > 0) {
+            $ogImage = $data['gallery'][0];
+        }
+
+        $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
+        $ogUrl = $protocol . $page->website->domain . $page->path;
+
+        $html = str_replace('{{TITLE}}', htmlspecialchars($title, ENT_QUOTES, 'UTF-8'), $html);
+        $html = str_replace('{{DESCRIPTION}}', htmlspecialchars($description, ENT_QUOTES, 'UTF-8'), $html);
+        $html = str_replace('{{OG_IMAGE}}', htmlspecialchars($ogImage, ENT_QUOTES, 'UTF-8'), $html);
+        $html = str_replace('{{OG_URL}}', htmlspecialchars($ogUrl, ENT_QUOTES, 'UTF-8'), $html);
+
+        return $html;
+    }
+
     private function buildTemplateData(string $templateType, array $item, string $title): array
     {
         switch ($templateType) {
@@ -358,6 +423,10 @@ class PageController extends Controller
                         'template_data' => $templateData
                     ]);
 
+                    // Generate HTML content from template
+                    $existingPage = $this->generatePageContent($existingPage);
+                    $existingPage->save();
+
                     // Update folder associations if provided
                     if (!empty($folderIds)) {
                         $existingPage->folders()->sync($folderIds);
@@ -388,8 +457,12 @@ class PageController extends Controller
                         'title' => $title,
                         'template_type' => $templateType,
                         'template_data' => $templateData,
-                        'content' => '' // Will be generated during deployment
+                        'content' => '' // Will be generated below
                     ]);
+
+                    // Generate HTML content from template
+                    $page = $this->generatePageContent($page);
+                    $page->save();
 
                     // Attach folders if provided
                     if (!empty($folderIds)) {
