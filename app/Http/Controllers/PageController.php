@@ -250,4 +250,122 @@ class PageController extends Controller
             }
         }
     }
+
+    public function import(Request $request, Website $website): JsonResponse
+    {
+        $validated = $request->validate([
+            'data' => 'required|array',
+            'data.*.name' => 'required|string',
+            'data.*.address' => 'nullable|string',
+            'data.*.rating' => 'nullable|numeric',
+            'data.*.ratingCategory' => 'nullable|string',
+            'data.*.reviewCount' => 'nullable|integer',
+            'data.*.images' => 'nullable|array',
+            'data.*.facilities' => 'nullable|array',
+            'data.*.faqs' => 'nullable|array',
+            'data.*.about' => 'nullable|string',
+            'data.*.houseRules' => 'nullable|array',
+            'folder_ids' => 'nullable|array',
+            'folder_ids.*' => 'integer',
+        ]);
+
+        $items = $validated['data'];
+        $folderIds = $validated['folder_ids'] ?? [];
+
+        $stats = [
+            'total' => count($items),
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'errors' => []
+        ];
+
+        foreach ($items as $index => $item) {
+            try {
+                $title = $item['name'];
+
+                // Check if page with this title already exists
+                $existingPage = $website->pages()->where('title', $title)->first();
+
+                // Map JSON data to template_data format
+                $templateData = [
+                    'title' => $title,
+                    'location' => $item['address'] ?? '',
+                    'location_text' => $item['address'] ?? '',
+                    'phone' => '',
+                    'about1' => $item['about'] ?? '',
+                    'amenities' => $item['facilities'] ?? [],
+                    'faqs' => array_map(function($faq) {
+                        return [
+                            'q' => $faq['question'] ?? '',
+                            'a' => $faq['answer'] ?? ''
+                        ];
+                    }, $item['faqs'] ?? []),
+                    'info' => array_map(function($rule) {
+                        return [
+                            'subject' => is_string($rule) ? $rule : ($rule['title'] ?? ''),
+                            'description' => is_string($rule) ? '' : ($rule['description'] ?? '')
+                        ];
+                    }, array_slice($item['houseRules'] ?? [], 0, 10)),
+                    'gallery' => array_slice($item['images'] ?? [], 0, 50),
+                    'breadcrumb_items' => ['Home', 'Stays', $title]
+                ];
+
+                if ($existingPage) {
+                    // Update existing page
+                    $existingPage->update([
+                        'template_type' => 'detail',
+                        'template_data' => $templateData
+                    ]);
+
+                    // Update folder associations if provided
+                    if (!empty($folderIds)) {
+                        $existingPage->folders()->sync($folderIds);
+                    }
+
+                    $stats['updated']++;
+                } else {
+                    // Create new page
+                    // Generate slug from title
+                    $slug = \Illuminate\Support\Str::slug($title);
+                    $path = '/' . $slug;
+
+                    // Check if path exists, add number if needed
+                    $counter = 1;
+                    while ($website->pages()->where('path', $path)->exists()) {
+                        $path = '/' . $slug . '-' . $counter;
+                        $counter++;
+                    }
+
+                    $page = $website->pages()->create([
+                        'path' => $path,
+                        'filename' => 'index.html',
+                        'title' => $title,
+                        'template_type' => 'detail',
+                        'template_data' => $templateData,
+                        'content' => '' // Will be generated during deployment
+                    ]);
+
+                    // Attach folders if provided
+                    if (!empty($folderIds)) {
+                        $page->folders()->attach($folderIds);
+                    }
+
+                    $stats['created']++;
+                }
+            } catch (\Exception $e) {
+                $stats['skipped']++;
+                $stats['errors'][] = [
+                    'index' => $index,
+                    'title' => $item['name'] ?? 'Unknown',
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => 'Import completed',
+            'stats' => $stats
+        ]);
+    }
 }

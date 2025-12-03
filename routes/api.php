@@ -48,6 +48,7 @@ Route::middleware('admin.token')->group(function () {
     Route::post('websites/{website}/assets/favicon', [WebsiteAssetsController::class, 'uploadFavicon']);
 
     // Page Management
+    Route::post('websites/{website}/pages/import', [PageController::class, 'import']);
     Route::apiResource('websites.pages', PageController::class)->shallow();
 
     // Folder Management
