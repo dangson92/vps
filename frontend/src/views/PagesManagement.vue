@@ -82,11 +82,28 @@
                 <p v-if="importData" class="text-sm text-green-600 mt-2">✓ Loaded {{ importData.length }} items</p>
               </div>
 
-              <!-- Step 2: Field Mapping -->
-              <div v-if="importData && availableFields.length > 0" class="border-t pt-4">
+              <!-- Step 2: Select Template -->
+              <div v-if="importData" class="border-t pt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-3">
                   <span class="inline-flex items-center gap-2">
                     <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">2</span>
+                    Select Template Type
+                  </span>
+                </label>
+                <select v-model="selectedTemplate" @change="updateFieldMappingsForTemplate" class="w-full md:w-1/2 border-gray-300 rounded-md text-sm">
+                  <option value="detail">Hotel Detail</option>
+                  <option value="blank">Blank (HTML)</option>
+                  <option value="home">Home Page</option>
+                  <option value="listing">Listing Page</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Select which template to use for imported pages</p>
+              </div>
+
+              <!-- Step 3: Field Mapping -->
+              <div v-if="importData && availableFields.length > 0" class="border-t pt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-3">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">3</span>
                     Map JSON Fields to Template Fields
                   </span>
                 </label>
@@ -115,11 +132,11 @@
                 </div>
               </div>
 
-              <!-- Step 3: Select Folders -->
+              <!-- Step 4: Select Folders -->
               <div v-if="importData && folders.length > 0" class="border-t pt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   <span class="inline-flex items-center gap-2">
-                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">3</span>
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">4</span>
                     Assign to Folders (optional)
                   </span>
                 </label>
@@ -193,6 +210,37 @@ const importResult = ref(null)
 const folders = ref([])
 const selectedFolderIds = ref([])
 const availableFields = ref([])
+const selectedTemplate = ref('detail')
+
+// Template-specific field mappings
+const templateFieldConfigs = {
+  detail: {
+    name: { label: 'Title', jsonField: 'name' },
+    address: { label: 'Address', jsonField: 'address' },
+    about: { label: 'About', jsonField: 'about' },
+    rating: { label: 'Rating', jsonField: 'rating' },
+    images: { label: 'Images', jsonField: 'images' },
+    facilities: { label: 'Facilities', jsonField: 'facilities' },
+    faqs: { label: 'FAQs', jsonField: 'faqs' },
+    houseRules: { label: 'House Rules', jsonField: 'houseRules' }
+  },
+  blank: {
+    name: { label: 'Title', jsonField: 'name' },
+    content: { label: 'Content', jsonField: 'content' }
+  },
+  home: {
+    name: { label: 'Title', jsonField: 'name' },
+    about: { label: 'About', jsonField: 'about' },
+    services: { label: 'Services', jsonField: 'services' },
+    testimonials: { label: 'Testimonials', jsonField: 'testimonials' }
+  },
+  listing: {
+    name: { label: 'Title', jsonField: 'name' },
+    items: { label: 'Items', jsonField: 'items' },
+    filters: { label: 'Filters', jsonField: 'filters' }
+  }
+}
+
 const fieldMappings = ref({
   name: { label: 'Title', jsonField: 'name' },
   address: { label: 'Address', jsonField: 'address' },
@@ -387,24 +435,8 @@ const handleFileUpload = (event) => {
         const fields = Object.keys(firstItem)
         availableFields.value = fields
 
-        // Auto-detect and map fields
-        const autoMap = {
-          name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
-          address: fields.find(f => f.toLowerCase().includes('address') || f.toLowerCase().includes('location')),
-          about: fields.find(f => f.toLowerCase().includes('about') || f.toLowerCase().includes('description')),
-          rating: fields.find(f => f.toLowerCase().includes('rating') || f.toLowerCase().includes('score')),
-          images: fields.find(f => f.toLowerCase().includes('image') || f.toLowerCase().includes('photo')),
-          facilities: fields.find(f => f.toLowerCase().includes('facilit') || f.toLowerCase().includes('amenity')),
-          faqs: fields.find(f => f.toLowerCase().includes('faq') || f.toLowerCase().includes('question')),
-          houseRules: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy'))
-        }
-
-        // Update field mappings with auto-detected values
-        Object.keys(autoMap).forEach(key => {
-          if (autoMap[key] && fieldMappings.value[key]) {
-            fieldMappings.value[key].jsonField = autoMap[key]
-          }
-        })
+        // Auto-map fields based on selected template
+        updateFieldMappingsForTemplate()
       }
 
       toast.success(`Loaded ${data.length} items from file`)
@@ -414,6 +446,68 @@ const handleFileUpload = (event) => {
     }
   }
   reader.readAsText(file)
+}
+
+const updateFieldMappingsForTemplate = () => {
+  // Get template-specific field config
+  const templateConfig = templateFieldConfigs[selectedTemplate.value] || templateFieldConfigs.detail
+
+  // Reset field mappings based on template
+  fieldMappings.value = JSON.parse(JSON.stringify(templateConfig))
+
+  // Auto-detect and map fields based on template type
+  const fields = availableFields.value
+
+  if (selectedTemplate.value === 'detail') {
+    const autoMap = {
+      name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
+      address: fields.find(f => f.toLowerCase().includes('address') || f.toLowerCase().includes('location')),
+      about: fields.find(f => f.toLowerCase().includes('about') || f.toLowerCase().includes('description')),
+      rating: fields.find(f => f.toLowerCase().includes('rating') || f.toLowerCase().includes('score')),
+      images: fields.find(f => f.toLowerCase().includes('image') || f.toLowerCase().includes('photo')),
+      facilities: fields.find(f => f.toLowerCase().includes('facilit') || f.toLowerCase().includes('amenity')),
+      faqs: fields.find(f => f.toLowerCase().includes('faq') || f.toLowerCase().includes('question')),
+      houseRules: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy'))
+    }
+    Object.keys(autoMap).forEach(key => {
+      if (autoMap[key] && fieldMappings.value[key]) {
+        fieldMappings.value[key].jsonField = autoMap[key]
+      }
+    })
+  } else if (selectedTemplate.value === 'blank') {
+    const autoMap = {
+      name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
+      content: fields.find(f => f.toLowerCase().includes('content') || f.toLowerCase().includes('description') || f.toLowerCase().includes('body'))
+    }
+    Object.keys(autoMap).forEach(key => {
+      if (autoMap[key] && fieldMappings.value[key]) {
+        fieldMappings.value[key].jsonField = autoMap[key]
+      }
+    })
+  } else if (selectedTemplate.value === 'home') {
+    const autoMap = {
+      name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
+      about: fields.find(f => f.toLowerCase().includes('about') || f.toLowerCase().includes('description')),
+      services: fields.find(f => f.toLowerCase().includes('service')),
+      testimonials: fields.find(f => f.toLowerCase().includes('testimonial') || f.toLowerCase().includes('review'))
+    }
+    Object.keys(autoMap).forEach(key => {
+      if (autoMap[key] && fieldMappings.value[key]) {
+        fieldMappings.value[key].jsonField = autoMap[key]
+      }
+    })
+  } else if (selectedTemplate.value === 'listing') {
+    const autoMap = {
+      name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
+      items: fields.find(f => f.toLowerCase().includes('item') || f.toLowerCase().includes('list')),
+      filters: fields.find(f => f.toLowerCase().includes('filter') || f.toLowerCase().includes('category'))
+    }
+    Object.keys(autoMap).forEach(key => {
+      if (autoMap[key] && fieldMappings.value[key]) {
+        fieldMappings.value[key].jsonField = autoMap[key]
+      }
+    })
+  }
 }
 
 const getPreviewValue = (jsonField) => {
@@ -437,6 +531,7 @@ const closeImportModal = () => {
       importResult.value = null
       availableFields.value = []
       selectedFolderIds.value = []
+      selectedTemplate.value = 'detail'
     }
   }, 300)
 }
@@ -465,7 +560,8 @@ const performImport = async () => {
 
     const resp = await axios.post(`/api/websites/${websiteId}/pages/import`, {
       data: mappedData,
-      folder_ids: selectedFolderIds.value
+      folder_ids: selectedFolderIds.value,
+      template_type: selectedTemplate.value
     })
 
     importResult.value = resp.data

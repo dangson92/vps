@@ -251,44 +251,11 @@ class PageController extends Controller
         }
     }
 
-    public function import(Request $request, Website $website): JsonResponse
+    private function buildTemplateData(string $templateType, array $item, string $title): array
     {
-        $validated = $request->validate([
-            'data' => 'required|array',
-            'data.*.name' => 'required|string',
-            'data.*.address' => 'nullable|string',
-            'data.*.rating' => 'nullable|numeric',
-            'data.*.ratingCategory' => 'nullable|string',
-            'data.*.reviewCount' => 'nullable|integer',
-            'data.*.images' => 'nullable|array',
-            'data.*.facilities' => 'nullable|array',
-            'data.*.faqs' => 'nullable|array',
-            'data.*.about' => 'nullable|string',
-            'data.*.houseRules' => 'nullable|array',
-            'folder_ids' => 'nullable|array',
-            'folder_ids.*' => 'integer',
-        ]);
-
-        $items = $validated['data'];
-        $folderIds = $validated['folder_ids'] ?? [];
-
-        $stats = [
-            'total' => count($items),
-            'created' => 0,
-            'updated' => 0,
-            'skipped' => 0,
-            'errors' => []
-        ];
-
-        foreach ($items as $index => $item) {
-            try {
-                $title = $item['name'];
-
-                // Check if page with this title already exists
-                $existingPage = $website->pages()->where('title', $title)->first();
-
-                // Map JSON data to template_data format
-                $templateData = [
+        switch ($templateType) {
+            case 'detail':
+                return [
                     'title' => $title,
                     'location' => $item['address'] ?? '',
                     'location_text' => $item['address'] ?? '',
@@ -311,10 +278,82 @@ class PageController extends Controller
                     'breadcrumb_items' => ['Home', 'Stays', $title]
                 ];
 
+            case 'blank':
+                return [
+                    'title' => $title,
+                    'content' => $item['content'] ?? $item['about'] ?? ''
+                ];
+
+            case 'home':
+                return [
+                    'title' => $title,
+                    'about' => $item['about'] ?? '',
+                    'services' => $item['services'] ?? [],
+                    'testimonials' => $item['testimonials'] ?? []
+                ];
+
+            case 'listing':
+                return [
+                    'title' => $title,
+                    'items' => $item['items'] ?? [],
+                    'filters' => $item['filters'] ?? []
+                ];
+
+            default:
+                return ['title' => $title];
+        }
+    }
+
+    public function import(Request $request, Website $website): JsonResponse
+    {
+        $validated = $request->validate([
+            'data' => 'required|array',
+            'data.*.name' => 'required|string',
+            'data.*.address' => 'nullable|string',
+            'data.*.rating' => 'nullable|numeric',
+            'data.*.ratingCategory' => 'nullable|string',
+            'data.*.reviewCount' => 'nullable|integer',
+            'data.*.images' => 'nullable|array',
+            'data.*.facilities' => 'nullable|array',
+            'data.*.faqs' => 'nullable|array',
+            'data.*.about' => 'nullable|string',
+            'data.*.houseRules' => 'nullable|array',
+            'data.*.content' => 'nullable|string',
+            'data.*.services' => 'nullable|array',
+            'data.*.testimonials' => 'nullable|array',
+            'data.*.items' => 'nullable|array',
+            'data.*.filters' => 'nullable|array',
+            'folder_ids' => 'nullable|array',
+            'folder_ids.*' => 'integer',
+            'template_type' => 'nullable|string|in:detail,blank,home,listing',
+        ]);
+
+        $items = $validated['data'];
+        $folderIds = $validated['folder_ids'] ?? [];
+        $templateType = $validated['template_type'] ?? 'detail';
+
+        $stats = [
+            'total' => count($items),
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'errors' => []
+        ];
+
+        foreach ($items as $index => $item) {
+            try {
+                $title = $item['name'];
+
+                // Check if page with this title already exists
+                $existingPage = $website->pages()->where('title', $title)->first();
+
+                // Map JSON data to template_data format based on template type
+                $templateData = $this->buildTemplateData($templateType, $item, $title);
+
                 if ($existingPage) {
                     // Update existing page
                     $existingPage->update([
-                        'template_type' => 'detail',
+                        'template_type' => $templateType,
                         'template_data' => $templateData
                     ]);
 
@@ -341,7 +380,7 @@ class PageController extends Controller
                         'path' => $path,
                         'filename' => 'index.html',
                         'title' => $title,
-                        'template_type' => 'detail',
+                        'template_type' => $templateType,
                         'template_data' => $templateData,
                         'content' => '' // Will be generated during deployment
                     ]);
