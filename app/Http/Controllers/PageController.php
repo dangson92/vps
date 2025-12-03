@@ -423,6 +423,9 @@ class PageController extends Controller
                         'template_data' => $templateData
                     ]);
 
+                    // Explicitly set the website relationship
+                    $existingPage->setRelation('website', $website);
+
                     // Generate HTML content from template
                     $existingPage = $this->generatePageContent($existingPage);
                     $existingPage->save();
@@ -459,6 +462,9 @@ class PageController extends Controller
                         'template_data' => $templateData,
                         'content' => '' // Will be generated below
                     ]);
+
+                    // Explicitly set the website relationship
+                    $page->setRelation('website', $website);
 
                     // Generate HTML content from template
                     $page = $this->generatePageContent($page);

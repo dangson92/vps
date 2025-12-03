@@ -435,12 +435,22 @@ const bulkDeploy = async () => {
 
     selectedIds.value = []
     const message = response.data.message || 'Operations queued successfully'
-    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
+    alert(`✓ ${message}\n\nWatch the status indicators for each item.`)
 
-    // Refresh after 3 seconds to show updated status
-    setTimeout(() => {
-      fetchAll()
-    }, 3000)
+    // Start polling to show real-time progress
+    let attempts = 0
+    while (attempts < 120) { // Poll for up to 4 minutes
+      await new Promise(r => setTimeout(r, 2000)) // Wait 2 seconds
+      await fetchAll()
+
+      // Check if any subdomain is still deploying
+      const stillDeploying = subdomains.value.some(s => s.status === 'deploying')
+      if (!stillDeploying) break
+
+      attempts++
+    }
+
+    await fetchAll() // Final refresh
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk deploy failed'
     alert(`✗ ${msg}`)
@@ -461,12 +471,13 @@ const bulkInstallSsl = async () => {
 
     selectedIds.value = []
     const message = response.data.message || 'Operations queued successfully'
-    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
+    alert(`✓ ${message}\n\nWatch the status indicators for each item.`)
 
-    // Refresh after 3 seconds to show updated status
-    setTimeout(() => {
-      fetchAll()
-    }, 3000)
+    // Poll a few times to show progress
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 2000)) // Wait 2 seconds
+      await fetchAll()
+    }
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk SSL installation failed'
     alert(`✗ ${msg}`)
@@ -487,12 +498,13 @@ const bulkDeactivate = async () => {
 
     selectedIds.value = []
     const message = response.data.message || 'Operations queued successfully'
-    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
+    alert(`✓ ${message}\n\nWatch the status indicators for each item.`)
 
-    // Refresh after 3 seconds to show updated status
-    setTimeout(() => {
-      fetchAll()
-    }, 3000)
+    // Poll a few times to show progress
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 2000)) // Wait 2 seconds
+      await fetchAll()
+    }
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk deactivate failed'
     alert(`✗ ${msg}`)
@@ -513,12 +525,13 @@ const bulkDelete = async () => {
 
     selectedIds.value = []
     const message = response.data.message || 'Operations queued successfully'
-    alert(`✓ ${message}\n\nThe page will refresh automatically to show progress.`)
+    alert(`✓ ${message}\n\nWatch the list update as items are deleted.`)
 
-    // Refresh after 3 seconds to show updated status
-    setTimeout(() => {
-      fetchAll()
-    }, 3000)
+    // Poll a few times to show progress
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 2000)) // Wait 2 seconds
+      await fetchAll()
+    }
   } catch (error) {
     const msg = error?.response?.data?.message || 'Bulk delete failed'
     alert(`✗ ${msg}`)
