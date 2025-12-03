@@ -130,7 +130,7 @@
                     Upload JSON File
                   </span>
                 </label>
-                <input type="file" @change="handleFileUpload" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                <input type="file" @change="handleFileUpload" accept=".json" class="block w-full text-sm text-gray-500 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer"/>
                 <p v-if="importData" class="text-sm text-green-600 mt-2">✓ Loaded {{ importData.length }} items</p>
                 <p class="text-xs text-gray-500 mt-1">Each item will create a new subdomain with initial page</p>
               </div>
@@ -143,7 +143,7 @@
                     Select Template Type
                   </span>
                 </label>
-                <select v-model="selectedTemplate" @change="updateFieldMappingsForTemplate" class="w-full md:w-1/2 border-gray-300 rounded-md text-sm">
+                <select v-model="selectedTemplate" @change="updateFieldMappingsForTemplate" class="w-full md:w-1/2 border-gray-300 rounded-md text-sm cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400">
                   <option value="detail">Hotel Detail</option>
                   <option value="blank">Blank (HTML)</option>
                   <option value="home">Home Page</option>
@@ -163,8 +163,8 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div v-for="(mapping, key) in visibleFieldMappings" :key="key" class="flex items-center gap-3">
-                    <label class="text-sm font-medium text-gray-700 w-32">{{ mapping.label }}:</label>
-                    <select v-model="mapping.jsonField" class="flex-1 text-sm border-gray-300 rounded-md">
+                    <label class="text-sm font-medium text-gray-700 w-32 shrink-0">{{ mapping.label }}:</label>
+                    <select v-model="mapping.jsonField" class="flex-1 text-sm border-gray-300 rounded-md cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors">
                       <option :value="null">-- Skip --</option>
                       <option v-for="field in availableFields" :key="field" :value="field">{{ field }}</option>
                     </select>
@@ -286,20 +286,10 @@ const fieldMappings = ref({
   houseRules: { label: 'Useful Information', jsonField: 'houseRules' }
 })
 
-// Filter field mappings to only show fields that exist in JSON or are required
+// Show all fields from selected template (no filtering needed)
+// updateFieldMappingsForTemplate() already sets correct fields based on template
 const visibleFieldMappings = computed(() => {
-  const result = {}
-  const requiredFields = ['name'] // Always show required fields
-
-  Object.keys(fieldMappings.value).forEach(key => {
-    const mapping = fieldMappings.value[key]
-    // Show field if it's required OR if it's mapped to an available field
-    if (requiredFields.includes(key) || (mapping.jsonField && availableFields.value.includes(mapping.jsonField))) {
-      result[key] = mapping
-    }
-  })
-
-  return result
+  return fieldMappings.value
 })
 
 const allSelected = computed(() => {
