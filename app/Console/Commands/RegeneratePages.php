@@ -141,12 +141,12 @@ class RegeneratePages extends Command
 
         // Convert relative script and link URLs to absolute URLs pointing to root domain
         $html = preg_replace(
-            '/<script([^>]*)\ssrc=["\'](\/[^"\']+)["\']/',
+            '/<script([^>]*?)\s+src=["\'](\/[^"\']+)["\']/',
             '<script$1 src="' . $assetBaseUrl . '$2"',
             $html
         );
         $html = preg_replace(
-            '/<link([^>]*)\shref=["\'](\/[^"\']+)["\']/',
+            '/<link([^>]*?)\s+href=["\'](\/[^"\']+)["\']/',
             '<link$1 href="' . $assetBaseUrl . '$2"',
             $html
         );
