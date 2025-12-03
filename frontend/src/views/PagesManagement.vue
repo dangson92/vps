@@ -78,8 +78,17 @@
                     Upload JSON File
                   </span>
                 </label>
-                <input type="file" @change="handleFileUpload" accept=".json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                <p v-if="importData" class="text-sm text-green-600 mt-2">✓ Loaded {{ importData.length }} items</p>
+                <div class="flex items-center gap-3">
+                  <label class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-md border border-blue-200 text-sm font-semibold cursor-pointer hover:bg-blue-100 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <span>Choose File</span>
+                    <input type="file" @change="handleFileUpload" accept=".json" class="hidden"/>
+                  </label>
+                  <span v-if="!importData" class="text-sm text-gray-500">No file chosen</span>
+                  <span v-else class="text-sm text-green-600 font-medium">✓ {{ importData.length }} items loaded</span>
+                </div>
               </div>
 
               <!-- Step 2: Select Template -->
@@ -90,7 +99,7 @@
                     Select Template Type
                   </span>
                 </label>
-                <select v-model="selectedTemplate" @change="updateFieldMappingsForTemplate" class="w-full md:w-1/2 border-gray-300 rounded-md text-sm">
+                <select v-model="selectedTemplate" @change="updateFieldMappingsForTemplate" class="w-full md:w-1/2 border-gray-300 rounded-md text-sm cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400">
                   <option value="detail">Hotel Detail</option>
                   <option value="blank">Blank (HTML)</option>
                   <option value="home">Home Page</option>
@@ -109,9 +118,9 @@
                 </label>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div v-for="(mapping, key) in fieldMappings" :key="key" class="flex items-center gap-3">
-                    <label class="text-sm font-medium text-gray-700 w-32">{{ mapping.label }}:</label>
-                    <select v-model="mapping.jsonField" class="flex-1 text-sm border-gray-300 rounded-md">
+                  <div v-for="(mapping, key) in visibleFieldMappings" :key="key" class="flex items-center gap-3">
+                    <label class="text-sm font-medium text-gray-700 w-32 shrink-0">{{ mapping.label }}:</label>
+                    <select v-model="mapping.jsonField" class="flex-1 text-sm border-gray-300 rounded-md cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-400 transition-colors">
                       <option :value="null">-- Skip --</option>
                       <option v-for="field in availableFields" :key="field" :value="field">{{ field }}</option>
                     </select>
@@ -122,7 +131,7 @@
                 <div v-if="previewItem" class="bg-gray-50 rounded-md p-4 mt-4">
                   <h3 class="text-sm font-semibold text-gray-700 mb-2">Preview (First Item):</h3>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                    <div v-for="(mapping, key) in fieldMappings" :key="key" v-show="mapping.jsonField">
+                    <div v-for="(mapping, key) in visibleFieldMappings" :key="key" v-show="mapping.jsonField">
                       <span class="font-medium text-gray-600">{{ mapping.label }}:</span>
                       <span class="ml-2 text-gray-800">
                         {{ getPreviewValue(mapping.jsonField) }}
@@ -216,13 +225,12 @@ const selectedTemplate = ref('detail')
 const templateFieldConfigs = {
   detail: {
     name: { label: 'Title', jsonField: 'name' },
-    address: { label: 'Address', jsonField: 'address' },
-    about: { label: 'About', jsonField: 'about' },
-    rating: { label: 'Rating', jsonField: 'rating' },
-    images: { label: 'Images', jsonField: 'images' },
-    facilities: { label: 'Facilities', jsonField: 'facilities' },
+    address: { label: 'Địa điểm', jsonField: 'address' },
+    about: { label: 'Giới thiệu', jsonField: 'about' },
+    images: { label: 'Ảnh gallery', jsonField: 'images' },
+    facilities: { label: 'Amenities', jsonField: 'facilities' },
     faqs: { label: 'FAQs', jsonField: 'faqs' },
-    info: { label: 'Useful Information', jsonField: 'houseRules' }
+    houseRules: { label: 'Useful Information', jsonField: 'houseRules' }
   },
   blank: {
     name: { label: 'Title', jsonField: 'name' },
@@ -243,13 +251,18 @@ const templateFieldConfigs = {
 
 const fieldMappings = ref({
   name: { label: 'Title', jsonField: 'name' },
-  address: { label: 'Address', jsonField: 'address' },
-  about: { label: 'About', jsonField: 'about' },
-  rating: { label: 'Rating', jsonField: 'rating' },
-  images: { label: 'Images', jsonField: 'images' },
-  facilities: { label: 'Facilities', jsonField: 'facilities' },
+  address: { label: 'Địa điểm', jsonField: 'address' },
+  about: { label: 'Giới thiệu', jsonField: 'about' },
+  images: { label: 'Ảnh gallery', jsonField: 'images' },
+  facilities: { label: 'Amenities', jsonField: 'facilities' },
   faqs: { label: 'FAQs', jsonField: 'faqs' },
-  info: { label: 'Useful Information', jsonField: 'houseRules' }
+  houseRules: { label: 'Useful Information', jsonField: 'houseRules' }
+})
+
+// Show all fields from selected template (no filtering needed)
+// updateFieldMappingsForTemplate() already sets correct fields based on template
+const visibleFieldMappings = computed(() => {
+  return fieldMappings.value
 })
 
 const filteredPages = computed(() => {
@@ -463,11 +476,10 @@ const updateFieldMappingsForTemplate = () => {
       name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
       address: fields.find(f => f.toLowerCase().includes('address') || f.toLowerCase().includes('location')),
       about: fields.find(f => f.toLowerCase().includes('about') || f.toLowerCase().includes('description')),
-      rating: fields.find(f => f.toLowerCase().includes('rating') || f.toLowerCase().includes('score')),
       images: fields.find(f => f.toLowerCase().includes('image') || f.toLowerCase().includes('photo')),
       facilities: fields.find(f => f.toLowerCase().includes('facilit') || f.toLowerCase().includes('amenity')),
       faqs: fields.find(f => f.toLowerCase().includes('faq') || f.toLowerCase().includes('question')),
-      info: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy') || f.toLowerCase().includes('info'))
+      houseRules: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy') || f.toLowerCase().includes('info'))
     }
     Object.keys(autoMap).forEach(key => {
       if (autoMap[key] && fieldMappings.value[key]) {
