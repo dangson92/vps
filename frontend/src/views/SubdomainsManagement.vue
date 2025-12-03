@@ -258,7 +258,7 @@ const templateFieldConfigs = {
     images: { label: 'Images', jsonField: 'images' },
     facilities: { label: 'Facilities', jsonField: 'facilities' },
     faqs: { label: 'FAQs', jsonField: 'faqs' },
-    houseRules: { label: 'House Rules', jsonField: 'houseRules' }
+    info: { label: 'Useful Information', jsonField: 'houseRules' }
   },
   blank: {
     name: { label: 'Title', jsonField: 'name' },
@@ -285,7 +285,7 @@ const fieldMappings = ref({
   images: { label: 'Images', jsonField: 'images' },
   facilities: { label: 'Facilities', jsonField: 'facilities' },
   faqs: { label: 'FAQs', jsonField: 'faqs' },
-  houseRules: { label: 'House Rules', jsonField: 'houseRules' }
+  info: { label: 'Useful Information', jsonField: 'houseRules' }
 })
 
 const allSelected = computed(() => {
@@ -538,7 +538,7 @@ const updateFieldMappingsForTemplate = () => {
       images: fields.find(f => f.toLowerCase().includes('image') || f.toLowerCase().includes('photo')),
       facilities: fields.find(f => f.toLowerCase().includes('facilit') || f.toLowerCase().includes('amenity')),
       faqs: fields.find(f => f.toLowerCase().includes('faq') || f.toLowerCase().includes('question')),
-      houseRules: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy'))
+      info: fields.find(f => f.toLowerCase().includes('rule') || f.toLowerCase().includes('policy') || f.toLowerCase().includes('info'))
     }
     Object.keys(autoMap).forEach(key => {
       if (autoMap[key] && fieldMappings.value[key]) {
