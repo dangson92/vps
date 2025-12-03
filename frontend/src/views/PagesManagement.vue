@@ -222,7 +222,7 @@ const templateFieldConfigs = {
     images: { label: 'Images', jsonField: 'images' },
     facilities: { label: 'Facilities', jsonField: 'facilities' },
     faqs: { label: 'FAQs', jsonField: 'faqs' },
-    houseRules: { label: 'House Rules', jsonField: 'houseRules' }
+    houseRules: { label: 'Useful Information', jsonField: 'houseRules' }
   },
   blank: {
     name: { label: 'Title', jsonField: 'name' },
@@ -249,7 +249,7 @@ const fieldMappings = ref({
   images: { label: 'Images', jsonField: 'images' },
   facilities: { label: 'Facilities', jsonField: 'facilities' },
   faqs: { label: 'FAQs', jsonField: 'faqs' },
-  houseRules: { label: 'House Rules', jsonField: 'houseRules' }
+  houseRules: { label: 'Useful Information', jsonField: 'houseRules' }
 })
 
 // Filter field mappings to only show fields that exist in JSON or are required
