@@ -738,11 +738,16 @@ const performImport = async () => {
         const newWebsiteId = websiteResp.data.id
 
         // Import page data for the subdomain
-        await axios.post(`/api/websites/${newWebsiteId}/pages/import`, {
+        const importResp = await axios.post(`/api/websites/${newWebsiteId}/pages/import`, {
           data: [mapped],
           folder_ids: selectedFolderIds.value,
           template_type: selectedTemplate.value
         })
+
+        // Log queued import
+        if (importResp.data.status === 'queued') {
+          console.log(`Import queued for ${mapped.name}: ${importResp.data.message}`)
+        }
 
         result.created++
       } catch (error) {

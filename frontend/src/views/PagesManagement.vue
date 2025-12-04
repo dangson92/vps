@@ -579,10 +579,18 @@ const performImport = async () => {
     })
 
     importResult.value = resp.data
-    toast.success(`Import completed: ${resp.data.stats.created} created, ${resp.data.stats.updated} updated`)
 
-    // Refresh pages list
-    await fetchPages()
+    // Show different message for queued vs completed imports
+    if (resp.data.status === 'queued') {
+      toast.success(resp.data.message || `Import started: Processing ${resp.data.total} items in background`)
+    } else {
+      toast.success(`Import completed: ${resp.data.stats?.created || 0} created, ${resp.data.stats?.updated || 0} updated`)
+    }
+
+    // Refresh pages list after a short delay to allow background job to process
+    setTimeout(async () => {
+      await fetchPages()
+    }, 2000)
   } catch (error) {
     toast.error('Import failed: ' + (error.response?.data?.message || error.message))
     console.error(error)
