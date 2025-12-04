@@ -825,9 +825,8 @@ class DeploymentService
         $html = str_replace('{{OG_IMAGE}}', $gallery[0] ?? '', $html);
         $html = str_replace('{{OG_URL}}', 'https://' . $website->domain . $page->path, $html);
 
-        // Inject page data script - use window.HOTEL_DATA for compatibility with detail.js
-        $jsData = json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
-        $dataScript = '<script>window.HOTEL_DATA = ' . $jsData . ';</script>';
+        // Inject page data script as JSON (detail.js reads from this)
+        $dataScript = '<script type="application/json" id="page-data">' . json_encode($data, JSON_UNESCAPED_UNICODE) . '</script>';
 
         // Replace known placeholders or fallback
         if (strpos($html, '{{GALLERY_DATA_SCRIPT}}') !== false) {
