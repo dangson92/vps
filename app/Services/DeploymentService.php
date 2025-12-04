@@ -843,13 +843,21 @@ class DeploymentService
             }
         }
 
-        // Rewrite CSS/JS asset references to use shared assets on main domain from package
+        // Rewrite CSS/JS asset references to use absolute URLs on main domain
         if (!empty($templateType) && $website->type === 'laravel1') {
             $base = $data['main_domain_url'] ?? ($website->ssl_enabled ? 'https://' : 'http://') . $mainDomain;
             $package = $this->getTemplatePackage($website);
             $scriptVersion = time();
 
-            // Rewrite to package assets structure: /templates/{package}/assets/{type}.css
+            // Rewrite template asset paths to absolute URLs
+            // Match: /templates/{package}/assets/*.css and /templates/{package}/assets/*.js
+            $html = preg_replace(
+                '#(href|src)="(/templates/[^/]+/assets/[^"]+\.(css|js))(\?[^"]*)?"#',
+                '$1="' . $base . '$2?v=' . $scriptVersion . '"',
+                $html
+            );
+
+            // Legacy fallback for old-style references
             $html = preg_replace(
                 '#href="[^"]*style\.css[^"]*"#',
                 'href="' . $base . '/templates/' . $package . '/assets/' . $templateType . '.css?v=' . $scriptVersion . '"',
