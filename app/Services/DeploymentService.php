@@ -851,7 +851,7 @@ class DeploymentService
             // Rewrite template asset paths to absolute URLs
             // Match: /templates/{package}/assets/*.css and /templates/{package}/assets/*.js
             $html = preg_replace(
-                '#(href|src)="(/templates/[^/]+/assets/[^"?]+\.(css|js))(\?[^"]*)?"#',
+                '#(href|src)="(/templates/[^/]+/assets/[^"?./]+\.(css|js))(\?[^"]*)?"#',
                 '$1="' . $base . '$2?v=' . $scriptVersion . '"',
                 $html
             );
