@@ -1286,8 +1286,10 @@ class DeploymentService
         $domain = $website->domain;
 
         if (!empty($settings['title'])) {
-            $html = str_replace('{{TITLE}}', e($settings['title']), $html);
-            $html = preg_replace('/<title>[\s\S]*?<\/title>/i', '<title>' . e($settings['title']) . '</title>', $html, 1);
+            // Only replace {{TITLE}} placeholder if it exists, don't override already-set titles
+            if (strpos($html, '{{TITLE}}') !== false) {
+                $html = str_replace('{{TITLE}}', e($settings['title']), $html);
+            }
         }
         if (!empty($settings['favicon_url']) && stripos($html, 'rel="icon"') === false) {
             if (preg_match('/<\/head>/i', $html)) {
