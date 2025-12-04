@@ -308,6 +308,7 @@ const templateFieldConfigs = {
 const fieldMappings = ref({
   name: { label: 'Title', jsonField: 'name' },
   address: { label: 'Địa điểm', jsonField: 'address' },
+  rating: { label: 'Phân hạng (Rating)', jsonField: 'rating' },
   about: { label: 'Giới thiệu', jsonField: 'about' },
   images: { label: 'Ảnh gallery', jsonField: 'images' },
   facilities: { label: 'Amenities', jsonField: 'facilities' },
@@ -592,6 +593,7 @@ const updateFieldMappingsForTemplate = () => {
     const autoMap = {
       name: fields.find(f => f.toLowerCase().includes('name') || f.toLowerCase().includes('title')),
       address: fields.find(f => f.toLowerCase().includes('address') || f.toLowerCase().includes('location')),
+      rating: fields.find(f => f.toLowerCase().includes('rating') || f.toLowerCase().includes('star')),
       about: fields.find(f => f.toLowerCase().includes('about') || f.toLowerCase().includes('description')),
       images: fields.find(f => f.toLowerCase().includes('image') || f.toLowerCase().includes('photo')),
       facilities: fields.find(f => f.toLowerCase().includes('facilit') || f.toLowerCase().includes('amenity')),
