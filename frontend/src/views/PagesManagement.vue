@@ -16,6 +16,11 @@
             <router-link :to="`/websites/${websiteId}/pages/new`" class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-blue-600 hover:bg-gray-50" title="Add Page">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
             </router-link>
+            <button @click="deploySelected" :disabled="selectedIds.length === 0 || deployingBulk" class="h-9 px-3 flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white text-blue-600 hover:bg-gray-50 disabled:text-gray-400" :title="`Deploy Selected (${selectedIds.length})`">
+              <Loader2 v-if="deployingBulk" class="size-4 animate-spin" />
+              <svg v-else viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="text-sm">Deploy</span>
+            </button>
             <button @click="deleteSelected" :disabled="selectedIds.length === 0 || deletingBulk" class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-red-600 hover:bg-gray-50 disabled:text-gray-400" :title="`Delete Selected (${selectedIds.length})`">
               <Loader2 v-if="deletingBulk" class="size-4 animate-spin" />
               <Trash2 v-else class="size-4" />
@@ -210,6 +215,7 @@ const allWebsites = ref([])
 const selectedIds = ref([])
 const loadingDeleteIds = ref([])
 const deletingBulk = ref(false)
+const deployingBulk = ref(false)
 const query = ref('')
 const showAddForm = ref(false)
 const showImportModal = ref(false)
@@ -415,6 +421,23 @@ const deleteSelected = async () => {
   }
 }
 
+const deploySelected = async () => {
+  if (selectedIds.value.length === 0) return
+  if (!confirm(`Deploy ${selectedIds.value.length} selected pages + homepage + categories?`)) return
+  deployingBulk.value = true
+  try {
+    const resp = await axios.post(`/api/websites/${websiteId}/pages/bulk-deploy`, {
+      page_ids: selectedIds.value
+    })
+    toast.success(resp.data.message || `Deploying ${selectedIds.value.length} pages in background`)
+    selectedIds.value = []
+  } catch (e) {
+    toast.error('Failed to deploy selected pages: ' + (e.response?.data?.message || e.message))
+  } finally {
+    deployingBulk.value = false
+  }
+}
+
 const fetchFolders = async () => {
   try {
     const resp = await axios.get(`/api/websites/${websiteId}/folders`)
@@ -579,10 +602,18 @@ const performImport = async () => {
     })
 
     importResult.value = resp.data
-    toast.success(`Import completed: ${resp.data.stats.created} created, ${resp.data.stats.updated} updated`)
 
-    // Refresh pages list
-    await fetchPages()
+    // Show different message for queued vs completed imports
+    if (resp.data.status === 'queued') {
+      toast.success(resp.data.message || `Import started: Processing ${resp.data.total} items in background`)
+    } else {
+      toast.success(`Import completed: ${resp.data.stats?.created || 0} created, ${resp.data.stats?.updated || 0} updated`)
+    }
+
+    // Refresh pages list after a short delay to allow background job to process
+    setTimeout(async () => {
+      await fetchPages()
+    }, 2000)
   } catch (error) {
     toast.error('Import failed: ' + (error.response?.data?.message || error.message))
     console.error(error)
