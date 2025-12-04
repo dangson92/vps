@@ -104,11 +104,8 @@ class RegeneratePages extends Command
 
     private function injectTemplateData(string $html, array $data, Page $page): string
     {
-        // Create JavaScript data object
-        $jsData = json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
-
-        // Inject data as GALLERY_DATA_SCRIPT placeholder
-        $dataScript = "<script>window.HOTEL_DATA = {$jsData};</script>";
+        // Inject data as JSON script tag (detail.js reads from this)
+        $dataScript = '<script type="application/json" id="page-data">' . json_encode($data, JSON_UNESCAPED_UNICODE) . '</script>';
         $html = str_replace('{{GALLERY_DATA_SCRIPT}}', $dataScript, $html);
 
         // Inject SCRIPT_VERSION
