@@ -430,6 +430,38 @@ class PageController extends Controller
         return 0;
     }
 
+    /**
+     * Normalize houseRules to array format
+     * Handles both object {checkIn: "...", checkOut: "..."} and array formats
+     */
+    private function normalizeHouseRules($houseRules): array
+    {
+        if (!$houseRules) {
+            return [];
+        }
+
+        // If already an array, return as is
+        if (is_array($houseRules) && isset($houseRules[0])) {
+            return $houseRules;
+        }
+
+        // If object format, convert to array
+        if (is_array($houseRules)) {
+            $result = [];
+            foreach ($houseRules as $key => $value) {
+                // Convert camelCase to Title Case
+                $title = ucfirst(preg_replace('/([A-Z])/', ' $1', $key));
+                $result[] = [
+                    'title' => $title,
+                    'description' => $value
+                ];
+            }
+            return $result;
+        }
+
+        return [];
+    }
+
     private function buildTemplateData(string $templateType, array $item, string $title): array
     {
         switch ($templateType) {
@@ -453,7 +485,7 @@ class PageController extends Controller
                             'subject' => is_string($rule) ? $rule : ($rule['title'] ?? ''),
                             'description' => is_string($rule) ? '' : ($rule['description'] ?? '')
                         ];
-                    }, array_slice($item['houseRules'] ?? [], 0, 10)),
+                    }, array_slice($this->normalizeHouseRules($item['houseRules'] ?? []), 0, 10)),
                     'gallery' => array_slice($item['images'] ?? [], 0, 50),
                     'breadcrumb_items' => ['Home', 'Stays', $title]
                 ];
@@ -513,98 +545,13 @@ class PageController extends Controller
         $folderIds = $validated['folder_ids'] ?? [];
         $templateType = $validated['template_type'] ?? 'detail';
 
-        $stats = [
-            'total' => count($items),
-            'created' => 0,
-            'updated' => 0,
-            'skipped' => 0,
-            'errors' => []
-        ];
-
-        foreach ($items as $index => $item) {
-            try {
-                $title = $item['name'];
-
-                // Check if page with this title already exists
-                $existingPage = $website->pages()->where('title', $title)->first();
-
-                // Map JSON data to template_data format based on template type
-                $templateData = $this->buildTemplateData($templateType, $item, $title);
-
-                if ($existingPage) {
-                    // Update existing page
-                    $existingPage->update([
-                        'template_type' => $templateType,
-                        'template_data' => $templateData
-                    ]);
-
-                    // Explicitly set the website relationship
-                    $existingPage->setRelation('website', $website);
-
-                    // Generate HTML content from template
-                    $existingPage = $this->generatePageContent($existingPage);
-                    $existingPage->save();
-
-                    // Update folder associations if provided
-                    if (!empty($folderIds)) {
-                        $existingPage->folders()->sync($folderIds);
-                    }
-
-                    $stats['updated']++;
-                } else {
-                    // Create new page
-                    // Use custom path if provided, otherwise generate from title
-                    if (isset($item['path']) && !empty($item['path'])) {
-                        $path = $item['path'];
-                    } else {
-                        // Generate slug from title
-                        $slug = \Illuminate\Support\Str::slug($title);
-                        $path = '/' . $slug;
-
-                        // Check if path exists, add number if needed
-                        $counter = 1;
-                        while ($website->pages()->where('path', $path)->exists()) {
-                            $path = '/' . $slug . '-' . $counter;
-                            $counter++;
-                        }
-                    }
-
-                    $page = $website->pages()->create([
-                        'path' => $path,
-                        'filename' => 'index.html',
-                        'title' => $title,
-                        'template_type' => $templateType,
-                        'template_data' => $templateData,
-                        'content' => '' // Will be generated below
-                    ]);
-
-                    // Explicitly set the website relationship
-                    $page->setRelation('website', $website);
-
-                    // Generate HTML content from template
-                    $page = $this->generatePageContent($page);
-                    $page->save();
-
-                    // Attach folders if provided
-                    if (!empty($folderIds)) {
-                        $page->folders()->attach($folderIds);
-                    }
-
-                    $stats['created']++;
-                }
-            } catch (\Exception $e) {
-                $stats['skipped']++;
-                $stats['errors'][] = [
-                    'index' => $index,
-                    'title' => $item['name'] ?? 'Unknown',
-                    'error' => $e->getMessage()
-                ];
-            }
-        }
+        // Dispatch import job
+        \App\Jobs\ImportPages::dispatch($website->id, $items, $folderIds, $templateType);
 
         return response()->json([
-            'message' => 'Import completed',
-            'stats' => $stats
+            'message' => 'Import started successfully. Processing ' . count($items) . ' items in background.',
+            'total' => count($items),
+            'status' => 'queued'
         ]);
     }
 }
