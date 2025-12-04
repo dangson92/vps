@@ -133,6 +133,13 @@ class PageController extends Controller
 
         $page->update($validated);
 
+        // Regenerate HTML content from template if template_type is set
+        if (!empty($page->template_type) && $page->template_type !== 'blank') {
+            $page->setRelation('website', $page->website);
+            $page = $this->generatePageContent($page);
+            $page->save();
+        }
+
         if (array_key_exists('folder_ids', $validated)) {
             $ids = collect($validated['folder_ids'] ?? [])
                 ->filter(fn($id) => is_int($id) || ctype_digit((string)$id))
