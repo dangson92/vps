@@ -49,6 +49,7 @@ Route::middleware('admin.token')->group(function () {
 
     // Page Management
     Route::post('websites/{website}/pages/import', [PageController::class, 'import']);
+    Route::post('websites/{website}/pages/bulk-deploy', [PageController::class, 'bulkDeploy']);
     Route::apiResource('websites.pages', PageController::class)->shallow();
 
     // Folder Management

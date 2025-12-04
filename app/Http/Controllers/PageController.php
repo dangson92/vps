@@ -554,4 +554,35 @@ class PageController extends Controller
             'status' => 'queued'
         ]);
     }
+
+    public function bulkDeploy(Request $request, Website $website): JsonResponse
+    {
+        $validated = $request->validate([
+            'page_ids' => 'required|array',
+            'page_ids.*' => 'integer'
+        ]);
+
+        $pageIds = $validated['page_ids'];
+
+        // Verify all pages belong to this website
+        $validPageIds = $website->pages()
+            ->whereIn('id', $pageIds)
+            ->pluck('id')
+            ->toArray();
+
+        if (empty($validPageIds)) {
+            return response()->json([
+                'message' => 'No valid pages found'
+            ], 400);
+        }
+
+        // Dispatch bulk deploy job
+        \App\Jobs\BulkDeployPages::dispatch($validPageIds, $website->id);
+
+        return response()->json([
+            'message' => 'Bulk deploy started. Processing ' . count($validPageIds) . ' pages + homepage + categories in background.',
+            'page_count' => count($validPageIds),
+            'status' => 'queued'
+        ]);
+    }
 }
