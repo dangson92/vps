@@ -843,7 +843,7 @@ class DeploymentService
         }
 
         // Rewrite CSS/JS asset references to use absolute URLs on main domain
-        if (!empty($templateType) && $website->type === 'laravel1') {
+        if ($website->type === 'laravel1') {
             $base = $data['main_domain_url'] ?? ($website->ssl_enabled ? 'https://' : 'http://') . $mainDomain;
             $package = $this->getTemplatePackage($website);
             $scriptVersion = time();
@@ -851,22 +851,24 @@ class DeploymentService
             // Rewrite template asset paths to absolute URLs
             // Match: /templates/{package}/assets/*.css and /templates/{package}/assets/*.js
             $html = preg_replace(
-                '#(href|src)="(/templates/[^/]+/assets/[^"]+\.(css|js))(\?[^"]*)?"#',
+                '#(href|src)="(/templates/[^/]+/assets/[^"?]+\.(css|js))(\?[^"]*)?"#',
                 '$1="' . $base . '$2?v=' . $scriptVersion . '"',
                 $html
             );
 
-            // Legacy fallback for old-style references
-            $html = preg_replace(
-                '#href="[^"]*style\.css[^"]*"#',
-                'href="' . $base . '/templates/' . $package . '/assets/' . $templateType . '.css?v=' . $scriptVersion . '"',
-                $html
-            );
-            $html = preg_replace(
-                '#src="[^"]*script\.js[^"]*"#',
-                'src="' . $base . '/templates/' . $package . '/assets/' . $templateType . '.js?v=' . $scriptVersion . '"',
-                $html
-            );
+            // Legacy fallback for old-style references (only if templateType is set)
+            if (!empty($templateType)) {
+                $html = preg_replace(
+                    '#href="[^"]*style\.css[^"]*"#',
+                    'href="' . $base . '/templates/' . $package . '/assets/' . $templateType . '.css?v=' . $scriptVersion . '"',
+                    $html
+                );
+                $html = preg_replace(
+                    '#src="[^"]*script\.js[^"]*"#',
+                    'src="' . $base . '/templates/' . $package . '/assets/' . $templateType . '.js?v=' . $scriptVersion . '"',
+                    $html
+                );
+            }
         }
 
         // Add script version for cache busting
