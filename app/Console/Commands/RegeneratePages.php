@@ -104,6 +104,47 @@ class RegeneratePages extends Command
 
     private function injectTemplateData(string $html, array $data, Page $page): string
     {
+        // Get protocol and domain info
+        $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
+        $domainParts = explode('.', $page->website->domain);
+        $rootDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $page->website->domain;
+        $assetBaseUrl = $protocol . $rootDomain;
+
+        // Add missing fields that detail.js expects
+        $data['main_domain_url'] = $assetBaseUrl;
+
+        // Build breadcrumb paths
+        $breadcrumbItems = $data['breadcrumb_items'] ?? ['Home', 'Stays', $data['title'] ?? $page->title];
+        $breadcrumbPaths = ['/', '/', '']; // Home, Stays category (placeholder), current page (no link)
+
+        // Get folder hierarchy if page has folders
+        $folder = $page->folders()->first();
+        if ($folder) {
+            $breadcrumbItems = ['Home'];
+            $breadcrumbPaths = ['/'];
+
+            // Get all parent folders in order
+            $folderHierarchy = [];
+            $currentFolder = $folder;
+            while ($currentFolder) {
+                array_unshift($folderHierarchy, $currentFolder);
+                $currentFolder = $currentFolder->parent;
+            }
+
+            // Add folder names and paths to breadcrumb
+            foreach ($folderHierarchy as $f) {
+                $breadcrumbItems[] = $f->name;
+                $breadcrumbPaths[] = $f->getPath();
+            }
+
+            // Add page title (no path for current page)
+            $breadcrumbItems[] = $data['title'] ?? $page->title ?? 'Untitled';
+            $breadcrumbPaths[] = '';  // Last item has no link
+        }
+
+        $data['breadcrumb_items'] = $breadcrumbItems;
+        $data['breadcrumb_paths'] = $breadcrumbPaths;
+
         // Inject data as JSON script tag (detail.js reads from this)
         $dataScript = '<script type="application/json" id="page-data">' . json_encode($data, JSON_UNESCAPED_UNICODE) . '</script>';
         $html = str_replace('{{GALLERY_DATA_SCRIPT}}', $dataScript, $html);
@@ -123,13 +164,7 @@ class RegeneratePages extends Command
             $ogImage = $data['gallery'][0];
         }
 
-        $protocol = $page->website->ssl_enabled ? 'https://' : 'http://';
         $ogUrl = $protocol . $page->website->domain . $page->path;
-
-        // Get root domain URL for assets
-        $domainParts = explode('.', $page->website->domain);
-        $rootDomain = count($domainParts) > 2 ? implode('.', array_slice($domainParts, -2)) : $page->website->domain;
-        $assetBaseUrl = $protocol . $rootDomain;
 
         $html = str_replace('{{TITLE}}', htmlspecialchars($title, ENT_QUOTES, 'UTF-8'), $html);
         $html = str_replace('{{DESCRIPTION}}', htmlspecialchars($description, ENT_QUOTES, 'UTF-8'), $html);
