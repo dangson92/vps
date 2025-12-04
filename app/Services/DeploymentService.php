@@ -825,8 +825,9 @@ class DeploymentService
         $html = str_replace('{{OG_IMAGE}}', $gallery[0] ?? '', $html);
         $html = str_replace('{{OG_URL}}', 'https://' . $website->domain . $page->path, $html);
 
-        // Inject page data script
-        $dataScript = '<script type="application/json" id="page-data">' . json_encode($data) . '</script>';
+        // Inject page data script - use window.HOTEL_DATA for compatibility with detail.js
+        $jsData = json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+        $dataScript = '<script>window.HOTEL_DATA = ' . $jsData . ';</script>';
 
         // Replace known placeholders or fallback
         if (strpos($html, '{{GALLERY_DATA_SCRIPT}}') !== false) {
@@ -834,22 +835,11 @@ class DeploymentService
         } elseif (strpos($html, '{{PAGE_DATA_SCRIPT}}') !== false) {
             $html = str_replace('{{PAGE_DATA_SCRIPT}}', $dataScript, $html);
         } else {
-            // If no placeholder, replace hardcoded script tag if present
-            $replaced = preg_replace(
-                '/<script[^>]*id=["\']page-data["\'][^>]*>.*?<\/script>/s',
-                $dataScript,
-                $html
-            );
-            if ($replaced !== null) {
-                $html = $replaced;
-            }
-            // If still no page-data script, inject before </body>
-            if (strpos($html, 'id="page-data"') === false) {
-                if (stripos($html, '</body>') !== false) {
-                    $html = preg_replace('/<\/body>/i', $dataScript . '</body>', $html, 1);
-                } else {
-                    $html .= "\n" . $dataScript;
-                }
+            // If no placeholder, inject before </body>
+            if (stripos($html, '</body>') !== false) {
+                $html = preg_replace('/<\/body>/i', $dataScript . '</body>', $html, 1);
+            } else {
+                $html .= "\n" . $dataScript;
             }
         }
 
