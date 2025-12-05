@@ -9,7 +9,7 @@
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
             </router-link>
             <input v-model="query" placeholder="Search by title or path" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
-            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 px-3 text-sm">
+            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 pl-3 pr-8 text-sm appearance-none bg-white cursor-pointer">
               <option value="all">All Status</option>
               <option value="recent">Recent (7 days)</option>
               <option value="older">Older</option>
@@ -34,6 +34,21 @@
         </div>
 
         <div class="bg-white shadow rounded-lg p-6">
+          <!-- Select All & Bulk Actions Bar -->
+          <div v-if="filteredPages.length > 0" class="mb-4 pb-4 border-b">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" :checked="allPageSelected" @change="toggleSelectAllPage" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                <label class="text-sm text-gray-700 font-medium cursor-pointer" @click="toggleSelectAllPage">Select Page</label>
+                <button @click="selectAllFiltered" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Select All Filtered ({{ filteredPages.length }})</button>
+                <div v-if="selectedIds.length > 0" class="flex items-center gap-2 ml-2 pl-2 border-l border-gray-300">
+                  <span class="text-sm font-medium text-blue-900">{{ selectedIds.length }} selected</span>
+                  <button @click="selectedIds = []" class="text-sm text-blue-600 hover:text-blue-800">Clear</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Pagination Info -->
           <div v-if="paginatedPages.length > 0" class="mb-4 flex items-center justify-between text-sm text-gray-600">
             <div>
@@ -41,8 +56,8 @@
             </div>
             <div class="flex items-center gap-2">
               <label class="flex items-center gap-2">
-                <span>Per page:</span>
-                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 px-2 py-1 text-sm">
+                <span class="text-sm">Per page:</span>
+                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 pl-2 pr-7 py-1 text-sm appearance-none bg-white cursor-pointer">
                   <option :value="10">10</option>
                   <option :value="20">20</option>
                   <option :value="50">50</option>
@@ -384,6 +399,27 @@ const previewItem = computed(() => {
 const canImport = computed(() => {
   return importData.value && importData.value.length > 0 && fieldMappings.value.name.jsonField
 })
+
+const allPageSelected = computed(() => {
+  return paginatedPages.value.length > 0 && paginatedPages.value.every(p => selectedIds.value.includes(p.id))
+})
+
+const toggleSelectAllPage = () => {
+  if (allPageSelected.value) {
+    // Deselect all on current page
+    const pageIds = paginatedPages.value.map(p => p.id)
+    selectedIds.value = selectedIds.value.filter(id => !pageIds.includes(id))
+  } else {
+    // Select all on current page
+    const pageIds = paginatedPages.value.map(p => p.id)
+    selectedIds.value = [...new Set([...selectedIds.value, ...pageIds])]
+  }
+}
+
+const selectAllFiltered = () => {
+  // Select all filtered items (not just current page)
+  selectedIds.value = filteredPages.value.map(p => p.id)
+}
 
 const fetchWebsite = async () => {
   const resp = await axios.get(`/api/websites/${websiteId}`)
