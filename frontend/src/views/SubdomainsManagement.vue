@@ -14,6 +14,11 @@
               <option value="error">Error</option>
               <option value="suspended">Suspended</option>
             </select>
+            <select v-model="sslFilter" class="h-9 rounded-md border border-gray-300 pl-3 pr-8 text-sm appearance-none bg-white cursor-pointer">
+              <option value="all">All SSL</option>
+              <option value="enabled">SSL Enabled</option>
+              <option value="disabled">No SSL</option>
+            </select>
             <button @click="showImportModal = true" class="px-4 py-2 border border-gray-300 rounded-md text-green-600 hover:bg-gray-50 flex items-center gap-2">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Import</span>
@@ -313,6 +318,7 @@ const parentDomain = ref('')
 const subdomains = ref([])
 const query = ref('')
 const statusFilter = ref('all')
+const sslFilter = ref('all')
 const currentPage = ref(1)
 const itemsPerPage = ref(20)
 const deployingIds = ref([])
@@ -392,6 +398,15 @@ const filteredSubdomains = computed(() => {
   // Filter by status
   if (statusFilter.value !== 'all') {
     filtered = filtered.filter(s => s.status === statusFilter.value)
+  }
+
+  // Filter by SSL
+  if (sslFilter.value !== 'all') {
+    if (sslFilter.value === 'enabled') {
+      filtered = filtered.filter(s => s.ssl_enabled === true || s.ssl_enabled === 1)
+    } else if (sslFilter.value === 'disabled') {
+      filtered = filtered.filter(s => !s.ssl_enabled || s.ssl_enabled === false || s.ssl_enabled === 0)
+    }
   }
 
   return filtered
