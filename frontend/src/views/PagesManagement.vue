@@ -9,7 +9,7 @@
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
             </router-link>
             <input v-model="query" placeholder="Search by title or path" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
-            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 px-3 text-sm">
+            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 pl-3 pr-8 text-sm appearance-none bg-white cursor-pointer">
               <option value="all">All Status</option>
               <option value="recent">Recent (7 days)</option>
               <option value="older">Older</option>
@@ -56,8 +56,8 @@
             </div>
             <div class="flex items-center gap-2">
               <label class="flex items-center gap-2">
-                <span>Per page:</span>
-                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 px-2 py-1 text-sm">
+                <span class="text-sm">Per page:</span>
+                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 pl-2 pr-7 py-1 text-sm appearance-none bg-white cursor-pointer">
                   <option :value="10">10</option>
                   <option :value="20">20</option>
                   <option :value="50">50</option>

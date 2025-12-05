@@ -6,7 +6,7 @@
           <h1 class="text-3xl font-bold text-gray-900">Subdomains of {{ parentDomain }}</h1>
           <div class="flex items-center gap-2">
             <input v-model="query" placeholder="Search by domain" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
-            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 px-3 text-sm">
+            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 pl-3 pr-8 text-sm appearance-none bg-white cursor-pointer">
               <option value="all">All Status</option>
               <option value="deployed">Deployed</option>
               <option value="pending">Pending</option>
@@ -30,8 +30,8 @@
             </div>
             <div class="flex items-center gap-2">
               <label class="flex items-center gap-2">
-                <span>Per page:</span>
-                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 px-2 py-1 text-sm">
+                <span class="text-sm">Per page:</span>
+                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 pl-2 pr-7 py-1 text-sm appearance-none bg-white cursor-pointer">
                   <option :value="10">10</option>
                   <option :value="20">20</option>
                   <option :value="50">50</option>
