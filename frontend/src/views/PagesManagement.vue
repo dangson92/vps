@@ -34,6 +34,21 @@
         </div>
 
         <div class="bg-white shadow rounded-lg p-6">
+          <!-- Select All & Bulk Actions Bar -->
+          <div v-if="filteredPages.length > 0" class="mb-4 pb-4 border-b">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <input type="checkbox" :checked="allPageSelected" @change="toggleSelectAllPage" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                <label class="text-sm text-gray-700 font-medium cursor-pointer" @click="toggleSelectAllPage">Select Page</label>
+                <button @click="selectAllFiltered" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Select All Filtered ({{ filteredPages.length }})</button>
+                <div v-if="selectedIds.length > 0" class="flex items-center gap-2 ml-2 pl-2 border-l border-gray-300">
+                  <span class="text-sm font-medium text-blue-900">{{ selectedIds.length }} selected</span>
+                  <button @click="selectedIds = []" class="text-sm text-blue-600 hover:text-blue-800">Clear</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Pagination Info -->
           <div v-if="paginatedPages.length > 0" class="mb-4 flex items-center justify-between text-sm text-gray-600">
             <div>
@@ -384,6 +399,27 @@ const previewItem = computed(() => {
 const canImport = computed(() => {
   return importData.value && importData.value.length > 0 && fieldMappings.value.name.jsonField
 })
+
+const allPageSelected = computed(() => {
+  return paginatedPages.value.length > 0 && paginatedPages.value.every(p => selectedIds.value.includes(p.id))
+})
+
+const toggleSelectAllPage = () => {
+  if (allPageSelected.value) {
+    // Deselect all on current page
+    const pageIds = paginatedPages.value.map(p => p.id)
+    selectedIds.value = selectedIds.value.filter(id => !pageIds.includes(id))
+  } else {
+    // Select all on current page
+    const pageIds = paginatedPages.value.map(p => p.id)
+    selectedIds.value = [...new Set([...selectedIds.value, ...pageIds])]
+  }
+}
+
+const selectAllFiltered = () => {
+  // Select all filtered items (not just current page)
+  selectedIds.value = filteredPages.value.map(p => p.id)
+}
 
 const fetchWebsite = async () => {
   const resp = await axios.get(`/api/websites/${websiteId}`)

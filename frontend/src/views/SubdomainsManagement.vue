@@ -45,7 +45,8 @@
           <div v-if="filteredSubdomains.length > 0" class="mb-3 flex items-center justify-between pb-3 border-b">
             <div class="flex items-center gap-3">
               <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
-              <label class="text-sm text-gray-700 font-medium cursor-pointer" @click="toggleSelectAll">Select All</label>
+              <label class="text-sm text-gray-700 font-medium cursor-pointer" @click="toggleSelectAll">Select Page</label>
+              <button @click="selectAllFiltered" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Select All Filtered ({{ filteredSubdomains.length }})</button>
               <div v-if="selectedIds.length > 0" class="flex items-center gap-2 ml-2 pl-2 border-l border-gray-300">
                 <span class="text-sm font-medium text-blue-900">{{ selectedIds.length }} selected</span>
                 <button @click="selectedIds = []" class="text-sm text-blue-600 hover:text-blue-800">Clear</button>
@@ -441,6 +442,11 @@ const toggleSelectAll = () => {
     const pageIds = paginatedSubdomains.value.map(s => s.id)
     selectedIds.value = [...new Set([...selectedIds.value, ...pageIds])]
   }
+}
+
+const selectAllFiltered = () => {
+  // Select all filtered items (not just current page)
+  selectedIds.value = filteredSubdomains.value.map(s => s.id)
 }
 
 const fetchAll = async () => {
