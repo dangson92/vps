@@ -8,9 +8,9 @@
             <input v-model="query" placeholder="Search by domain" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
             <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 pl-3 pr-8 text-sm appearance-none bg-white cursor-pointer">
               <option value="all">All Status</option>
-              <option value="deployed">Deployed</option>
-              <option value="pending">Pending</option>
+              <option value="draft">Draft</option>
               <option value="deploying">Deploying</option>
+              <option value="deployed">Deployed</option>
               <option value="error">Error</option>
               <option value="suspended">Suspended</option>
             </select>
