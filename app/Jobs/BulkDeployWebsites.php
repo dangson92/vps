@@ -54,26 +54,38 @@ class BulkDeployWebsites implements ShouldQueue
                 // 2. Deploy all pages
                 $deploymentService->publishAllPages($website);
 
-                // 3. Deploy homepage (for laravel1 sites)
+                // 3. Deploy homepage and category pages (ONLY for root domain laravel1 sites, NOT subdomains)
                 if ($website->type === 'laravel1') {
-                    try {
-                        $deploymentService->deployLaravel1Homepage($website);
-                        Log::info("BulkDeployWebsites: Deployed homepage", ['website_id' => $websiteId]);
-                    } catch (\Exception $e) {
-                        Log::error("BulkDeployWebsites: Failed to deploy homepage", [
-                            'website_id' => $websiteId,
-                            'error' => $e->getMessage()
-                        ]);
-                    }
+                    // Check if this is a subdomain
+                    $domainParts = explode('.', $website->domain);
+                    $isSubdomain = count($domainParts) > 2;
 
-                    // 4. Deploy category pages
-                    try {
-                        $deploymentService->deployLaravel1AllCategories($website);
-                        Log::info("BulkDeployWebsites: Deployed all categories", ['website_id' => $websiteId]);
-                    } catch (\Exception $e) {
-                        Log::error("BulkDeployWebsites: Failed to deploy categories", [
+                    if (!$isSubdomain) {
+                        // This is a root domain, deploy homepage and categories
+                        try {
+                            $deploymentService->deployLaravel1Homepage($website);
+                            Log::info("BulkDeployWebsites: Deployed homepage", ['website_id' => $websiteId]);
+                        } catch (\Exception $e) {
+                            Log::error("BulkDeployWebsites: Failed to deploy homepage", [
+                                'website_id' => $websiteId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+
+                        // 4. Deploy category pages
+                        try {
+                            $deploymentService->deployLaravel1AllCategories($website);
+                            Log::info("BulkDeployWebsites: Deployed all categories", ['website_id' => $websiteId]);
+                        } catch (\Exception $e) {
+                            Log::error("BulkDeployWebsites: Failed to deploy categories", [
+                                'website_id' => $websiteId,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    } else {
+                        Log::info("BulkDeployWebsites: Skipping homepage/categories for subdomain", [
                             'website_id' => $websiteId,
-                            'error' => $e->getMessage()
+                            'domain' => $website->domain
                         ]);
                     }
                 }

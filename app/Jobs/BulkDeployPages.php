@@ -50,25 +50,37 @@ class BulkDeployPages implements ShouldQueue
             }
         }
 
-        // 2. Deploy homepage
-        try {
-            $deploymentService->deployLaravel1Homepage($website);
-            Log::info('BulkDeployPages: Deployed homepage', ['website_id' => $this->websiteId]);
-        } catch (\Exception $e) {
-            Log::error('BulkDeployPages: Failed to deploy homepage', [
-                'website_id' => $this->websiteId,
-                'error' => $e->getMessage()
-            ]);
-        }
+        // 2. Deploy homepage and categories (ONLY for root domain, NOT subdomains)
+        // Check if this is a subdomain
+        $domainParts = explode('.', $website->domain);
+        $isSubdomain = count($domainParts) > 2;
 
-        // 3. Deploy listing pages (categories)
-        try {
-            $deploymentService->deployLaravel1AllCategories($website);
-            Log::info('BulkDeployPages: Deployed all categories', ['website_id' => $this->websiteId]);
-        } catch (\Exception $e) {
-            Log::error('BulkDeployPages: Failed to deploy categories', [
+        if (!$isSubdomain) {
+            // This is a root domain, deploy homepage and categories
+            try {
+                $deploymentService->deployLaravel1Homepage($website);
+                Log::info('BulkDeployPages: Deployed homepage', ['website_id' => $this->websiteId]);
+            } catch (\Exception $e) {
+                Log::error('BulkDeployPages: Failed to deploy homepage', [
+                    'website_id' => $this->websiteId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+            // 3. Deploy listing pages (categories)
+            try {
+                $deploymentService->deployLaravel1AllCategories($website);
+                Log::info('BulkDeployPages: Deployed all categories', ['website_id' => $this->websiteId]);
+            } catch (\Exception $e) {
+                Log::error('BulkDeployPages: Failed to deploy categories', [
+                    'website_id' => $this->websiteId,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        } else {
+            Log::info('BulkDeployPages: Skipping homepage/categories for subdomain', [
                 'website_id' => $this->websiteId,
-                'error' => $e->getMessage()
+                'domain' => $website->domain
             ]);
         }
 
