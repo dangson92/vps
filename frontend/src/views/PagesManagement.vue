@@ -232,6 +232,7 @@ const templateFieldConfigs = {
   detail: {
     name: { label: 'Title', jsonField: 'name' },
     address: { label: 'Địa điểm', jsonField: 'address' },
+    rating: { label: 'Phân hạng (Rating)', jsonField: 'rating' },
     about: { label: 'Giới thiệu', jsonField: 'about' },
     images: { label: 'Ảnh gallery', jsonField: 'images' },
     facilities: { label: 'Amenities', jsonField: 'facilities' },
