@@ -8,7 +8,12 @@
             <router-link :to="backToRoute" class="h-9 w-9 flex items-center justify-center rounded-md border border-gray-300 bg-white text-gray-700 hover:bg-gray-50" title="Back">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
             </router-link>
-            <input v-model="query" placeholder="Search" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
+            <input v-model="query" placeholder="Search by title or path" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
+            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 px-3 text-sm">
+              <option value="all">All Status</option>
+              <option value="recent">Recent (7 days)</option>
+              <option value="older">Older</option>
+            </select>
             <button @click="showImportModal = true" class="h-9 px-3 flex items-center justify-center gap-1 rounded-md border border-gray-300 bg-white text-green-600 hover:bg-gray-50" title="Import Pages">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span class="text-sm">Import</span>
@@ -29,8 +34,26 @@
         </div>
 
         <div class="bg-white shadow rounded-lg p-6">
+          <!-- Pagination Info -->
+          <div v-if="paginatedPages.length > 0" class="mb-4 flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Showing {{ ((currentPage - 1) * itemsPerPage) + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredPages.length) }} of {{ filteredPages.length }} pages
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="flex items-center gap-2">
+                <span>Per page:</span>
+                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 px-2 py-1 text-sm">
+                  <option :value="10">10</option>
+                  <option :value="20">20</option>
+                  <option :value="50">50</option>
+                  <option :value="100">100</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
           <div class="space-y-4">
-            <div v-for="page in filteredPages" :key="page.id" class="border rounded-lg p-4">
+            <div v-for="page in paginatedPages" :key="page.id" class="border rounded-lg p-4">
               <div class="flex justify-between items-start">
                 <div>
                   <label class="inline-flex items-center gap-2 mb-2">
@@ -59,6 +82,29 @@
               </div>
             </div>
             <div v-if="filteredPages.length === 0" class="text-center text-gray-500">No pages found</div>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div v-if="totalPages > 1" class="mt-6 flex items-center justify-center gap-2">
+            <button @click="currentPage = 1" :disabled="currentPage === 1" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              First
+            </button>
+            <button @click="currentPage--" :disabled="currentPage === 1" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              Previous
+            </button>
+            <div class="flex items-center gap-1">
+              <button v-for="page in visiblePageNumbers" :key="page" @click="currentPage = page"
+                :class="currentPage === page ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'"
+                class="px-3 py-1 rounded-md border border-gray-300 text-sm">
+                {{ page }}
+              </button>
+            </div>
+            <button @click="currentPage++" :disabled="currentPage === totalPages" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              Next
+            </button>
+            <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              Last
+            </button>
           </div>
         </div>
 
@@ -217,6 +263,9 @@ const loadingDeleteIds = ref([])
 const deletingBulk = ref(false)
 const deployingBulk = ref(false)
 const query = ref('')
+const statusFilter = ref('all')
+const currentPage = ref(1)
+const itemsPerPage = ref(20)
 const showAddForm = ref(false)
 const showImportModal = ref(false)
 const importData = ref(null)
@@ -232,6 +281,7 @@ const templateFieldConfigs = {
   detail: {
     name: { label: 'Title', jsonField: 'name' },
     address: { label: 'Địa điểm', jsonField: 'address' },
+    rating: { label: 'Phân hạng (Rating)', jsonField: 'rating' },
     about: { label: 'Giới thiệu', jsonField: 'about' },
     images: { label: 'Ảnh gallery', jsonField: 'images' },
     facilities: { label: 'Amenities', jsonField: 'facilities' },
@@ -273,11 +323,58 @@ const visibleFieldMappings = computed(() => {
 })
 
 const filteredPages = computed(() => {
+  let filtered = pages.value
+
+  // Filter by search query
   const q = query.value.trim().toLowerCase()
-  if (!q) return pages.value
-  return pages.value.filter(p =>
-    (p.title || '').toLowerCase().includes(q) || (p.path || '').toLowerCase().includes(q)
-  )
+  if (q) {
+    filtered = filtered.filter(p =>
+      (p.title || '').toLowerCase().includes(q) || (p.path || '').toLowerCase().includes(q)
+    )
+  }
+
+  // Filter by status
+  if (statusFilter.value !== 'all') {
+    const now = new Date()
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+    if (statusFilter.value === 'recent') {
+      filtered = filtered.filter(p => {
+        const updatedAt = p.updated_at ? new Date(p.updated_at) : null
+        return updatedAt && updatedAt > sevenDaysAgo
+      })
+    } else if (statusFilter.value === 'older') {
+      filtered = filtered.filter(p => {
+        const updatedAt = p.updated_at ? new Date(p.updated_at) : null
+        return !updatedAt || updatedAt <= sevenDaysAgo
+      })
+    }
+  }
+
+  return filtered
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredPages.value.length / itemsPerPage.value)
+})
+
+const paginatedPages = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredPages.value.slice(start, end)
+})
+
+const visiblePageNumbers = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const delta = 2 // Number of pages to show on each side of current page
+
+  let pages = []
+  for (let i = Math.max(1, current - delta); i <= Math.min(total, current + delta); i++) {
+    pages.push(i)
+  }
+
+  return pages
 })
 
 const previewItem = computed(() => {
