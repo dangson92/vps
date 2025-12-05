@@ -5,6 +5,15 @@
         <div class="flex justify-between items-center mb-6">
           <h1 class="text-3xl font-bold text-gray-900">Subdomains of {{ parentDomain }}</h1>
           <div class="flex items-center gap-2">
+            <input v-model="query" placeholder="Search by domain" class="h-9 w-56 rounded-md border border-gray-300 px-3" />
+            <select v-model="statusFilter" class="h-9 rounded-md border border-gray-300 px-3 text-sm">
+              <option value="all">All Status</option>
+              <option value="deployed">Deployed</option>
+              <option value="pending">Pending</option>
+              <option value="deploying">Deploying</option>
+              <option value="error">Error</option>
+              <option value="suspended">Suspended</option>
+            </select>
             <button @click="showImportModal = true" class="px-4 py-2 border border-gray-300 rounded-md text-green-600 hover:bg-gray-50 flex items-center gap-2">
               <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>Import</span>
@@ -14,8 +23,26 @@
         </div>
 
         <div class="bg-white shadow rounded-lg p-6">
+          <!-- Pagination Info -->
+          <div v-if="paginatedSubdomains.length > 0" class="mb-4 flex items-center justify-between text-sm text-gray-600">
+            <div>
+              Showing {{ ((currentPage - 1) * itemsPerPage) + 1 }} - {{ Math.min(currentPage * itemsPerPage, filteredSubdomains.length) }} of {{ filteredSubdomains.length }} subdomains
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="flex items-center gap-2">
+                <span>Per page:</span>
+                <select v-model.number="itemsPerPage" class="rounded-md border border-gray-300 px-2 py-1 text-sm">
+                  <option :value="10">10</option>
+                  <option :value="20">20</option>
+                  <option :value="50">50</option>
+                  <option :value="100">100</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
           <!-- Select All & Bulk Actions Bar -->
-          <div v-if="subdomains.length > 0" class="mb-3 flex items-center justify-between pb-3 border-b">
+          <div v-if="filteredSubdomains.length > 0" class="mb-3 flex items-center justify-between pb-3 border-b">
             <div class="flex items-center gap-3">
               <input type="checkbox" :checked="allSelected" @change="toggleSelectAll" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
               <label class="text-sm text-gray-700 font-medium cursor-pointer" @click="toggleSelectAll">Select All</label>
@@ -49,7 +76,7 @@
           </div>
 
           <div class="space-y-4">
-            <div v-for="site in subdomains" :key="site.id" class="border rounded-lg p-4">
+            <div v-for="site in paginatedSubdomains" :key="site.id" class="border rounded-lg p-4">
               <div class="flex items-start gap-3">
                 <!-- Checkbox -->
                 <input type="checkbox" :value="site.id" v-model="selectedIds" class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
@@ -107,7 +134,30 @@
                 </div>
               </div>
             </div>
-            <div v-if="subdomains.length === 0" class="text-center text-gray-500">No subdomains found</div>
+            <div v-if="filteredSubdomains.length === 0" class="text-center text-gray-500">No subdomains found</div>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div v-if="totalPages > 1" class="mt-6 flex items-center justify-center gap-2">
+            <button @click="currentPage = 1" :disabled="currentPage === 1" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              First
+            </button>
+            <button @click="currentPage--" :disabled="currentPage === 1" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              Previous
+            </button>
+            <div class="flex items-center gap-1">
+              <button v-for="page in visiblePageNumbers" :key="page" @click="currentPage = page"
+                :class="currentPage === page ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'"
+                class="px-3 py-1 rounded-md border border-gray-300 text-sm">
+                {{ page }}
+              </button>
+            </div>
+            <button @click="currentPage++" :disabled="currentPage === totalPages" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              Next
+            </button>
+            <button @click="currentPage = totalPages" :disabled="currentPage === totalPages" class="px-3 py-1 rounded-md border border-gray-300 bg-white hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400 text-sm">
+              Last
+            </button>
           </div>
         </div>
 
@@ -260,6 +310,10 @@ const route = useRoute()
 const websiteId = route.params.websiteId
 const parentDomain = ref('')
 const subdomains = ref([])
+const query = ref('')
+const statusFilter = ref('all')
+const currentPage = ref(1)
+const itemsPerPage = ref(20)
 const deployingIds = ref([])
 const deletingIds = ref([])
 const sslIds = ref([])
@@ -323,8 +377,50 @@ const visibleFieldMappings = computed(() => {
   return fieldMappings.value
 })
 
+const filteredSubdomains = computed(() => {
+  let filtered = subdomains.value
+
+  // Filter by search query
+  const q = query.value.trim().toLowerCase()
+  if (q) {
+    filtered = filtered.filter(s =>
+      (s.domain || '').toLowerCase().includes(q)
+    )
+  }
+
+  // Filter by status
+  if (statusFilter.value !== 'all') {
+    filtered = filtered.filter(s => s.status === statusFilter.value)
+  }
+
+  return filtered
+})
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredSubdomains.value.length / itemsPerPage.value)
+})
+
+const paginatedSubdomains = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredSubdomains.value.slice(start, end)
+})
+
+const visiblePageNumbers = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const delta = 2 // Number of pages to show on each side of current page
+
+  let pages = []
+  for (let i = Math.max(1, current - delta); i <= Math.min(total, current + delta); i++) {
+    pages.push(i)
+  }
+
+  return pages
+})
+
 const allSelected = computed(() => {
-  return subdomains.value.length > 0 && selectedIds.value.length === subdomains.value.length
+  return paginatedSubdomains.value.length > 0 && selectedIds.value.length === paginatedSubdomains.value.length
 })
 
 const previewItem = computed(() => {
@@ -337,9 +433,13 @@ const canImport = computed(() => {
 
 const toggleSelectAll = () => {
   if (allSelected.value) {
-    selectedIds.value = []
+    // Deselect all on current page
+    const pageIds = paginatedSubdomains.value.map(s => s.id)
+    selectedIds.value = selectedIds.value.filter(id => !pageIds.includes(id))
   } else {
-    selectedIds.value = subdomains.value.map(s => s.id)
+    // Select all on current page
+    const pageIds = paginatedSubdomains.value.map(s => s.id)
+    selectedIds.value = [...new Set([...selectedIds.value, ...pageIds])]
   }
 }
 
