@@ -51,8 +51,24 @@ class BulkDeployWebsites implements ShouldQueue
                 // 1. Deploy infrastructure
                 $deploymentService->deploy($website);
 
-                // 2. Deploy all pages
-                $deploymentService->publishAllPages($website);
+                // 2. Deploy all pages synchronously (not queued)
+                foreach ($website->pages as $page) {
+                    try {
+                        $deploymentService->deployPage($page);
+                        Log::info("BulkDeployWebsites: Deployed page", [
+                            'website_id' => $websiteId,
+                            'page_id' => $page->id,
+                            'path' => $page->path
+                        ]);
+                    } catch (\Exception $e) {
+                        Log::error("BulkDeployWebsites: Failed to deploy page", [
+                            'website_id' => $websiteId,
+                            'page_id' => $page->id,
+                            'path' => $page->path,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
 
                 // 3. Deploy homepage and category pages (ONLY for root domain laravel1 sites, NOT subdomains)
                 if ($website->type === 'laravel1') {
